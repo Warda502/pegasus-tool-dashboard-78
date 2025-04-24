@@ -91,21 +91,29 @@ export const useUserOperations = () => {
     }
     
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      console.log("Attempting to create new user:", newUser.Email);
+      
+      // Create the auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUser.Email,
         password: newUser.Password,
+        email_confirm: true
       });
       
       if (authError) {
+        console.error("Auth error:", authError);
         throw new Error(authError.message);
       }
       
       if (!authData.user) {
+        console.error("No user returned from auth signup");
         throw new Error("Failed to create auth user");
       }
       
       const userId = authData.user.id;
-
+      console.log("Auth user created successfully with ID:", userId);
+      
+      // Insert user data into the users table
       const { error: userError } = await supabase.from('users').insert({
         id: userId,
         uid: userId,
@@ -113,20 +121,23 @@ export const useUserOperations = () => {
         password: newUser.Password,
         name: newUser.Name || '',
         phone: newUser.Phone || '',
-        country: newUser.Country || 'السعودية',
+        country: newUser.Country || 'Saudi Arabia',
         activate: newUser.Activate || 'Active',
         block: newUser.Block || 'Not Blocked',
         credits: newUser.Credits || '0.0',
         user_type: newUser.User_Type || 'Credits License',
-        email_type: 'User',
+        email_type: newUser.Email_Type || 'User',
         expiry_time: newUser.Expiry_Time || null,
         start_date: newUser.Start_Date || new Date().toISOString().split('T')[0],
-        hwid: 'Null'
+        hwid: newUser.Hwid || 'Null'
       });
 
       if (userError) {
-        throw new Error("Failed to add user data");
+        console.error("User data error:", userError);
+        throw new Error("Failed to add user data: " + userError.message);
       }
+      
+      console.log("User data added successfully");
       
       toast(t("addSuccess"), {
         description: t("addUserSuccess")
@@ -136,7 +147,7 @@ export const useUserOperations = () => {
       return true;
     } catch (error) {
       console.error("Error adding user:", error);
-      toast("Error", {
+      toast(t("error") || "Error", {
         description: error instanceof Error ? error.message : "Failed to add user"
       });
       return false;
