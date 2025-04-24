@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
 import {
   Table,
   TableBody,
@@ -27,6 +27,7 @@ import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function UsersManager() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog states
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
@@ -59,13 +60,14 @@ export default function UsersManager() {
     }
     
     try {
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${userId}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'DELETE'
-      });
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
       
-      if (!response.ok) {
-        throw new Error(`فشل حذف المستخدم: ${response.status}`);
+      if (error) {
+        throw new Error(`فشل حذف المستخدم: ${error.message}`);
       }
       
       toast(t("deleteSuccess"), {
@@ -78,16 +80,15 @@ export default function UsersManager() {
       toast("خطأ", {
         description: "فشل في حذف المستخدم"
       });
-      handleLogout();
     }
   };
   
-  const handleViewDetails = (user: any) => {
+  const handleViewDetails = (user: User) => {
     setSelectedUser(user);
     setIsViewDialogOpen(true);
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
@@ -96,7 +97,7 @@ export default function UsersManager() {
     setIsAddDialogOpen(true);
   };
   
-  const handleRenewUser = (user: any) => {
+  const handleRenewUser = (user: User) => {
     setSelectedUser(user);
     setIsRenewDialogOpen(true);
   };
@@ -105,7 +106,7 @@ export default function UsersManager() {
     setIsAddCreditsDialogOpen(true);
   };
   
-  const handleSaveEditedUser = async (updatedUser: any) => {
+  const handleSaveEditedUser = async (updatedUser: User) => {
     const token = localStorage.getItem("userToken");
     if (!token) {
       navigate("/login");
@@ -113,21 +114,21 @@ export default function UsersManager() {
     }
     
     try {
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${updatedUser.id}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Name: updatedUser.Name,
-          Email: updatedUser.Email,
-          Password: updatedUser.Password,
-          Phone: updatedUser.Phone,
-          Country: updatedUser.Country,
-          Activate: updatedUser.Activate,
-          Block: updatedUser.Block,
-        }),
-      });
+      // Update user in Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: updatedUser.Name,
+          email: updatedUser.Email,
+          password: updatedUser.Password,
+          phone: updatedUser.Phone,
+          country: updatedUser.Country,
+          activate: updatedUser.Activate,
+          block: updatedUser.Block,
+        })
+        .eq('id', updatedUser.id);
 
-      if (!response.ok) {
+      if (error) {
         throw new Error("Failed to update user");
       }
 
@@ -142,7 +143,6 @@ export default function UsersManager() {
       toast("خطأ", {
         description: "فشل في تحديث بيانات المستخدم"
       });
-      handleLogout();
     }
   };
   
@@ -154,39 +154,42 @@ export default function UsersManager() {
     }
     
     try {
-      // First create Firebase Auth user
-      const authUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAoZXmXFEvXAujyaI1ahFolBf06in5R4P4`;
-      const authResponse = await fetch(authUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: newUser.Email,
-          password: newUser.Password,
-          returnSecureToken: true
-        })
+      // Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUser.Email,
+        password: newUser.Password,
       });
-      
-      if (!authResponse.ok) {
-        const errorData = await authResponse.json();
-        throw new Error(handleAuthError(errorData.error?.message || "فشل في إنشاء المستخدم"));
+
+      if (authError) {
+        throw new Error(handleAuthError(authError.message));
       }
       
-      const authData = await authResponse.json();
-      const localId = authData.localId;
+      if (!authData.user) {
+        throw new Error("Failed to create user");
+      }
       
-      // Now save user data to Firebase Realtime Database
-      newUser.UID = localId;
-      newUser.Hwid = "Null"; // As specified in the code
+      // Insert user data into Supabase
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          name: newUser.Name,
+          email: newUser.Email,
+          password: newUser.Password,
+          phone: newUser.Phone,
+          country: newUser.Country,
+          activate: newUser.Activate || "Activate",
+          block: newUser.Block || "Not Blocked",
+          credits: newUser.Credits || "0.0",
+          user_type: newUser.User_Type || "Monthly License",
+          email_type: newUser.Email_Type || "User",
+          expiry_time: newUser.Expiry_Time,
+          start_date: new Date().toISOString(),
+          hwid: "Null",
+          uid: authData.user.id
+        });
 
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${localId}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'PUT',
-        body: JSON.stringify(newUser),
-      });
-
-      if (!response.ok) {
+      if (insertError) {
         throw new Error("Failed to add user data");
       }
       
@@ -219,16 +222,16 @@ export default function UsersManager() {
       expiryDate.setMonth(expiryDate.getMonth() + parseInt(months));
       const newExpiryDate = expiryDate.toISOString().split('T')[0];
       
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${selectedUser.id}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          User_Type: "Monthly License",
-          Expiry_Time: newExpiryDate
-        }),
-      });
+      // Update user in Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({
+          user_type: "Monthly License",
+          expiry_time: newExpiryDate
+        })
+        .eq('id', selectedUser.id);
 
-      if (!response.ok) {
+      if (error) {
         throw new Error("Failed to renew user");
       }
 
@@ -243,7 +246,6 @@ export default function UsersManager() {
       toast("خطأ", {
         description: "فشل في تجديد حساب المستخدم"
       });
-      handleLogout();
     }
   };
 
@@ -295,15 +297,27 @@ export default function UsersManager() {
     }
   };
   
+  // Support both email_type and Email_Type fields
   const filteredUsers = users.filter(user => {
-    if (user.Email_Type !== "User") return false;
+    const emailType = user.Email_Type || user.email_type;
+    if (emailType !== "User") return false;
+    
+    const email = (user.Email || user.email || "").toLowerCase();
+    const userType = (user.User_Type || user.user_type || "").toLowerCase();
+    const country = (user.Country || user.country || "").toLowerCase();
+    const query = searchQuery.toLowerCase();
     
     return (
-      user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.Country?.toLowerCase().includes(searchQuery.toLowerCase())
+      email.includes(query) ||
+      userType.includes(query) ||
+      country.includes(query)
     );
   });
+  
+  // Helper function to get the value from either the legacy or new property
+  const getValue = (user: User, legacyProp: string, newProp: string) => {
+    return user[legacyProp] !== undefined ? user[legacyProp] : user[newProp];
+  };
   
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-100">
@@ -365,17 +379,17 @@ export default function UsersManager() {
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.Email}</TableCell>
-                      <TableCell>{user.User_Type}</TableCell>
+                      <TableCell className="font-medium">{getValue(user, "Email", "email")}</TableCell>
+                      <TableCell>{getValue(user, "User_Type", "user_type")}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${user.Block === "Not Blocked" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                          {user.Block}
+                        <span className={`px-2 py-1 rounded-full text-xs ${getValue(user, "Block", "block") === "Not Blocked" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                          {getValue(user, "Block", "block")}
                         </span>
                       </TableCell>
-                      <TableCell>{user.Country}</TableCell>
-                      <TableCell>{user.Credits}</TableCell>
-                      <TableCell>{user.Start_Date}</TableCell>
-                      <TableCell>{user.Expiry_Time}</TableCell>
+                      <TableCell>{getValue(user, "Country", "country")}</TableCell>
+                      <TableCell>{getValue(user, "Credits", "credits")}</TableCell>
+                      <TableCell>{getValue(user, "Start_Date", "start_date")}</TableCell>
+                      <TableCell>{getValue(user, "Expiry_Time", "expiry_time")}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
@@ -443,7 +457,7 @@ export default function UsersManager() {
         isOpen={isRenewDialogOpen}
         onClose={() => setIsRenewDialogOpen(false)}
         onConfirm={handleRenewConfirm}
-        userType={selectedUser?.User_Type || ""}
+        userType={selectedUser?.User_Type || selectedUser?.user_type || ""}
       />
       
       <AddUserDialog
@@ -455,7 +469,7 @@ export default function UsersManager() {
       <AddCreditsDialog
         isOpen={isAddCreditsDialogOpen}
         onClose={() => setIsAddCreditsDialogOpen(false)}
-        users={users.filter(user => user.Email_Type === "User")}
+        users={filteredUsers}
         onAddCredits={handleAddCreditsConfirm}
       />
     </div>

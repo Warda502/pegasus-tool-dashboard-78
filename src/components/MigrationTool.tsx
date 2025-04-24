@@ -8,6 +8,7 @@ import { toast } from "@/components/ui/sonner";
 import { Loader2, ArrowRightLeft, Check, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const MigrationTool: React.FC = () => {
   const { t, isRTL } = useLanguage();
@@ -15,6 +16,7 @@ export const MigrationTool: React.FC = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const queryClient = useQueryClient();
   
   const handleMigration = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +44,10 @@ export const MigrationTool: React.FC = () => {
         toast("Migration Complete", {
           description: `Successfully migrated ${data.stats.users.migrated} users and ${data.stats.operations.migrated} operations.`
         });
+        
+        // Refresh the data in the app
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        queryClient.invalidateQueries({ queryKey: ['operations'] });
       } else {
         toast("Migration Failed", {
           description: data.error || "An unknown error occurred during migration"
