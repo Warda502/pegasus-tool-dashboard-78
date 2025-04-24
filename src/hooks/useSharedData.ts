@@ -243,7 +243,7 @@ export const useSharedData = () => {
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    staleTime: 10000, // Reduced stale time to 10 seconds to ensure fresher data
+    staleTime: 5000, // Even further reduced stale time to 5 seconds to ensure fresher data
     gcTime: 1000 * 60 * 60, // Cache for 1 hour
     meta: {
       onSuccess: (data) => {
@@ -262,7 +262,7 @@ export const useSharedData = () => {
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
     queryKey: ['operations'],
     queryFn: fetchOperations,
-    staleTime: 10000, // Reduced stale time to 10 seconds
+    staleTime: 5000, // Reduced stale time to 5 seconds
     gcTime: 1000 * 60 * 60,
   });
 

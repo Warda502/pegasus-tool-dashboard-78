@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
 import { UserSearch } from "@/components/users/UserSearch";
 import { UsersTable } from "@/components/users/UsersTable";
 import { UserHeaderActions } from "@/components/users/UserHeaderActions";
-import type { User } from "@/hooks/useSharedData";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -255,15 +253,12 @@ export default function UsersManager() {
     refreshData();
   };
 
-  // Modified filter to show all users when admin is logged in
   const filteredUsers = users.filter(user => {
-    // If admin, don't filter by Email_Type
     if (role === "admin") {
       return user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
              user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
              user.Country?.toLowerCase().includes(searchQuery.toLowerCase());
     } else {
-      // Regular users only see users with Email_Type = "User"
       if (user.Email_Type !== "User") return false;
       
       return user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
