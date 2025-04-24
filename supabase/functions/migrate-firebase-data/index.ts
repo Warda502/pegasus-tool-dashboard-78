@@ -10,6 +10,10 @@ const FIREBASE_API_KEY = Deno.env.get('FIREBASE_API_KEY') || 'AIzaSyAoZXmXFEvXAu
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || 'https://sxigocnatqgqgiedrgue.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
+console.log("Edge function initialized");
+console.log(`Supabase URL: ${SUPABASE_URL}`);
+console.log(`Service role key configured: ${SUPABASE_SERVICE_ROLE_KEY ? 'Yes' : 'No'}`);
+
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,12 +28,16 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 // Helper function to fetch data from Firebase
 async function fetchFromFirebase(path: string, idToken: string) {
   const url = `${FIREBASE_URL}/${path}?auth=${idToken}`;
+  console.log(`Fetching from Firebase: ${path}`);
   try {
     const response = await fetch(url);
     if (!response.ok) {
+      console.error(`Firebase fetch error: ${response.status} ${response.statusText}`);
       throw new Error(`Failed to fetch from Firebase: ${response.statusText}`);
     }
-    return await response.json();
+    const data = await response.json();
+    console.log(`Successfully fetched data from Firebase: ${path}`);
+    return data;
   } catch (error) {
     console.error(`Error fetching from Firebase (${path}):`, error);
     throw error;
@@ -38,6 +46,7 @@ async function fetchFromFirebase(path: string, idToken: string) {
 
 // Helper function to sign in to Firebase
 async function firebaseSignIn(email: string, password: string) {
+  console.log(`Authenticating with Firebase using email: ${email}`);
   try {
     const response = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
@@ -50,10 +59,13 @@ async function firebaseSignIn(email: string, password: string) {
     
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("Firebase auth error:", errorData);
       throw new Error(`Firebase authentication failed: ${errorData.error?.message || response.statusText}`);
     }
     
-    return await response.json();
+    const authData = await response.json();
+    console.log("Firebase authentication successful");
+    return authData;
   } catch (error) {
     console.error('Firebase sign-in error:', error);
     throw error;
@@ -225,8 +237,9 @@ serve(async (req) => {
   
   // Check if service role key is available
   if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Service role key is missing!');
     return new Response(
-      JSON.stringify({ error: 'Service role key is required but not configured' }),
+      JSON.stringify({ success: false, error: 'Service role key is required but not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -236,7 +249,7 @@ serve(async (req) => {
     
     if (!email || !password) {
       return new Response(
-        JSON.stringify({ error: 'Email and password are required' }),
+        JSON.stringify({ success: false, error: 'Email and password are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
