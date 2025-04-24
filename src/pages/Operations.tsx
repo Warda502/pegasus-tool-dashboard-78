@@ -23,10 +23,12 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { useSharedData, formatTimeString, useLanguage, Operation, refundOperation } from "@/hooks/useSharedData";
 import { OperationDetailsDialog } from "@/components/operations/OperationDetailsDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Operations() {
   const { operations, isLoading, refreshData } = useSharedData();
   const { t, language, isRTL } = useLanguage();
+  const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -226,15 +228,17 @@ export default function Operations() {
                       <FileText className="h-4 w-4 mr-1" />
                       {t("details")}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleRefund(op)}
-                      disabled={!op.Credit || op.Credit === "0.0"}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-1" />
-                      {t("refund")}
-                    </Button>
+                    {isAdmin && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleRefund(op)}
+                        disabled={!op.Credit || op.Credit === "0.0"}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        {t("refund")}
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

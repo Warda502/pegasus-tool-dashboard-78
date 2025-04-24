@@ -92,12 +92,12 @@ const fetchUsers = async (): Promise<User[]> => {
   }));
 };
 
-// Modified function to fetch all operations with pagination
-const fetchOperations = async (): Promise<Operation[]> => {
+// Modified function to fetch operations with pagination and user-specific filtering
+const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Promise<Operation[]> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("No authentication session");
   
-  console.log("Fetching operations with pagination...");
+  console.log(`Fetching operations with pagination (isAdmin: ${isAdmin}, userId: ${userId || 'unknown'})`);
   
   let allOperations: any[] = [];
   let page = 0;
@@ -110,11 +110,19 @@ const fetchOperations = async (): Promise<Operation[]> => {
     
     console.log(`Fetching operations batch ${page + 1}, range: ${from}-${to}`);
     
-    const { data, error } = await supabase
+    // Build the query with conditional filtering based on user role
+    let query = supabase
       .from('operations')
       .select('*')
       .range(from, to)
       .order('time', { ascending: false });
+    
+    // If not admin and userId is available, filter by user ID
+    if (!isAdmin && userId) {
+      query = query.eq('uid', userId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error(`Error fetching operations batch ${page + 1}:`, error);
@@ -157,50 +165,6 @@ const fetchOperations = async (): Promise<Operation[]> => {
     // Add LogOpration but don't reference op.log_operation since it doesn't exist
     LogOpration: null
   }));
-};
-
-// Unified function to add credit to a user
-const addCreditToUser = async (userId: string, amount: number): Promise<boolean> => {
-  try {
-    // Get current session from Supabase
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authentication session");
-    
-    // Get current credits
-    const { data: userData, error: fetchError } = await supabase
-      .from('users')
-      .select('credits')
-      .eq('id', userId)
-      .single();
-
-    if (fetchError || !userData) {
-      console.error("Error fetching user credits:", fetchError);
-      return false;
-    }
-
-    // Calculate new credits with the correct format
-    const currentCredits = parseFloat(userData.credits || "0.0");
-    const newCredits = (currentCredits + amount).toString() + ".0";
-
-    console.log(`Adding ${amount} credits to user ${userId}. Current: ${currentCredits}, New: ${newCredits}`);
-
-    // Update credits in Supabase
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ credits: newCredits })
-      .eq('id', userId);
-
-    if (updateError) {
-      console.error("Error updating credits:", updateError);
-      return false;
-    }
-    
-    console.log("Credits updated successfully");
-    return true;
-  } catch (error) {
-    console.error("Error adding credits:", error);
-    return false;
-  }
 };
 
 // Helper function to format time strings
@@ -282,7 +246,7 @@ export const refundOperation = async (operation: Operation): Promise<boolean> =>
 export const useSharedData = () => {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
 
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
@@ -308,8 +272,8 @@ export const useSharedData = () => {
   });
 
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
-    queryKey: ['operations'],
-    queryFn: fetchOperations,
+    queryKey: ['operations', isAdmin, user?.id],
+    queryFn: () => fetchOperations(isAdmin, user?.id),
     staleTime: 1000, // Reduced stale time for more frequent updates
     gcTime: 1000 * 60 * 5, // Cache for 5 minutes
     refetchOnMount: true, // Refetch data when component mounts
