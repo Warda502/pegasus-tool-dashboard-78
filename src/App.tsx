@@ -7,14 +7,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import UsersManager from "./pages/UsersManager";
 import Operations from "./pages/Operations";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import UserEdit from "./pages/UserEdit";
-import DataMigration from "./pages/DataMigration";
 import AppLayout from "./components/layout/AppLayout";
 import { LanguageProvider } from "./hooks/useLanguage";
 
@@ -35,7 +32,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <AppLayout><Dashboard /></AppLayout>
@@ -54,16 +50,6 @@ const App = () => (
             <Route path="/settings" element={
               <ProtectedRoute>
                 <AppLayout><Settings /></AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/user-edit/:userId" element={
-              <ProtectedRoute>
-                <AppLayout><UserEdit /></AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/data-migration" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AppLayout><DataMigration /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
