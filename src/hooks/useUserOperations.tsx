@@ -122,15 +122,15 @@ export const useUserOperations = () => {
         password: newUser.Password,
         name: newUser.Name || '',
         phone: newUser.Phone || '',
-        country: newUser.Country || 'Saudi Arabia',
-        activate: newUser.Activate || 'Active',
+        country: newUser.Country,
+        activate: newUser.Activate || 'Activate',
         block: newUser.Block || 'Not Blocked',
         credits: newUser.Credits || '0.0',
-        user_type: newUser.User_Type || 'Credits License',
-        email_type: newUser.Email_Type || 'User',
-        expiry_time: newUser.Expiry_Time || null,
+        user_type: newUser.User_Type,
+        email_type: 'User',
+        expiry_time: newUser.Expiry_Time,
         start_date: newUser.Start_Date || new Date().toISOString().split('T')[0],
-        hwid: newUser.Hwid || 'Null'
+        hwid: 'Null'
       });
 
       if (userError) {
