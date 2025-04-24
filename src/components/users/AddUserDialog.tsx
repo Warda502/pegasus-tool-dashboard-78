@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ export function AddUserDialog({
     setShowSubscriptionMonths(userType === "Monthly License");
   }, [userType]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Get current date
     const startDate = new Date().toISOString().split('T')[0];
@@ -103,25 +104,32 @@ export function AddUserDialog({
       User_Type: userType,
       Phone: phone,
       Country: country,
-      Activate: "Activate",
+      Activate: "Active", // تأكد من استخدام "Active" بدلاً من "Activate"
       Block: "Not Blocked",
       Start_Date: startDate,
       Expiry_Time: expiryDate,
       Email_Type: "User",
       Hwid: "Null"
     };
+    
     try {
-      onSave(newUser);
-
-      // Reset form fields
-      setName("");
-      setEmail("");
-      setPassword("");
-      setCredits("0");
-      setUserType("Credits License");
-      setPhone("");
-      setCountry("السعودية");
-      setSubscriptionMonths("3");
+      console.log("Submitting new user:", newUser);
+      const success = await onSave(newUser);
+      
+      if (success) {
+        // Reset form fields
+        setName("");
+        setEmail("");
+        setPassword("");
+        setCredits("0");
+        setUserType("Credits License");
+        setPhone("");
+        setCountry("Saudi Arabia");
+        setSubscriptionMonths("3");
+        
+        // Close the dialog
+        onClose();
+      }
     } catch (error) {
       console.error("Error adding user:", error);
       toast(t("error") || "خطأ", {
