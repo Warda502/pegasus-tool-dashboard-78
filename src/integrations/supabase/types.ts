@@ -15,13 +15,11 @@ export type Database = {
           baseband: string | null
           brand: string | null
           carrier: string | null
-          created_at: string | null
           credit: string | null
           hwid: string | null
-          id: string
           imei: string | null
-          log_operation: string | null
           model: string | null
+          operation_id: string
           operation_type: string
           phone_sn: string | null
           security_patch: string | null
@@ -35,13 +33,11 @@ export type Database = {
           baseband?: string | null
           brand?: string | null
           carrier?: string | null
-          created_at?: string | null
           credit?: string | null
           hwid?: string | null
-          id?: string
           imei?: string | null
-          log_operation?: string | null
           model?: string | null
+          operation_id: string
           operation_type: string
           phone_sn?: string | null
           security_patch?: string | null
@@ -55,13 +51,11 @@ export type Database = {
           baseband?: string | null
           brand?: string | null
           carrier?: string | null
-          created_at?: string | null
           credit?: string | null
           hwid?: string | null
-          id?: string
           imei?: string | null
-          log_operation?: string | null
           model?: string | null
+          operation_id?: string
           operation_type?: string
           phone_sn?: string | null
           security_patch?: string | null
