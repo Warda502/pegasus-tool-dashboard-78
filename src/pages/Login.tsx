@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -20,7 +19,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // استخدام Supabase للمصادقة
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -30,32 +28,14 @@ export default function Login() {
         throw new Error(error.message || t("loginError") || "Login error");
       }
 
-      // Store session data directly from Supabase
-      localStorage.setItem("userToken", data.session.access_token);
-      localStorage.setItem("userId", data.user.id);
-
-      // Check user role
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('email_type')
-        .eq('id', data.user.id)
-        .single();
-
-      if (userError) {
-        console.error("Error fetching user role:", userError);
-      } else {
-        // Store user role for easy access
-        localStorage.setItem("userRole", userData.email_type || 'User');
-      }
-
       toast({
         title: t("loginSuccess") || "Login successful",
         description: t("loadingData") || "Loading data...",
       });
       
       setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1700);
+        navigate("/dashboard");
+      }, 1000);
     } catch (error) {
       toast({
         variant: "destructive",

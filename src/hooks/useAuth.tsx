@@ -42,7 +42,6 @@ export const useAuth = () => {
           return;
         }
 
-        // Convert email_type to lowercase for consistent role comparison
         const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
         setRole(userRole);
         setUser({
@@ -58,7 +57,6 @@ export const useAuth = () => {
       }
     };
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_OUT') {
@@ -66,7 +64,6 @@ export const useAuth = () => {
           setUser(null);
           navigate('/login');
         } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          // Use setTimeout to avoid potential deadlocks
           setTimeout(async () => {
             const { data: userData, error } = await supabase
               .from('users')
@@ -79,7 +76,6 @@ export const useAuth = () => {
               return;
             }
 
-            // Convert email_type to lowercase for consistent role comparison
             const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
             setRole(userRole);
             setUser({
@@ -127,11 +123,6 @@ export const useAuth = () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
-      // Clear any stored tokens
-      localStorage.removeItem("userToken");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userRole");
       
       toast(t("logoutSuccess") || "Logout successful", {
         description: t("comeBackSoon") || "See you soon!"

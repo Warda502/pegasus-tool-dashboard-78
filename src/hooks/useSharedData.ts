@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
@@ -56,28 +55,11 @@ export interface Operation {
 let hasShownSuccessToast = false;
 
 const fetchUsers = async (): Promise<User[]> => {
-  // Get the current session from Supabase
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("No authentication session");
   
-  console.log("Fetching users with auth token...");
+  console.log("Fetching users...");
   
-  // Get the user role first to determine if admin
-  const { data: currentUserData, error: userError } = await supabase
-    .from('users')
-    .select('email_type')
-    .eq('id', session.user.id)
-    .single();
-    
-  if (userError) {
-    console.error("Error fetching user role:", userError);
-    throw new Error("Failed to determine user role");
-  }
-  
-  const isAdmin = (currentUserData.email_type || '').toLowerCase() === 'admin';
-  console.log("Current user role:", currentUserData.email_type, "Is admin:", isAdmin);
-  
-  // If admin, fetch all users, otherwise just fetch the current user
   const { data, error } = await supabase
     .from('users')
     .select('*');
@@ -87,12 +69,11 @@ const fetchUsers = async (): Promise<User[]> => {
     throw new Error("Failed to fetch users");
   }
   
-  console.log("Fetched users:", data?.length || 0); // Debug log to see what users are being retrieved
+  console.log("Fetched users:", data?.length || 0);
   
-  // Map Supabase data to the structure expected by the app
   return data.map(user => ({
     ...user,
-    Name: user.name || "",  // Ensure Name is always a string, never null
+    Name: user.name || "",
     Email: user.email || "",
     Password: user.password || "",
     Phone: user.phone || "",
