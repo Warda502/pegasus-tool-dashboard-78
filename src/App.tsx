@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -35,12 +36,36 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
-            <Route path="/users-manager" element={<AppLayout><UsersManager /></AppLayout>} />
-            <Route path="/operations" element={<AppLayout><Operations /></AppLayout>} />
-            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-            <Route path="/user-edit/:userId" element={<AppLayout><UserEdit /></AppLayout>} />
-            <Route path="/data-migration" element={<AppLayout><DataMigration /></AppLayout>} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <AppLayout><Dashboard /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/users-manager" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AppLayout><UsersManager /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/operations" element={
+              <ProtectedRoute>
+                <AppLayout><Operations /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <AppLayout><Settings /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/user-edit/:userId" element={
+              <ProtectedRoute>
+                <AppLayout><UserEdit /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/data-migration" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AppLayout><DataMigration /></AppLayout>
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

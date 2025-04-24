@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
@@ -28,6 +27,7 @@ import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -35,14 +35,7 @@ export default function UsersManager() {
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Dialog states
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const token = localStorage.getItem("userToken");
@@ -60,7 +53,6 @@ export default function UsersManager() {
     }
     
     try {
-      // Delete the user from Supabase
       const { error } = await supabase
         .from('users')
         .delete()
@@ -114,7 +106,6 @@ export default function UsersManager() {
     }
     
     try {
-      // Update user in Supabase
       const { error } = await supabase
         .from('users')
         .update({
@@ -154,7 +145,6 @@ export default function UsersManager() {
     }
     
     try {
-      // Create a new user entry in Supabase users table
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.Email,
         password: newUser.Password,
@@ -170,12 +160,11 @@ export default function UsersManager() {
       
       const userId = authData.user.id;
 
-      // Create user data in users table
       const { error: userError } = await supabase.from('users').insert({
         id: userId,
         uid: userId,
         email: newUser.Email,
-        password: newUser.Password, // Note: In production apps, passwords are normally not stored in the users table
+        password: newUser.Password,
         name: newUser.Name || '',
         phone: newUser.Phone || '',
         country: newUser.Country || 'السعودية',
@@ -217,12 +206,10 @@ export default function UsersManager() {
     }
     
     try {
-      // Calculate new expiry date
       const expiryDate = new Date();
       expiryDate.setMonth(expiryDate.getMonth() + parseInt(months));
       const newExpiryDate = expiryDate.toISOString().split('T')[0];
       
-      // Update user in Supabase
       const { error } = await supabase
         .from('users')
         .update({
@@ -251,7 +238,6 @@ export default function UsersManager() {
 
   const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
     try {
-      // Use the shared addCreditToUser function with +0 suffix
       await addCreditToUser(userId, creditsToAdd);
       
       toast(t("addCreditSuccess"), {
@@ -325,14 +311,18 @@ export default function UsersManager() {
               <RefreshCw className="h-5 w-5 mr-2" />
               {t("refresh")}
             </Button>
-            <Button onClick={handleAddCredits} className="flex items-center" variant="outline">
-              <PlusCircle className="h-5 w-5 mr-2" />
-              {t("addCredit")}
-            </Button>
-            <Button onClick={handleAddUser} className="flex items-center" variant="outline">
-              <UserPlus className="h-5 w-5 mr-2" />
-              {t("addUser")}
-            </Button>
+            {isAdmin && (
+              <>
+                <Button onClick={handleAddCredits} className="flex items-center" variant="outline">
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  {t("addCredit")}
+                </Button>
+                <Button onClick={handleAddUser} className="flex items-center" variant="outline">
+                  <UserPlus className="h-5 w-5 mr-2" />
+                  {t("addUser")}
+                </Button>
+              </>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -388,31 +378,35 @@ export default function UsersManager() {
                             <Eye className="h-4 w-4 mr-1" />
                             {t("viewDetails")}
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            {t("edit")}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRenewUser(user)}
-                          >
-                            <RefreshCw className="h-4 w-4 mr-1" />
-                            {t("renew")}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            <Trash className="h-4 w-4 mr-1" />
-                            {t("delete")}
-                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditUser(user)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                {t("edit")}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRenewUser(user)}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                {t("renew")}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                <Trash className="h-4 w-4 mr-1" />
+                                {t("delete")}
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

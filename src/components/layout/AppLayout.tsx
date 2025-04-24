@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -17,6 +16,7 @@ import { toast } from "@/components/ui/sonner";
 import { LogOut, Home, Users, LineChart, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -24,9 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userName, setUserName] = useState("");
   const isMobile = useIsMobile();
   const { t, isRTL } = useLanguage();
+  const { isAdmin, isUser } = useAuth();
 
   useEffect(() => {
-    // التحقق من وجود المستخدم
     const token = localStorage.getItem("userToken");
     const userId = localStorage.getItem("userId");
 
@@ -35,7 +35,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // يمكن استدعاء بيانات المستخدم من Firebase هنا إذا لزم الأمر
     if (userId) {
       const fetchUserName = async () => {
         try {
@@ -71,25 +70,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("dashboard"),
       path: "/dashboard",
       icon: Home,
+      show: true,
     },
     {
       title: t("users"),
       path: "/users-manager",
       icon: Users,
+      show: isAdmin,
     },
     {
       title: t("operations"),
       path: "/operations",
       icon: LineChart,
+      show: true,
     },
     {
       title: t("settings"),
       path: "/settings",
       icon: Settings,
+      show: true,
     },
-  ];
+  ].filter(item => item.show);
 
-  // Function to get the current page title
   const getCurrentPageTitle = () => {
     const currentPath = location.pathname;
     const menuItem = menuItems.find(item => item.path === currentPath);
