@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -98,11 +97,9 @@ export const useUserOperations = () => {
     try {
       console.log("Attempting to create new user:", newUser.Email);
       
-      // Create the auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.Email,
-        password: newUser.Password,
-        email_confirm: true
+        password: newUser.Password
       });
       
       if (authError) {
@@ -118,7 +115,6 @@ export const useUserOperations = () => {
       const userId = authData.user.id;
       console.log("Auth user created successfully with ID:", userId);
       
-      // Insert user data into the users table
       const { error: userError } = await supabase.from('users').insert({
         id: userId,
         uid: userId,
