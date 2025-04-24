@@ -62,6 +62,22 @@ const fetchUsers = async (): Promise<User[]> => {
   
   console.log("Fetching users with auth token...");
   
+  // Get the user role first to determine if admin
+  const { data: currentUserData, error: userError } = await supabase
+    .from('users')
+    .select('email_type')
+    .eq('id', session.user.id)
+    .single();
+    
+  if (userError) {
+    console.error("Error fetching user role:", userError);
+    throw new Error("Failed to determine user role");
+  }
+  
+  const isAdmin = (currentUserData.email_type || '').toLowerCase() === 'admin';
+  console.log("Current user role:", currentUserData.email_type, "Is admin:", isAdmin);
+  
+  // If admin, fetch all users, otherwise just fetch the current user
   const { data, error } = await supabase
     .from('users')
     .select('*');
@@ -136,15 +152,10 @@ const fetchOperations = async (): Promise<Operation[]> => {
 
 // Unified function to add credit to a user
 const addCreditToUser = async (userId: string, amount: number): Promise<boolean> => {
-  const token = localStorage.getItem("userToken");
-  if (!token) return false;
-  
   try {
-    // Set auth token
-    supabase.auth.setSession({
-      access_token: token,
-      refresh_token: '',
-    });
+    // Get current session from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No authentication session");
     
     // Get current credits
     const { data: userData, error: fetchError } = await supabase
@@ -205,15 +216,10 @@ export const formatTimeString = (timeStr: string): string => {
 export const refundOperation = async (operation: Operation): Promise<boolean> => {
   if (!operation) return false;
   
-  const token = localStorage.getItem("userToken");
-  if (!token) throw new Error("No authentication token");
-  
   try {
-    // Set auth token
-    supabase.auth.setSession({
-      access_token: token,
-      refresh_token: '',
-    });
+    // Get current session from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No authentication session");
     
     // The refund amount from the operation
     const refundAmountStr = operation.Credit;

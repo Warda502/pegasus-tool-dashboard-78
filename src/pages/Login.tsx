@@ -30,9 +30,23 @@ export default function Login() {
         throw new Error(error.message || t("loginError") || "Login error");
       }
 
-      // تخزين بيانات المستخدم في التخزين المحلي
+      // Store session data directly from Supabase
       localStorage.setItem("userToken", data.session.access_token);
       localStorage.setItem("userId", data.user.id);
+
+      // Check user role
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email_type')
+        .eq('id', data.user.id)
+        .single();
+
+      if (userError) {
+        console.error("Error fetching user role:", userError);
+      } else {
+        // Store user role for easy access
+        localStorage.setItem("userRole", userData.email_type || 'User');
+      }
 
       toast({
         title: t("loginSuccess") || "Login successful",

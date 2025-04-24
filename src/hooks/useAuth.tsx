@@ -42,7 +42,8 @@ export const useAuth = () => {
           return;
         }
 
-        const userRole = (userData.email_type?.toLowerCase() as UserRole) || "user";
+        // Convert email_type to lowercase for consistent role comparison
+        const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
         setRole(userRole);
         setUser({
           id: session.user.id,
@@ -78,7 +79,8 @@ export const useAuth = () => {
               return;
             }
 
-            const userRole = (userData.email_type?.toLowerCase() as UserRole) || "user";
+            // Convert email_type to lowercase for consistent role comparison
+            const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
             setRole(userRole);
             setUser({
               id: session.user.id,
@@ -125,6 +127,11 @@ export const useAuth = () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear any stored tokens
+      localStorage.removeItem("userToken");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userRole");
       
       toast(t("logoutSuccess") || "Logout successful", {
         description: t("comeBackSoon") || "See you soon!"
