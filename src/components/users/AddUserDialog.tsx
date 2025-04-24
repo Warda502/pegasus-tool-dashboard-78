@@ -25,7 +25,7 @@ export function AddUserDialog({
   const [credits, setCredits] = useState("0");
   const [userType, setUserType] = useState("Credits License");
   const [phone, setPhone] = useState("");
-  const [country, setCountry] = useState("السعودية");
+  const [country, setCountry] = useState("Saudi Arabia");
   const [subscriptionMonths, setSubscriptionMonths] = useState("3");
   const [showSubscriptionMonths, setShowSubscriptionMonths] = useState(false);
   const { t, isRTL } = useLanguage();
