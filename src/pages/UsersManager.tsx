@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage } from "@/hooks/useSharedData";
@@ -110,8 +111,8 @@ export default function UsersManager() {
   console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role);
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-100">
-      <Card className="max-w-7xl mx-auto shadow mt-8">
+    <div dir={isRTL ? "rtl" : "ltr"} className="flex min-h-screen bg-gray-100">
+      <Card className="flex flex-col w-full h-full max-w-full shadow m-0">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white border-b">
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
@@ -132,7 +133,7 @@ export default function UsersManager() {
             onAddUser={openAddDialog}
           />
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent className="flex-grow overflow-auto p-4">
           <UserFilters
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
