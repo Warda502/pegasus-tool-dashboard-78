@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
@@ -29,7 +30,7 @@ export interface User extends UserRow {
 }
 
 // Extended Operation interface to match the structure used in the app
-export interface Operation extends OperationRow {
+export interface Operation {
   operation_id?: string;
   OprationID?: string;
   OprationTypes?: string;
@@ -65,6 +66,8 @@ const fetchUsers = async (): Promise<User[]> => {
   
   if (error) throw new Error("Failed to fetch users");
   
+  console.log("Fetched users:", data); // Debug log to see what users are being retrieved
+  
   // Map Supabase data to the structure expected by the app
   return data.map(user => ({
     ...user,
@@ -97,7 +100,6 @@ const fetchOperations = async (): Promise<Operation[]> => {
 
   // Map Supabase data to the structure expected by the app
   return data.map(op => ({
-    ...op,
     operation_id: op.operation_id,
     OprationID: op.operation_id,
     OprationTypes: op.operation_type,
@@ -241,11 +243,12 @@ export const useSharedData = () => {
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    staleTime: Infinity, // Keep the data fresh indefinitely
+    staleTime: 10000, // Reduced stale time to 10 seconds to ensure fresher data
     gcTime: 1000 * 60 * 60, // Cache for 1 hour
     meta: {
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Show success toast only once after data is first loaded
+        console.log("Users loaded successfully:", data.length); // Debug log
         if (!hasShownSuccessToast) {
           toast(t("fetchSuccessTitle") || "Success", {
             description: t("fetchSuccessDescription") || "Data loaded successfully"
@@ -259,12 +262,13 @@ export const useSharedData = () => {
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
     queryKey: ['operations'],
     queryFn: fetchOperations,
-    staleTime: Infinity,
+    staleTime: 10000, // Reduced stale time to 10 seconds
     gcTime: 1000 * 60 * 60,
   });
 
   // Function to refresh data
   const refreshData = () => {
+    console.log("Refreshing data..."); // Debug log
     queryClient.invalidateQueries({ queryKey: ['users'] });
     queryClient.invalidateQueries({ queryKey: ['operations'] });
   };

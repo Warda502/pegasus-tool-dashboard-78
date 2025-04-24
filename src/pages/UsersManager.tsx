@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage } from "@/hooks/useSharedData";
@@ -38,7 +39,10 @@ export default function UsersManager() {
       navigate("/login");
       return;
     }
-  }, [navigate]);
+    
+    // Initial data refresh when component mounts
+    refreshData();
+  }, [navigate, refreshData]);
   
   const handleDeleteUser = async (userId: string) => {
     const token = localStorage.getItem("userToken");
@@ -247,19 +251,30 @@ export default function UsersManager() {
   };
 
   const handleRefresh = () => {
+    console.log("Manual refresh triggered"); // Debug log
     refreshData();
   };
 
+  // Modified filter to show all users when admin is logged in
   const filteredUsers = users.filter(user => {
-    if (user.Email_Type !== "User") return false;
-    
-    return (
-      user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.Country?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // If admin, don't filter by Email_Type
+    if (role === "admin") {
+      return user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             user.Country?.toLowerCase().includes(searchQuery.toLowerCase());
+    } else {
+      // Regular users only see users with Email_Type = "User"
+      if (user.Email_Type !== "User") return false;
+      
+      return user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             user.Country?.toLowerCase().includes(searchQuery.toLowerCase());
+    }
   });
   
+  console.log("Filtered users count:", filteredUsers.length); // Debug log
+  console.log("Total users count:", users.length); // Debug log
+
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-100">
       <Card className="max-w-7xl mx-auto shadow mt-8">
@@ -270,7 +285,10 @@ export default function UsersManager() {
             </Button>
             <div>
               <CardTitle className="text-2xl font-extrabold text-gray-900">{t("users")}</CardTitle>
-              <CardDescription>{t("usersDescription")}</CardDescription>
+              <CardDescription>
+                {t("usersDescription")} 
+                {role === "admin" ? ` (${users.length} total)` : ""}
+              </CardDescription>
             </div>
           </div>
           <UserHeaderActions
