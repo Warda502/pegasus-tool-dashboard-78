@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -36,7 +36,7 @@ export default function UsersManager() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const { role } = useAuth();
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);

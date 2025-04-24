@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
@@ -49,6 +48,7 @@ export interface Operation {
   UID?: string;
   Hwid?: string;
   LogOpration?: string;
+  log_operation?: string;
   [key: string]: any;
 }
 
@@ -115,7 +115,8 @@ const fetchOperations = async (): Promise<Operation[]> => {
     Security_Patch: op.security_patch,
     UID: op.uid,
     Hwid: op.hwid,
-    LogOpration: op.log_operation
+    LogOpration: op.log_operation,
+    log_operation: op.log_operation
   }));
 };
 
