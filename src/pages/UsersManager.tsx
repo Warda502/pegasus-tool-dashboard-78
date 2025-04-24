@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
@@ -39,6 +40,7 @@ export default function UsersManager() {
     }
     
     // Initial data refresh when component mounts
+    console.log("Triggering initial data refresh");
     refreshData();
   }, [navigate, refreshData]);
   
@@ -240,6 +242,9 @@ export default function UsersManager() {
       toast(t("addCreditSuccess"), {
         description: t("addCreditDescription")
       });
+      
+      // Refresh data after adding credits
+      refreshData();
     } catch (error) {
       console.error("Error adding credits:", error);
       toast("Error", {
@@ -253,22 +258,26 @@ export default function UsersManager() {
     refreshData();
   };
 
+  // Filter users based on role and search query
   const filteredUsers = users.filter(user => {
-    if (role === "admin") {
-      return user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             user.Country?.toLowerCase().includes(searchQuery.toLowerCase());
-    } else {
-      if (user.Email_Type !== "User") return false;
+    console.log("Filtering user:", user.Email, "Role:", role, "Email_Type:", user.Email_Type);
+    
+    // Full search term match on any field
+    const searchTermMatches = 
+      (user.Email?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (user.User_Type?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (user.Country?.toLowerCase() || "").includes(searchQuery.toLowerCase());
       
-      return user.Email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             user.User_Type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             user.Country?.toLowerCase().includes(searchQuery.toLowerCase());
+    // If admin, show all users that match the search term
+    if (role === "admin") {
+      return searchTermMatches;
+    } else {
+      // Regular users only see users with Email_Type = "User"
+      return user.Email_Type === "User" && searchTermMatches;
     }
   });
   
-  console.log("Filtered users count:", filteredUsers.length); // Debug log
-  console.log("Total users count:", users.length); // Debug log
+  console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role); 
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-100">

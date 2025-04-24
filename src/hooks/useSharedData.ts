@@ -66,7 +66,7 @@ const fetchUsers = async (): Promise<User[]> => {
   
   if (error) throw new Error("Failed to fetch users");
   
-  console.log("Fetched users:", data); // Debug log to see what users are being retrieved
+  console.log("Fetched users:", data?.length || 0); // Debug log to see what users are being retrieved
   
   // Map Supabase data to the structure expected by the app
   return data.map(user => ({
@@ -122,32 +122,45 @@ const fetchOperations = async (): Promise<Operation[]> => {
   }));
 };
 
-// إضافة الرصيد للمستخدم
+// Unified function to add credit to a user
 const addCreditToUser = async (userId: string, amount: number): Promise<boolean> => {
   const token = localStorage.getItem("userToken");
   if (!token) return false;
   
   try {
-    // احصل على الرصيد الحالي
+    // Set auth token
+    supabase.auth.setSession({
+      access_token: token,
+      refresh_token: '',
+    });
+    
+    // Get current credits
     const { data: userData, error: fetchError } = await supabase
       .from('users')
       .select('credits')
       .eq('id', userId)
       .single();
 
-    if (fetchError || !userData) return false;
+    if (fetchError || !userData) {
+      console.error("Error fetching user credits:", fetchError);
+      return false;
+    }
 
-    // احسب الرصيد الجديد
+    // Calculate new credits with the correct format
     const currentCredits = parseFloat(userData.credits || "0.0");
     const newCredits = (currentCredits + amount).toString() + ".0";
 
-    // قم بتحديث الرصيد
+    // Update credits in Supabase
     const { error: updateError } = await supabase
       .from('users')
       .update({ credits: newCredits })
       .eq('id', userId);
 
-    if (updateError) return false;
+    if (updateError) {
+      console.error("Error updating credits:", updateError);
+      return false;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error adding credits:", error);
@@ -173,7 +186,7 @@ export const formatTimeString = (timeStr: string): string => {
   }
 };
 
-// Refund operation function - adapted for Supabase
+// Refund operation function
 export const refundOperation = async (operation: Operation): Promise<boolean> => {
   if (!operation) return false;
   
@@ -243,8 +256,9 @@ export const useSharedData = () => {
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    staleTime: 5000, // Even further reduced stale time to 5 seconds to ensure fresher data
+    staleTime: 3000, // Further reduced stale time to ensure fresher data
     gcTime: 1000 * 60 * 60, // Cache for 1 hour
+    refetchOnMount: true, // Refetch data when component mounts
     meta: {
       onSuccess: (data) => {
         // Show success toast only once after data is first loaded
@@ -262,8 +276,9 @@ export const useSharedData = () => {
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
     queryKey: ['operations'],
     queryFn: fetchOperations,
-    staleTime: 5000, // Reduced stale time to 5 seconds
+    staleTime: 3000, // Reduced stale time
     gcTime: 1000 * 60 * 60,
+    refetchOnMount: true, // Refetch data when component mounts
   });
 
   // Function to refresh data
@@ -271,44 +286,6 @@ export const useSharedData = () => {
     console.log("Refreshing data..."); // Debug log
     queryClient.invalidateQueries({ queryKey: ['users'] });
     queryClient.invalidateQueries({ queryKey: ['operations'] });
-  };
-
-  // Add credit to user with the "0." format (corrected format)
-  const addCreditToUser2 = async (userId: string, amount: number): Promise<boolean> => {
-    const token = localStorage.getItem("userToken");
-    if (!token) return false;
-    
-    try {
-      // Set auth token
-      supabase.auth.setSession({
-        access_token: token,
-        refresh_token: '',
-      });
-      
-      // Find the user in the already loaded data
-      const user = users.find(u => u.id === userId);
-      if (!user) return false;
-      
-      // Calculate new credits with the "0." format
-      const currentCredits = parseFloat(user.credits) || 0;
-      const newCredits = currentCredits + amount;
-      const formattedCredits = `${newCredits}.0`;
-      
-      // Update credits in Supabase
-      const { error } = await supabase
-        .from('users')
-        .update({ credits: formattedCredits })
-        .eq('id', userId);
-
-      if (error) throw new Error("Failed to add credits");
-      
-      // Refresh users data
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      return true;
-    } catch (error) {
-      console.error("Error adding credits:", error);
-      return false;
-    }
   };
 
   return {
