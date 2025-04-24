@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
@@ -14,225 +13,53 @@ import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
-import { UserSearch } from "@/components/users/UserSearch";
-import { UsersTable } from "@/components/users/UsersTable";
 import { UserHeaderActions } from "@/components/users/UserHeaderActions";
+import { UserFilters } from "@/components/users/UserFilters";
+import { useUserDialogs } from "@/hooks/useUserDialogs";
+import { useUserOperations } from "@/hooks/useUserOperations";
+import { UsersTable } from "@/components/users/UsersTable";
+import { Loading } from "@/components/ui/loading";
 
 export default function UsersManager() {
   const navigate = useNavigate();
   const { users, isLoading, addCreditToUser, refreshData } = useSharedData();
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
   const { role } = useAuth();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
-  const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
+  const {
+    selectedUser,
+    isViewDialogOpen,
+    isEditDialogOpen,
+    isAddDialogOpen,
+    isRenewDialogOpen,
+    isAddCreditsDialogOpen,
+    setIsViewDialogOpen,
+    setIsEditDialogOpen,
+    setIsAddDialogOpen,
+    setIsRenewDialogOpen,
+    setIsAddCreditsDialogOpen,
+    openViewDialog,
+    openEditDialog,
+    openRenewDialog,
+    openAddDialog,
+    openAddCreditsDialog
+  } = useUserDialogs();
+  
+  const { updateUser, addUser, renewUser, deleteUser } = useUserOperations();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [licenseTypeFilter, setLicenseTypeFilter] = useState("all");
 
   useEffect(() => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    
     // Initial data refresh when component mounts
     console.log("Triggering initial data refresh");
     refreshData();
-  }, [navigate, refreshData]);
+  }, [refreshData]);
   
-  const handleDeleteUser = async (userId: string) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
-      
-      if (error) {
-        throw new Error(`Failed to delete user: ${error.message}`);
-      }
-      
-      toast(t("deleteSuccess"), {
-        description: t("deleteUserSuccess")
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    } catch (error) {
-      console.error("Failed to delete user:", error);
-      toast("Error", {
-        description: "Failed to delete user"
-      });
-    }
-  };
-  
-  const handleViewDetails = (user: User) => {
-    setSelectedUser(user);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setIsEditDialogOpen(true);
-  };
-  
-  const handleAddUser = () => {
-    setIsAddDialogOpen(true);
-  };
-  
-  const handleRenewUser = (user: User) => {
-    setSelectedUser(user);
-    setIsRenewDialogOpen(true);
-  };
-
-  const handleAddCredits = () => {
-    setIsAddCreditsDialogOpen(true);
-  };
-  
-  const handleSaveEditedUser = async (updatedUser: User) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          name: updatedUser.Name,
-          email: updatedUser.Email,
-          password: updatedUser.Password,
-          phone: updatedUser.Phone,
-          country: updatedUser.Country,
-          activate: updatedUser.Activate,
-          block: updatedUser.Block,
-        })
-        .eq('id', updatedUser.id);
-
-      if (error) {
-        throw new Error("Failed to update user");
-      }
-
-      toast(t("updateSuccess"), {
-        description: t("updateUserSuccess")
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      
-    } catch (error) {
-      console.error("Error updating user:", error);
-      toast("Error", {
-        description: "Failed to update user data"
-      });
-    }
-  };
-  
-  const handleAddNewUser = async (newUser: any) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.Email,
-        password: newUser.Password,
-      });
-      
-      if (authError) {
-        throw new Error(authError.message);
-      }
-      
-      if (!authData.user) {
-        throw new Error("Failed to create auth user");
-      }
-      
-      const userId = authData.user.id;
-
-      const { error: userError } = await supabase.from('users').insert({
-        id: userId,
-        uid: userId,
-        email: newUser.Email,
-        password: newUser.Password,
-        name: newUser.Name || '',
-        phone: newUser.Phone || '',
-        country: newUser.Country || 'السعودية',
-        activate: newUser.Activate || 'Active',
-        block: newUser.Block || 'Not Blocked',
-        credits: newUser.Credits || '0.0',
-        user_type: newUser.User_Type || 'Credits License',
-        email_type: 'User',
-        expiry_time: newUser.Expiry_Time || null,
-        start_date: newUser.Start_Date || new Date().toISOString().split('T')[0],
-        hwid: 'Null'
-      });
-
-      if (userError) {
-        throw new Error("Failed to add user data");
-      }
-      
-      toast(t("addSuccess"), {
-        description: t("addUserSuccess")
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      
-    } catch (error) {
-      console.error("Error adding user:", error);
-      toast("Error", {
-        description: error instanceof Error ? error.message : "Failed to add user"
-      });
-    }
-  };
-  
-  const handleRenewConfirm = async (months: string) => {
-    if (!selectedUser) return;
-    
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    
-    try {
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + parseInt(months));
-      const newExpiryDate = expiryDate.toISOString().split('T')[0];
-      
-      const { error } = await supabase
-        .from('users')
-        .update({
-          user_type: "Monthly License",
-          expiry_time: newExpiryDate
-        })
-        .eq('id', selectedUser.id);
-
-      if (error) {
-        throw new Error("Failed to renew user");
-      }
-
-      toast(t("renewSuccess"), {
-        description: t("renewUserSuccess")
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      
-    } catch (error) {
-      console.error("Error renewing user:", error);
-      toast("Error", {
-        description: "Failed to renew user account"
-      });
-    }
+  const handleRefresh = () => {
+    console.log("Manual refresh triggered");
+    refreshData();
   };
 
   const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
@@ -253,15 +80,25 @@ export default function UsersManager() {
     }
   };
 
-  const handleRefresh = () => {
-    console.log("Manual refresh triggered"); // Debug log
-    refreshData();
-  };
-
-  // Filter users based on role and search query
-const filteredUsers = users;
+  // Filter users based on search query, status and license type
+  const filteredUsers = users.filter(user => {
+    // Apply search filter if there's a search query
+    const matchesSearch = searchQuery.trim() === "" || 
+      (user.Email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.Name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.Phone?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.Country?.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Apply status filter if not set to "all"
+    const matchesStatus = statusFilter === "all" || user.Block === statusFilter;
+    
+    // Apply license type filter if not set to "all"
+    const matchesLicenseType = licenseTypeFilter === "all" || user.User_Type === licenseTypeFilter;
+    
+    return matchesSearch && matchesStatus && matchesLicenseType;
+  });
   
-  console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role); 
+  console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role);
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-100">
@@ -282,30 +119,30 @@ const filteredUsers = users;
           <UserHeaderActions
             isAdmin={role === "admin"}
             onRefresh={handleRefresh}
-            onAddCredits={handleAddCredits}
-            onAddUser={handleAddUser}
+            onAddCredits={openAddCreditsDialog}
+            onAddUser={openAddDialog}
           />
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <UserSearch value={searchQuery} onChange={setSearchQuery} />
-          </div>
-          {isLoading ? (
-            <div className="text-center py-8">{t("loadingData")}</div>
-          ) : filteredUsers.length > 0 ? (
-            <UsersTable
-              users={filteredUsers}
-              isAdmin={role === "admin"}
-              onViewUser={handleViewDetails}
-              onEditUser={handleEditUser}
-              onRenewUser={handleRenewUser}
-              onDeleteUser={handleDeleteUser}
-            />
-          ) : (
-            <div className="text-center py-8">
-              {t("noUsers")}
-            </div>
-          )}
+        <CardContent className="pt-4">
+          <UserFilters
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            licenseTypeFilter={licenseTypeFilter}
+            onLicenseTypeFilterChange={setLicenseTypeFilter}
+            isAdmin={role === "admin"}
+          />
+          
+          <UsersTable
+            users={filteredUsers}
+            isAdmin={role === "admin"}
+            isLoading={isLoading}
+            onViewUser={openViewDialog}
+            onEditUser={openEditDialog}
+            onRenewUser={openRenewDialog}
+            onDeleteUser={deleteUser}
+          />
         </CardContent>
       </Card>
 
@@ -319,20 +156,20 @@ const filteredUsers = users;
         isOpen={isEditDialogOpen} 
         onClose={() => setIsEditDialogOpen(false)} 
         user={selectedUser}
-        onSave={handleSaveEditedUser}
+        onSave={updateUser}
       />
       
       <RenewUserDialog
         isOpen={isRenewDialogOpen}
         onClose={() => setIsRenewDialogOpen(false)}
-        onConfirm={handleRenewConfirm}
+        onConfirm={(months) => selectedUser && renewUser(selectedUser, months)}
         userType={selectedUser?.User_Type || ""}
       />
       
       <AddUserDialog
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onSave={handleAddNewUser}
+        onSave={addUser}
       />
 
       <AddCreditsDialog

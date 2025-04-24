@@ -10,10 +10,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserActions } from "./UserActions";
+import { Badge } from "@/components/ui/badge";
+import { Loading } from "@/components/ui/loading";
 
 interface UsersTableProps {
   users: User[];
   isAdmin: boolean;
+  isLoading: boolean;
   onViewUser: (user: User) => void;
   onEditUser: (user: User) => void;
   onRenewUser: (user: User) => void;
@@ -23,12 +26,55 @@ interface UsersTableProps {
 export function UsersTable({
   users,
   isAdmin,
+  isLoading,
   onViewUser,
   onEditUser,
   onRenewUser,
   onDeleteUser,
 }: UsersTableProps) {
   const { t, isRTL } = useLanguage();
+
+  if (isLoading) {
+    return <Loading text={t("loadingUsers") || "Loading users..."} />;
+  }
+
+  if (users.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        {t("noUsersFound") || "No users found"}
+      </div>
+    );
+  }
+
+  const getLicenseExpiry = (user: User) => {
+    if (!user.Expiry_Time) return t("notApplicable") || "N/A";
+    
+    // Check if expiry date has passed
+    const expiryDate = new Date(user.Expiry_Time);
+    const today = new Date();
+    const isExpired = expiryDate < today;
+    
+    if (isExpired) {
+      return (
+        <span className="text-red-600 font-medium">
+          {t("expired") || "Expired"} ({user.Expiry_Time})
+        </span>
+      );
+    }
+    
+    // Calculate days remaining
+    const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysRemaining <= 7) {
+      return (
+        <span className="text-amber-600 font-medium">
+          {user.Expiry_Time} ({daysRemaining} {t("daysRemaining") || "days remaining"})
+        </span>
+      );
+    }
+    
+    return user.Expiry_Time;
+  };
 
   return (
     <div className="overflow-x-auto">
@@ -49,16 +95,20 @@ export function UsersTable({
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.Email}</TableCell>
-              <TableCell>{user.User_Type}</TableCell>
               <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${user.Block === "Not Blocked" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                <Badge variant={user.User_Type === "Monthly License" ? "outline" : "secondary"}>
+                  {user.User_Type}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant={user.Block === "Not Blocked" ? "success" : "destructive"}>
                   {user.Block}
-                </span>
+                </Badge>
               </TableCell>
               <TableCell>{user.Country}</TableCell>
               <TableCell>{user.Credits}</TableCell>
               <TableCell>{user.Start_Date}</TableCell>
-              <TableCell>{user.Expiry_Time}</TableCell>
+              <TableCell>{getLicenseExpiry(user)}</TableCell>
               <TableCell>
                 <UserActions
                   user={user}

@@ -49,7 +49,7 @@ export interface Operation {
   UID?: string;
   Hwid?: string;
   LogOpration?: string;
-  log_operation?: string;
+  log_operation?: string; // Added this field to match the database schema
   [key: string]: any;
 }
 
@@ -60,11 +60,16 @@ const fetchUsers = async (): Promise<User[]> => {
   const token = localStorage.getItem("userToken");
   if (!token) throw new Error("No authentication token");
   
+  console.log("Fetching users...");
+  
   const { data, error } = await supabase
     .from('users')
     .select('*');
   
-  if (error) throw new Error("Failed to fetch users");
+  if (error) {
+    console.error("Error fetching users:", error);
+    throw new Error("Failed to fetch users");
+  }
   
   console.log("Fetched users:", data?.length || 0); // Debug log to see what users are being retrieved
   
@@ -92,11 +97,18 @@ const fetchOperations = async (): Promise<Operation[]> => {
   const token = localStorage.getItem("userToken");
   if (!token) throw new Error("No authentication token");
   
+  console.log("Fetching operations...");
+  
   const { data, error } = await supabase
     .from('operations')
     .select('*');
   
-  if (error) throw new Error("Failed to fetch operations");
+  if (error) {
+    console.error("Error fetching operations:", error);
+    throw new Error("Failed to fetch operations");
+  }
+
+  console.log("Fetched operations:", data?.length || 0);
 
   // Map Supabase data to the structure expected by the app
   return data.map(op => ({
@@ -150,6 +162,8 @@ const addCreditToUser = async (userId: string, amount: number): Promise<boolean>
     const currentCredits = parseFloat(userData.credits || "0.0");
     const newCredits = (currentCredits + amount).toString() + ".0";
 
+    console.log(`Adding ${amount} credits to user ${userId}. Current: ${currentCredits}, New: ${newCredits}`);
+
     // Update credits in Supabase
     const { error: updateError } = await supabase
       .from('users')
@@ -161,6 +175,7 @@ const addCreditToUser = async (userId: string, amount: number): Promise<boolean>
       return false;
     }
     
+    console.log("Credits updated successfully");
     return true;
   } catch (error) {
     console.error("Error adding credits:", error);
@@ -256,9 +271,11 @@ export const useSharedData = () => {
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    staleTime: 3000, // Further reduced stale time to ensure fresher data
-    gcTime: 1000 * 60 * 60, // Cache for 1 hour
+    staleTime: 1000, // Reduced to 1 second for more frequent updates
+    gcTime: 1000 * 60 * 5, // Cache for 5 minutes instead of an hour
     refetchOnMount: true, // Refetch data when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    retry: 1, // Only retry once on failure
     meta: {
       onSuccess: (data) => {
         // Show success toast only once after data is first loaded
@@ -276,9 +293,10 @@ export const useSharedData = () => {
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
     queryKey: ['operations'],
     queryFn: fetchOperations,
-    staleTime: 3000, // Reduced stale time
-    gcTime: 1000 * 60 * 60,
+    staleTime: 1000, // Reduced stale time for more frequent updates
+    gcTime: 1000 * 60 * 5, // Cache for 5 minutes
     refetchOnMount: true, // Refetch data when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   // Function to refresh data
