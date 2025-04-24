@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage } from "@/hooks/useSharedData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";

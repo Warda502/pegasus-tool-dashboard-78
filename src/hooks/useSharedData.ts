@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
@@ -48,7 +49,6 @@ export interface Operation {
   UID?: string;
   Hwid?: string;
   LogOpration?: string;
-  log_operation?: string;
   [key: string]: any;
 }
 
@@ -319,3 +319,4 @@ export const useSharedData = () => {
 
 // Export the language hook
 export { useLanguage } from './useLanguage';
+
