@@ -49,7 +49,7 @@ export default function Operations() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
+  const [itemsPerPage] = useState(10); // Increased from 8 to show more items per page
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -253,6 +253,9 @@ export default function Operations() {
 
   const handleRefresh = () => {
     refreshData();
+    toast(t("refreshingData") || "Refreshing data...", {
+      description: t("fetchingAllOperations") || "Fetching all operations, this might take a moment for large datasets"
+    });
   };
 
   const exportToCSV = () => {
@@ -329,6 +332,11 @@ export default function Operations() {
             </CardTitle>
             <CardDescription>
               {t("operationsManagement")}
+              {operations.length > 0 && (
+                <span className="ml-2 font-medium">
+                  ({operations.length} {t("totalRecords") || "total records"})
+                </span>
+              )}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">

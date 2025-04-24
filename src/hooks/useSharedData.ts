@@ -92,25 +92,51 @@ const fetchUsers = async (): Promise<User[]> => {
   }));
 };
 
+// Modified function to fetch all operations with pagination
 const fetchOperations = async (): Promise<Operation[]> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("No authentication session");
   
-  console.log("Fetching operations...");
+  console.log("Fetching operations with pagination...");
   
-  const { data, error } = await supabase
-    .from('operations')
-    .select('*');
+  let allOperations: any[] = [];
+  let page = 0;
+  const pageSize = 1000; // Supabase's maximum limit
+  let hasMore = true;
   
-  if (error) {
-    console.error("Error fetching operations:", error);
-    throw new Error("Failed to fetch operations");
+  while (hasMore) {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    
+    console.log(`Fetching operations batch ${page + 1}, range: ${from}-${to}`);
+    
+    const { data, error } = await supabase
+      .from('operations')
+      .select('*')
+      .range(from, to)
+      .order('time', { ascending: false });
+    
+    if (error) {
+      console.error(`Error fetching operations batch ${page + 1}:`, error);
+      throw new Error("Failed to fetch operations");
+    }
+    
+    if (data && data.length > 0) {
+      allOperations = [...allOperations, ...data];
+      if (data.length < pageSize) {
+        hasMore = false;
+      }
+    } else {
+      hasMore = false;
+    }
+    
+    page++;
   }
 
-  console.log("Fetched operations:", data?.length || 0);
+  console.log(`Total operations fetched across all batches: ${allOperations.length}`);
 
   // Map Supabase data to the structure expected by the app
-  return data.map(op => ({
+  return allOperations.map(op => ({
     operation_id: op.operation_id,
     OprationID: op.operation_id,
     OprationTypes: op.operation_type,
