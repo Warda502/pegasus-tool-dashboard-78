@@ -7,24 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/hooks/useLanguage";
-
-interface User {
-  id: string;
-  Name: string;
-  Activate: string;
-  Block: string;
-  Country: string;
-  Credits: string;
-  Email: string;
-  Email_Type: string;
-  Expiry_Time: string;
-  Hwid: string;
-  Password: string;
-  Phone: string;
-  Start_Date: string;
-  UID: string;
-  User_Type: string;
-}
+import { User } from "@/hooks/useSharedData";
 
 interface ViewUserDialogProps {
   isOpen: boolean;

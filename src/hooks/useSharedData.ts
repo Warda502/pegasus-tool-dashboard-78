@@ -12,20 +12,20 @@ type OperationRow = Database['public']['Tables']['operations']['Row'];
 
 // Extended User interface to match the structure used in the app
 export interface User extends UserRow {
-  Name?: string;
-  Email?: string;
-  Password?: string;
-  Phone?: string;
-  Country?: string;
-  Activate?: string;
-  Block?: string;
-  Credits?: string;
-  User_Type?: string;
-  Email_Type?: string;
-  Expiry_Time?: string;
-  Start_Date?: string;
-  Hwid?: string;
-  UID?: string;
+  Name: string; // Making this required to match expected usage in components
+  Email: string;
+  Password: string;
+  Phone: string;
+  Country: string;
+  Activate: string;
+  Block: string;
+  Credits: string;
+  User_Type: string;
+  Email_Type: string;
+  Expiry_Time: string;
+  Start_Date: string;
+  Hwid: string;
+  UID: string;
   [key: string]: any;
 }
 
@@ -48,7 +48,7 @@ export interface Operation {
   Security_Patch?: string;
   UID?: string;
   Hwid?: string;
-  LogOpration?: string;
+  LogOpration?: string; // Keep this for consistency with existing code
   [key: string]: any;
 }
 
@@ -76,20 +76,20 @@ const fetchUsers = async (): Promise<User[]> => {
   // Map Supabase data to the structure expected by the app
   return data.map(user => ({
     ...user,
-    Name: user.name,
-    Email: user.email,
-    Password: user.password,
-    Phone: user.phone,
-    Country: user.country,
-    Activate: user.activate,
-    Block: user.block,
-    Credits: user.credits,
-    User_Type: user.user_type,
-    Email_Type: user.email_type,
-    Expiry_Time: user.expiry_time,
-    Start_Date: user.start_date,
-    Hwid: user.hwid,
-    UID: user.uid
+    Name: user.name || "",  // Ensure Name is always a string, never null
+    Email: user.email || "",
+    Password: user.password || "",
+    Phone: user.phone || "",
+    Country: user.country || "",
+    Activate: user.activate || "Not Activate",
+    Block: user.block || "Not Blocked",
+    Credits: user.credits || "0.0",
+    User_Type: user.user_type || "Credits License",
+    Email_Type: user.email_type || "User",
+    Expiry_Time: user.expiry_time || "",
+    Start_Date: user.start_date || "",
+    Hwid: user.hwid || "",
+    UID: user.uid || ""
   }));
 };
 
@@ -129,9 +129,8 @@ const fetchOperations = async (): Promise<Operation[]> => {
     Security_Patch: op.security_patch,
     UID: op.uid,
     Hwid: op.hwid,
-    // Make sure log_operation exists in the operations interface
-    LogOpration: op.log_operation || null,
-    log_operation: op.log_operation || null
+    // Add LogOpration but don't reference op.log_operation since it doesn't exist
+    LogOpration: null
   }));
 };
 
@@ -319,4 +318,3 @@ export const useSharedData = () => {
 
 // Export the language hook
 export { useLanguage } from './useLanguage';
-
