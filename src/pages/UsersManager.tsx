@@ -259,23 +259,10 @@ export default function UsersManager() {
   };
 
   // Filter users based on role and search query
-  const filteredUsers = users.filter(user => {
-    console.log("Filtering user:", user.Email, "Role:", role, "Email_Type:", user.Email_Type);
-    
-    // Full search term match on any field
-    const searchTermMatches = 
-      (user.Email?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      (user.User_Type?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      (user.Country?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-      
-    // If admin, show all users that match the search term
-    if (role === "admin") {
-      return searchTermMatches;
-    } else {
-      // Regular users only see users with Email_Type = "User"
-      return user.Email_Type === "User" && searchTermMatches;
-    }
-  });
+const filteredUsers = users.filter(user =>
+  user.UserName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  user.Email.toLowerCase().includes(searchTerm.toLowerCase())
+);
   
   console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role); 
 
