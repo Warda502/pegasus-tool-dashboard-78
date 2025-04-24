@@ -11,18 +11,25 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { role, loading } = useAuth();
+  const { role, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
 
   useEffect(() => {
-    if (!loading && (!role || (allowedRoles && !allowedRoles.includes(role)))) {
-      toast(t("accessDenied"), {
-        description: t("noPermission")
-      });
-      navigate("/");
+    if (!loading) {
+      if (!isAuthenticated) {
+        toast(t("accessDenied"), {
+          description: t("pleaseLogin")
+        });
+        navigate("/login");
+      } else if (allowedRoles && !allowedRoles.includes(role as UserRole)) {
+        toast(t("accessDenied"), {
+          description: t("noPermission")
+        });
+        navigate("/dashboard");
+      }
     }
-  }, [role, loading, navigate, allowedRoles, t]);
+  }, [role, loading, navigate, allowedRoles, t, isAuthenticated]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">

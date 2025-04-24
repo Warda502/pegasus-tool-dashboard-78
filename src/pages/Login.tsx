@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,6 +15,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,20 +33,18 @@ export default function Login() {
         password,
       });
 
-      if (error) {
-        throw new Error(error.message || t("loginError") || "Login error");
-      }
+      if (error) throw error;
 
-      toast(t("loginSuccess") || "Login successful", {
-        description: t("loadingData") || "Loading data...",
-      });
-      
-      setTimeout(() => {
+      if (data?.session) {
+        toast(t("loginSuccess"), {
+          description: t("welcomeBack")
+        });
         navigate("/dashboard");
-      }, 1000);
+      }
     } catch (error) {
-      toast(t("error") || "Error", {
-        description: error instanceof Error ? error.message : t("unexpectedError") || "Unexpected error",
+      console.error("Login error:", error);
+      toast(t("error"), {
+        description: error instanceof Error ? error.message : t("unexpectedError")
       });
     } finally {
       setLoading(false);
@@ -48,12 +55,12 @@ export default function Login() {
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">{t("login") || "Login"}</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{t("login")}</h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">{t("email") || "Email"}</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -65,7 +72,7 @@ export default function Login() {
               />
             </div>
             <div>
-              <Label htmlFor="password">{t("password") || "Password"}</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -82,17 +89,17 @@ export default function Login() {
             disabled={loading}
             className="w-full"
           >
-            {loading ? (t("loggingIn") || "Logging in...") : (t("login") || "Login")}
+            {loading ? t("loggingIn") : t("login")}
           </Button>
           <div className="text-center mt-4">
             <p>
-              {t("noAccount") || "Don't have an account?"}{" "}
+              {t("noAccount")}{" "}
               <Button
                 variant="link"
                 className="p-0 mx-1"
                 onClick={() => navigate("/signup")}
               >
-                {t("createAccount") || "Create a new account"}
+                {t("createAccount")}
               </Button>
             </p>
           </div>

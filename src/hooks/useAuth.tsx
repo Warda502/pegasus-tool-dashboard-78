@@ -18,10 +18,47 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setRole(null);
+          setUser(null);
+          setIsAuthenticated(false);
+          navigate('/login');
+        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          setIsAuthenticated(true);
+          
+          // Use setTimeout to avoid potential deadlock
+          setTimeout(async () => {
+            const { data: userData, error } = await supabase
+              .from('users')
+              .select('email_type, email')
+              .eq('id', session.user.id)
+              .single();
+
+            if (error || !userData) {
+              console.error("Error fetching user role on auth change:", error);
+              return;
+            }
+
+            const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
+            setRole(userRole);
+            setUser({
+              id: session.user.id,
+              email: userData.email || session.user.email || '',
+              role: userRole
+            });
+          }, 0);
+        }
+      }
+    );
+
+    // Initial session check
+    const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -49,46 +86,16 @@ export const useAuth = () => {
           email: userData.email || session.user.email || '',
           role: userRole
         });
+        setIsAuthenticated(true);
         
-        setLoading(false);
       } catch (error) {
         console.error("Auth error:", error);
+      } finally {
         setLoading(false);
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setRole(null);
-          setUser(null);
-          navigate('/login');
-        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          setTimeout(async () => {
-            const { data: userData, error } = await supabase
-              .from('users')
-              .select('email_type, email')
-              .eq('id', session.user.id)
-              .single();
-
-            if (error || !userData) {
-              console.error("Error fetching user role on auth change:", error);
-              return;
-            }
-
-            const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
-            setRole(userRole);
-            setUser({
-              id: session.user.id,
-              email: userData.email || session.user.email || '',
-              role: userRole
-            });
-          }, 0);
-        }
-      }
-    );
-
-    checkAuth();
+    initAuth();
     
     return () => {
       subscription.unsubscribe();
@@ -104,16 +111,16 @@ export const useAuth = () => {
       
       if (error) throw error;
       
-      toast(t("loginSuccess") || "Login successful", {
-        description: t("welcomeBack") || "Welcome back!"
+      toast(t("loginSuccess"), {
+        description: t("welcomeBack")
       });
       
       navigate('/dashboard');
       return true;
     } catch (error) {
       console.error("Login error:", error);
-      toast(t("loginFailed") || "Login failed", {
-        description: error instanceof Error ? error.message : "Invalid credentials"
+      toast(t("loginFailed"), {
+        description: error instanceof Error ? error.message : t("unexpectedError")
       });
       return false;
     }
@@ -124,23 +131,20 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      toast(t("logoutSuccess") || "Logout successful", {
-        description: t("comeBackSoon") || "See you soon!"
+      toast(t("logoutSuccess"), {
+        description: t("comeBackSoon")
       });
       
       navigate('/login');
       return true;
     } catch (error) {
       console.error("Logout error:", error);
-      toast(t("logoutFailed") || "Logout failed", {
-        description: error instanceof Error ? error.message : "Please try again"
+      toast(t("logoutFailed"), {
+        description: error instanceof Error ? error.message : t("unexpectedError")
       });
       return false;
     }
   };
-
-  const isAdmin = role === 'admin';
-  const isAuthenticated = !!user;
 
   return { 
     role, 
@@ -148,7 +152,7 @@ export const useAuth = () => {
     user,
     login,
     logout,
-    isAdmin,
+    isAdmin: role === 'admin',
     isAuthenticated
   };
 };
