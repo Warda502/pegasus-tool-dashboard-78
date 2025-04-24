@@ -12,7 +12,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 interface AddUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (newUser: any) => void;
+  onSave: (newUser: any) => Promise<boolean>; // Updated to specify the return type as Promise<boolean>
 }
 
 export function AddUserDialog({
