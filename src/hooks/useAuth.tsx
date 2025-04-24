@@ -21,6 +21,48 @@ export const useAuth = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
+    // Set up the auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
+        
+        if (event === 'SIGNED_OUT') {
+          setRole(null);
+          setUser(null);
+          navigate('/login');
+        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          // Use setTimeout to prevent auth deadlock
+          setTimeout(async () => {
+            try {
+              const { data: userData, error } = await supabase
+                .from('users')
+                .select('email_type, email')
+                .eq('id', session.user.id)
+                .single();
+
+              if (error || !userData) {
+                console.error("Error fetching user role on auth change:", error);
+                return;
+              }
+
+              const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
+              setRole(userRole);
+              setUser({
+                id: session.user.id,
+                email: userData.email || session.user.email || '',
+                role: userRole
+              });
+              
+              console.log("User data loaded:", userRole);
+            } catch (fetchError) {
+              console.error("Error fetching user data:", fetchError);
+            }
+          }, 0);
+        }
+      }
+    );
+
+    // Then check for existing session
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -29,6 +71,8 @@ export const useAuth = () => {
           setLoading(false);
           return;
         }
+
+        console.log("Existing session found:", session.user.id);
 
         const { data: userData, error } = await supabase
           .from('users')
@@ -50,43 +94,13 @@ export const useAuth = () => {
           role: userRole
         });
         
+        console.log("User authenticated:", userRole);
         setLoading(false);
       } catch (error) {
         console.error("Auth error:", error);
         setLoading(false);
       }
     };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setRole(null);
-          setUser(null);
-          navigate('/login');
-        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          setTimeout(async () => {
-            const { data: userData, error } = await supabase
-              .from('users')
-              .select('email_type, email')
-              .eq('id', session.user.id)
-              .single();
-
-            if (error || !userData) {
-              console.error("Error fetching user role on auth change:", error);
-              return;
-            }
-
-            const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
-            setRole(userRole);
-            setUser({
-              id: session.user.id,
-              email: userData.email || session.user.email || '',
-              role: userRole
-            });
-          }, 0);
-        }
-      }
-    );
 
     checkAuth();
     
@@ -97,12 +111,21 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("Attempting login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error.message);
+        toast(t("loginFailed") || "Login failed", {
+          description: error.message || "Invalid credentials"
+        });
+        return false;
+      }
+      
+      console.log("Login successful, session established:", data.session?.user.id);
       
       toast(t("loginSuccess") || "Login successful", {
         description: t("welcomeBack") || "Welcome back!"

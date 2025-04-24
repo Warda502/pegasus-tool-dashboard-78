@@ -3,17 +3,18 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const navigate = useNavigate();
   const { t, isRTL } = useLanguage();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("userToken");
-    if (token) {
+    if (isAuthenticated) {
       navigate("/dashboard");
     }
-  }, [navigate]);
+  }, [navigate, isAuthenticated]);
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex flex-col items-center justify-center bg-gray-100">

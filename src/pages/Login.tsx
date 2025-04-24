@@ -1,46 +1,43 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
   const { t, isRTL } = useLanguage();
+  const { login, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (isAuthenticated) {
+    // If already authenticated, redirect to dashboard
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw new Error(error.message || t("loginError") || "Login error");
-      }
-
-      toast(t("loginSuccess") || "Login successful", {
-        description: t("loadingData") || "Loading data...",
-      });
+      const success = await login(email, password);
       
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
+      if (!success) {
+        setLoading(false);
+      }
+      // No need for navigation here, it's handled in the login function
     } catch (error) {
+      setLoading(false);
       toast(t("error") || "Error", {
         description: error instanceof Error ? error.message : t("unexpectedError") || "Unexpected error",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
