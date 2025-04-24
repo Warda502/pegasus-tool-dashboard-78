@@ -16,7 +16,7 @@ import { toast } from "@/components/ui/sonner";
 import { LogOut, Home, Users, LineChart, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userName, setUserName] = useState("");
   const isMobile = useIsMobile();
   const { t, isRTL } = useLanguage();
-  const { isAdmin, isUser } = useAuth();
+  const { role } = useAuth();
 
   useEffect(() => {
     const token = localStorage.getItem("userToken");
@@ -76,7 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("users"),
       path: "/users-manager",
       icon: Users,
-      show: isAdmin,
+      show: role === "admin",
     },
     {
       title: t("operations"),

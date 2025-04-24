@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage } from "@/hooks/useSharedData";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -35,7 +35,13 @@ export default function UsersManager() {
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const { isAdmin } = useAuth();
+  const { role } = useAuth();
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
+  const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("userToken");
@@ -311,7 +317,7 @@ export default function UsersManager() {
               <RefreshCw className="h-5 w-5 mr-2" />
               {t("refresh")}
             </Button>
-            {isAdmin && (
+            {role === "admin" && (
               <>
                 <Button onClick={handleAddCredits} className="flex items-center" variant="outline">
                   <PlusCircle className="h-5 w-5 mr-2" />
@@ -378,7 +384,7 @@ export default function UsersManager() {
                             <Eye className="h-4 w-4 mr-1" />
                             {t("viewDetails")}
                           </Button>
-                          {isAdmin && (
+                          {role === "admin" && (
                             <>
                               <Button
                                 variant="ghost"
