@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -28,8 +29,8 @@ export default function Login() {
         throw new Error(error.message || t("loginError") || "Login error");
       }
 
-      toast({
-        title: t("loginSuccess") || "Login successful",
+      // Updated toast usage to match Sonner's expected signature
+      toast(t("loginSuccess") || "Login successful", {
         description: t("loadingData") || "Loading data...",
       });
       
@@ -37,10 +38,10 @@ export default function Login() {
         navigate("/dashboard");
       }, 1000);
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: t("error") || "Error",
+      // Updated toast usage to match Sonner's expected signature
+      toast(t("error") || "Error", {
         description: error instanceof Error ? error.message : t("unexpectedError") || "Unexpected error",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
