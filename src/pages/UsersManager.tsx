@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage } from "@/hooks/useSharedData";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
 import { UserSearch } from "@/components/users/UserSearch";
 import { UsersTable } from "@/components/users/UsersTable";
 import { UserHeaderActions } from "@/components/users/UserHeaderActions";
+import type { User } from "@/hooks/useSharedData";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -249,34 +250,6 @@ export default function UsersManager() {
     refreshData();
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userId");
-    navigate("/login");
-  };
-  
-  const handleAuthError = (errorCode: string): string => {
-    if (errorCode.includes("EMAIL_NOT_FOUND")) {
-      return t("emailNotFound") || "The email address is not registered!";
-    } else if (errorCode.includes("INVALID_EMAIL")) {
-      return t("invalidEmail") || "The email format is invalid! (@ is missing or incorrect format)";
-    } else if (errorCode.includes("INVALID_LOGIN_CREDENTIALS")) {
-      return t("invalidCredentials") || "Invalid Login Credentials";
-    } else if (errorCode.includes("INVALID_PASSWORD")) {
-      return t("invalidPassword") || "The password is incorrect!";
-    } else if (errorCode.includes("USER_DISABLED")) {
-      return t("accountDisabled") || "This account has been disabled by the administrator!";
-    } else if (errorCode.includes("TOO_MANY_ATTEMPTS_TRY_LATER")) {
-      return t("tooManyAttempts") || "Too many failed attempts, please try again later!";
-    } else if (errorCode.includes("API_KEY_INVALID")) {
-      return t("invalidApiKey") || "The API key is invalid!";
-    } else if (errorCode.includes("EMAIL_EXISTS")) {
-      return t("emailExists") || "البريد الإلكتروني مستخدم بالفعل";
-    } else {
-      return t("serverError") || "Error In Server Error Code: 401";
-    }
-  };
-  
   const filteredUsers = users.filter(user => {
     if (user.Email_Type !== "User") return false;
     

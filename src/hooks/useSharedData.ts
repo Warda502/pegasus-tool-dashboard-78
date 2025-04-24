@@ -29,7 +29,7 @@ export interface User extends UserRow {
 }
 
 // Extended Operation interface to match the structure used in the app
-export interface Operation {
+export interface Operation extends OperationRow {
   operation_id?: string;
   OprationID?: string;
   OprationTypes?: string;
