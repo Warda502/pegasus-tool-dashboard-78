@@ -10,9 +10,8 @@ import type { Database } from "@/integrations/supabase/types";
 type UserRow = Database['public']['Tables']['users']['Row'];
 type OperationRow = Database['public']['Tables']['operations']['Row'];
 
-// Extended User interface to match the structure expected by the application
-export interface User {
-  id: string;
+// Extended User interface to match the structure used in the app
+export interface User extends UserRow {
   Name?: string;
   Email?: string;
   Password?: string;
@@ -27,25 +26,10 @@ export interface User {
   Start_Date?: string;
   Hwid?: string;
   UID?: string;
-  operation_id?: string;
-  name?: string;
-  email?: string;
-  password?: string;
-  phone?: string;
-  country?: string;
-  activate?: string;
-  block?: string;
-  credits?: string;
-  user_type?: string;
-  email_type?: string;
-  expiry_time?: string;
-  start_date?: string;
-  hwid?: string;
-  uid?: string;
   [key: string]: any;
 }
 
-// Extended Operation interface to match the structure expected by the application
+// Extended Operation interface to match the structure used in the app
 export interface Operation {
   operation_id?: string;
   OprationID?: string;
@@ -65,23 +49,6 @@ export interface Operation {
   UID?: string;
   Hwid?: string;
   LogOpration?: string;
-  id?: string;
-  operation_type?: string;
-  phone_sn?: string;
-  brand?: string;
-  model?: string;
-  imei?: string;
-  username?: string;
-  credit?: string;
-  time?: string;
-  status?: string;
-  android?: string;
-  baseband?: string;
-  carrier?: string;
-  security_patch?: string;
-  uid?: string;
-  hwid?: string;
-  log_operation?: string;
   [key: string]: any;
 }
 
@@ -101,7 +68,6 @@ const fetchUsers = async (): Promise<User[]> => {
   // Map Supabase data to the structure expected by the app
   return data.map(user => ({
     ...user,
-    id: user.id,
     operation_id: user.id,
     Name: user.name,
     Email: user.email,
@@ -130,12 +96,9 @@ const fetchOperations = async (): Promise<Operation[]> => {
   
   if (error) throw new Error("Failed to fetch operations");
 
-  if (!data || data.length === 0) return [];
-
   // Map Supabase data to the structure expected by the app
   return data.map(op => ({
     ...op,
-    id: op.id,
     operation_id: op.id,
     OprationID: op.id,
     OprationTypes: op.operation_type,
@@ -223,14 +186,14 @@ export const refundOperation = async (operation: Operation): Promise<boolean> =>
     });
     
     // The refund amount from the operation
-    const refundAmountStr = operation.Credit || operation.credit;
+    const refundAmountStr = operation.Credit;
     const refundAmount = parseFloat(refundAmountStr || "0") || 0;
     
     // Get current credits for the user
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('credits')
-      .eq('id', operation.UID || operation.uid)
+      .eq('id', operation.UID)
       .single();
     
     if (userError) throw new Error("Failed to get user credits");
@@ -249,7 +212,7 @@ export const refundOperation = async (operation: Operation): Promise<boolean> =>
     const { error: updateError } = await supabase
       .from('users')
       .update({ credits: newCredit.toString() + ".0" })
-      .eq('id', operation.UID || operation.uid);
+      .eq('id', operation.UID);
     
     if (updateError) throw new Error("Failed to update credits");
     
@@ -260,7 +223,7 @@ export const refundOperation = async (operation: Operation): Promise<boolean> =>
         status: "Failed",
         credit: "0.0"
       })
-      .eq('id', operation.operation_id || operation.id);
+      .eq('id', operation.operation_id);
     
     if (operationError) throw new Error("Failed to update operation");
     
@@ -323,7 +286,7 @@ export const useSharedData = () => {
       if (!user) return false;
       
       // Calculate new credits with the "0." format
-      const currentCredits = parseFloat(user.credits || user.Credits || "0") || 0;
+      const currentCredits = parseFloat(user.credits) || 0;
       const newCredits = currentCredits + amount;
       const formattedCredits = `${newCredits}.0`;
       

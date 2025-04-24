@@ -21,8 +21,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/sonner";
-import { useSharedData, formatTimeString, useLanguage, refundOperation, Operation } from "@/hooks/useSharedData";
+import { useSharedData, formatTimeString, useLanguage, refundOperation } from "@/hooks/useSharedData";
 import { OperationDetailsDialog } from "@/components/operations/OperationDetailsDialog";
+
+interface Operation {
+  OprationID: string;
+  OprationTypes: string;
+  Phone_SN: string;
+  Brand: string;
+  Model: string;
+  Imei: string;
+  UserName: string;
+  Credit: string;
+  Time: string;
+  Status: string;
+  Android: string;
+  Baseband: string;
+  Carrier: string;
+  Security_Patch: string;
+  UID: string;
+  Hwid: string;
+  LogOpration: string;
+}
 
 export default function Operations() {
   const { operations, isLoading, refreshData } = useSharedData();
@@ -35,26 +55,15 @@ export default function Operations() {
   const filteredOperations = operations.filter((op) => {
     if (searchTerm.trim() === "") return true;
     const searchLower = searchTerm.toLowerCase();
-    
-    // Handle both camelCase and snake_case properties
-    const opId = op.OprationID || op.operation_id || '';
-    const opType = op.OprationTypes || op.operation_type || '';
-    const phoneSN = op.Phone_SN || op.phone_sn || '';
-    const brand = op.Brand || op.brand || '';
-    const model = op.Model || op.model || '';
-    const imei = op.Imei || op.imei || '';
-    const userName = op.UserName || op.username || '';
-    const status = op.Status || op.status || '';
-    
     return (
-      opId.toString().toLowerCase().includes(searchLower) ||
-      opType.toLowerCase().includes(searchLower) ||
-      phoneSN.toLowerCase().includes(searchLower) ||
-      brand.toLowerCase().includes(searchLower) ||
-      model.toLowerCase().includes(searchLower) ||
-      imei.toLowerCase().includes(searchLower) ||
-      userName.toLowerCase().includes(searchLower) ||
-      status.toLowerCase().includes(searchLower)
+      op.OprationID?.toLowerCase().includes(searchLower) ||
+      op.OprationTypes?.toLowerCase().includes(searchLower) ||
+      op.Phone_SN?.toLowerCase().includes(searchLower) ||
+      op.Brand?.toLowerCase().includes(searchLower) ||
+      op.Model?.toLowerCase().includes(searchLower) ||
+      op.Imei?.toLowerCase().includes(searchLower) ||
+      op.UserName?.toLowerCase().includes(searchLower) ||
+      op.Status?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -211,24 +220,24 @@ export default function Operations() {
         <TableBody>
           {operations.length > 0 ? (
             operations.map((op) => (
-              <TableRow key={op.id || op.OprationID || op.operation_id}>
-                <TableCell className="font-medium">{op.OprationID || op.operation_id || op.id}</TableCell>
-                <TableCell>{op.OprationTypes || op.operation_type}</TableCell>
-                <TableCell>{op.Brand || op.brand}</TableCell>
-                <TableCell>{op.Model || op.model}</TableCell>
-                <TableCell>{op.Imei || op.imei}</TableCell>
-                <TableCell>{op.UserName || op.username}</TableCell>
-                <TableCell>{op.Credit || op.credit}</TableCell>
-                <TableCell dir="ltr" className="text-right">{formatTimeString(op.Time || op.time || '')}</TableCell>
+              <TableRow key={op.OprationID}>
+                <TableCell className="font-medium">{op.OprationID}</TableCell>
+                <TableCell>{op.OprationTypes}</TableCell>
+                <TableCell>{op.Brand}</TableCell>
+                <TableCell>{op.Model}</TableCell>
+                <TableCell>{op.Imei}</TableCell>
+                <TableCell>{op.UserName}</TableCell>
+                <TableCell>{op.Credit}</TableCell>
+                <TableCell dir="ltr" className="text-right">{formatTimeString(op.Time)}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded text-xs ${
-                    (op.Status || op.status || '').toLowerCase() === "success" || (op.Status || op.status || '').toLowerCase() === "succeeded"
+                    op.Status.toLowerCase() === "success" || op.Status.toLowerCase() === "succeeded"
                       ? "bg-green-100 text-green-800"
-                      : (op.Status || op.status || '').toLowerCase() === "failed" || (op.Status || op.status || '').toLowerCase() === "failure"
+                      : op.Status.toLowerCase() === "failed" || op.Status.toLowerCase() === "failure"
                       ? "bg-red-100 text-red-800"
                       : "bg-yellow-100 text-yellow-800"
                   }`}>
-                    {op.Status || op.status}
+                    {op.Status}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -241,7 +250,7 @@ export default function Operations() {
                       variant="ghost" 
                       size="sm"
                       onClick={() => handleRefund(op)}
-                      disabled={!(op.Credit || op.credit) || (op.Credit || op.credit) === "0.0"}
+                      disabled={!op.Credit || op.Credit === "0.0"}
                     >
                       <RefreshCw className="h-4 w-4 mr-1" />
                       {t("refund")}
@@ -343,72 +352,11 @@ export default function Operations() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={refreshData}>
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" />
               {t("refresh")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              // Use the exportToCSV function from this component's scope
-              const headers = [
-                t("operationID"),
-                t("operationType"),
-                t("serialNumber"),
-                t("brand"),
-                t("model"),
-                t("imei"),
-                t("user"),
-                t("credit"),
-                t("time"),
-                t("status"),
-                t("android"),
-                t("baseband"),
-                t("carrier"),
-                t("securityPatch"),
-                t("uid"),
-                t("hwid"),
-                "Log"
-              ];
-          
-              const csvRows = [
-                headers.join(','),
-                ...filteredOperations.map(op => [
-                  op.OprationID || op.operation_id,
-                  op.OprationTypes || op.operation_type,
-                  op.Phone_SN || op.phone_sn,
-                  op.Brand || op.brand,
-                  op.Model || op.model,
-                  op.Imei || op.imei,
-                  op.UserName || op.username,
-                  op.Credit || op.credit,
-                  op.Time || op.time,
-                  op.Status || op.status,
-                  op.Android || op.android,
-                  op.Baseband || op.baseband,
-                  op.Carrier || op.carrier,
-                  op.Security_Patch || op.security_patch,
-                  op.UID || op.uid,
-                  op.Hwid || op.hwid,
-                  op.LogOpration || op.log_operation
-                ].join(','))
-              ];
-          
-              const csvContent = csvRows.join('\n');
-          
-              // Create blob and download link
-              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.setAttribute('href', url);
-              link.setAttribute('download', `operations_${new Date().toISOString()}.csv`);
-              link.style.visibility = 'hidden';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-          
-              toast(t("exported"), {
-                description: t("exportSuccess")
-              });
-            }}>
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
               <FileDown className="h-4 w-4 mr-2" />
               {t("export")}
             </Button>
@@ -446,99 +394,15 @@ export default function Operations() {
             </DropdownMenu>
           </div>
 
-          {renderTable(filteredOperations.slice(
-            currentPage * itemsPerPage - itemsPerPage,
-            currentPage * itemsPerPage
-          ))}
+          {renderTable(currentItems)}
 
-          {/* Pagination */}
-          {filteredOperations.length > 0 && (
-            <Pagination className="mt-4">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => paginate(currentPage - 1)}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-
-                {totalPages <= 7 ? (
-                  [...Array(totalPages)].map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        onClick={() => paginate(i + 1)}
-                        isActive={currentPage === i + 1}
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))
-                ) : (
-                  <>
-                    <PaginationItem>
-                      <PaginationLink
-                        onClick={() => paginate(1)}
-                        isActive={currentPage === 1}
-                      >
-                        1
-                      </PaginationLink>
-                    </PaginationItem>
-
-                    {currentPage > 3 && (
-                      <PaginationItem>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )}
-
-                    {[...Array(5)].map((_, i) => {
-                      const pageNum = currentPage - 2 + i;
-                      if (pageNum > 1 && pageNum < totalPages) {
-                        return (
-                          <PaginationItem key={i}>
-                            <PaginationLink
-                              onClick={() => paginate(pageNum)}
-                              isActive={currentPage === pageNum}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      }
-                      return null;
-                    })}
-
-                    {currentPage < totalPages - 2 && (
-                      <PaginationItem>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )}
-
-                    <PaginationItem>
-                      <PaginationLink
-                        onClick={() => paginate(totalPages)}
-                        isActive={currentPage === totalPages}
-                      >
-                        {totalPages}
-                      </PaginationLink>
-                    </PaginationItem>
-                  </>
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => paginate(currentPage + 1)}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+          {renderPagination()}
 
           <div className="text-sm text-muted-foreground">
             {t("totalOperations")
               .replace("{0}", filteredOperations.length.toString())
-              .replace("{1}", ((currentPage - 1) * itemsPerPage + 1).toString())
-              .replace("{2}", Math.min(currentPage * itemsPerPage, filteredOperations.length).toString())
+              .replace("{1}", (indexOfFirstItem + 1).toString())
+              .replace("{2}", Math.min(indexOfLastItem, filteredOperations.length).toString())
             }
           </div>
         </CardContent>
@@ -552,16 +416,4 @@ export default function Operations() {
       />
     </div>
   );
-
-  // Define pagination variables here to fix reference errors
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
-  const totalPages = Math.ceil(filteredOperations.length / itemsPerPage);
-
-  // Pagination function
-  function paginate(pageNumber: number) {
-    if (pageNumber < 1) pageNumber = 1;
-    if (pageNumber > totalPages) pageNumber = totalPages;
-    setCurrentPage(pageNumber);
-  }
 }
