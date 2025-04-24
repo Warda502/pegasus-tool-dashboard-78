@@ -259,10 +259,7 @@ export default function UsersManager() {
   };
 
   // Filter users based on role and search query
-const filteredUsers = users.filter(user =>
-  user.UserName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  user.Email.toLowerCase().includes(searchTerm.toLowerCase())
-);
+const filteredUsers = users;
   
   console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role); 
 
@@ -341,7 +338,7 @@ const filteredUsers = users.filter(user =>
       <AddCreditsDialog
         isOpen={isAddCreditsDialogOpen}
         onClose={() => setIsAddCreditsDialogOpen(false)}
-        users={users.filter(user => user.Email_Type === "User")}
+        users={users}
         onAddCredits={handleAddCreditsConfirm}
       />
     </div>
