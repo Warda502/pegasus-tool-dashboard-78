@@ -5,16 +5,19 @@ import { toast } from "@/components/ui/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "./useLanguage";
 import { User } from "./useSharedData";
+import { useAuth } from "./useAuth";
 
 export const useUserOperations = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
 
   const deleteUser = async (userId: string) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
+    if (!isAuthenticated) {
+      toast(t("sessionExpired") || "انتهت الجلسة", {
+        description: t("pleaseLogin") || "الرجاء تسجيل الدخول مرة أخرى"
+      });
       return false;
     }
     
@@ -44,9 +47,10 @@ export const useUserOperations = () => {
   };
 
   const updateUser = async (updatedUser: User) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
+    if (!isAuthenticated) {
+      toast(t("sessionExpired") || "انتهت الجلسة", {
+        description: t("pleaseLogin") || "الرجاء تسجيل الدخول مرة أخرى"
+      });
       return false;
     }
     
@@ -84,9 +88,10 @@ export const useUserOperations = () => {
   };
 
   const addUser = async (newUser: any) => {
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
+    if (!isAuthenticated) {
+      toast(t("sessionExpired") || "انتهت الجلسة", {
+        description: t("pleaseLogin") || "الرجاء تسجيل الدخول مرة أخرى"
+      });
       return false;
     }
     
@@ -157,9 +162,10 @@ export const useUserOperations = () => {
   const renewUser = async (user: User, months: string) => {
     if (!user) return false;
     
-    const token = localStorage.getItem("userToken");
-    if (!token) {
-      navigate("/login");
+    if (!isAuthenticated) {
+      toast(t("sessionExpired") || "انتهت الجلسة", {
+        description: t("pleaseLogin") || "الرجاء تسجيل الدخول مرة أخرى"
+      });
       return false;
     }
     

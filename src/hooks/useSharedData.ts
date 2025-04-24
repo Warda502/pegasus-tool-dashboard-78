@@ -1,9 +1,11 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "./useAuth";
 
 // Define types based on Supabase database schema
 type UserRow = Database['public']['Tables']['users']['Row'];
@@ -254,6 +256,7 @@ export const refundOperation = async (operation: Operation): Promise<boolean> =>
 export const useSharedData = () => {
   const queryClient = useQueryClient();
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
 
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
@@ -263,6 +266,7 @@ export const useSharedData = () => {
     refetchOnMount: true, // Refetch data when component mounts
     refetchOnWindowFocus: true, // Refetch when window gains focus
     retry: 1, // Only retry once on failure
+    enabled: isAuthenticated, // Only run query when authenticated
     meta: {
       onSuccess: (data) => {
         // Show success toast only once after data is first loaded
@@ -284,13 +288,16 @@ export const useSharedData = () => {
     gcTime: 1000 * 60 * 5, // Cache for 5 minutes
     refetchOnMount: true, // Refetch data when component mounts
     refetchOnWindowFocus: true, // Refetch when window gains focus
+    enabled: isAuthenticated, // Only run query when authenticated
   });
 
   // Function to refresh data
   const refreshData = () => {
-    console.log("Refreshing data..."); // Debug log
-    queryClient.invalidateQueries({ queryKey: ['users'] });
-    queryClient.invalidateQueries({ queryKey: ['operations'] });
+    if (isAuthenticated) {
+      console.log("Refreshing data..."); // Debug log
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['operations'] });
+    }
   };
 
   return {

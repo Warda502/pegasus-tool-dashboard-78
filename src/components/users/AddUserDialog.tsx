@@ -12,7 +12,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 interface AddUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (newUser: any) => void;
+  onSave: (newUser: any) => Promise<boolean> | boolean;
 }
 
 export function AddUserDialog({
@@ -29,6 +29,7 @@ export function AddUserDialog({
   const [country, setCountry] = useState("Saudi Arabia");
   const [subscriptionMonths, setSubscriptionMonths] = useState("3");
   const [showSubscriptionMonths, setShowSubscriptionMonths] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { t, isRTL } = useLanguage();
 
   const countries = [
@@ -104,7 +105,7 @@ export function AddUserDialog({
       User_Type: userType,
       Phone: phone,
       Country: country,
-      Activate: "Active", // تأكد من استخدام "Active" بدلاً من "Activate"
+      Activate: "Active",
       Block: "Not Blocked",
       Start_Date: startDate,
       Expiry_Time: expiryDate,
@@ -113,10 +114,11 @@ export function AddUserDialog({
     };
     
     try {
+      setLoading(true);
       console.log("Submitting new user:", newUser);
       const success = await onSave(newUser);
       
-      if (success) {
+      if (success === true) { // Fixed the truthiness check for the success value
         // Reset form fields
         setName("");
         setEmail("");
@@ -135,6 +137,8 @@ export function AddUserDialog({
       toast(t("error") || "خطأ", {
         description: t("addUserError") || "فشل في إضافة المستخدم"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -223,8 +227,8 @@ export function AddUserDialog({
           </div>
           
           <DialogFooter className="sm:justify-start">
-            <Button type="submit">
-              {t("addUser") || "إضافة المستخدم"}
+            <Button type="submit" disabled={loading}>
+              {loading ? (t("adding") || "جاري الإضافة...") : (t("addUser") || "إضافة المستخدم")}
             </Button>
           </DialogFooter>
         </form>
