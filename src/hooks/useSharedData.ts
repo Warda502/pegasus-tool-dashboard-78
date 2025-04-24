@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
@@ -182,6 +181,58 @@ export const formatTimeString = (timeStr: string): string => {
     return format(date, "yyyy/MM/dd hh:mm -aa");
   } catch {
     return timeStr;
+  }
+};
+
+// Add credit to user function
+export const addCreditToUser = async (userId: string, creditsToAdd: number): Promise<boolean> => {
+  if (!userId || isNaN(creditsToAdd) || creditsToAdd <= 0) {
+    return false;
+  }
+  
+  try {
+    // Get current session from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No authentication session");
+    
+    // Get current credits for the user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', userId)
+      .single();
+    
+    if (userError) {
+      console.error("Error fetching user credits:", userError);
+      throw new Error("Failed to get user credits");
+    }
+    
+    // Calculate new credits
+    let currentCredit = 0;
+    try {
+      currentCredit = parseFloat(userData.credits.replace(/"/g, "")) || 0;
+    } catch (e) {
+      console.error("Error parsing credit:", e);
+    }
+    
+    const newCredit = currentCredit + creditsToAdd;
+    
+    // Update user's credit
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ credits: newCredit.toString() + ".0" })
+      .eq('id', userId);
+    
+    if (updateError) {
+      console.error("Error updating credits:", updateError);
+      throw new Error("Failed to update credits");
+    }
+    
+    console.log(`Successfully added ${creditsToAdd} credits to user ${userId}`);
+    return true;
+  } catch (error) {
+    console.error("Error adding credit to user:", error);
+    return false;
   }
 };
 
