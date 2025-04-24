@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLanguage } from "./useLanguage";
@@ -49,7 +48,7 @@ export interface Operation {
   UID?: string;
   Hwid?: string;
   LogOpration?: string;
-  log_operation?: string; // Added this field to match the database schema
+  log_operation?: string;
   [key: string]: any;
 }
 
@@ -57,10 +56,11 @@ export interface Operation {
 let hasShownSuccessToast = false;
 
 const fetchUsers = async (): Promise<User[]> => {
-  const token = localStorage.getItem("userToken");
-  if (!token) throw new Error("No authentication token");
+  // Get the current session from Supabase
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("No authentication session");
   
-  console.log("Fetching users...");
+  console.log("Fetching users with auth token...");
   
   const { data, error } = await supabase
     .from('users')
@@ -94,8 +94,8 @@ const fetchUsers = async (): Promise<User[]> => {
 };
 
 const fetchOperations = async (): Promise<Operation[]> => {
-  const token = localStorage.getItem("userToken");
-  if (!token) throw new Error("No authentication token");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("No authentication session");
   
   console.log("Fetching operations...");
   
@@ -129,8 +129,9 @@ const fetchOperations = async (): Promise<Operation[]> => {
     Security_Patch: op.security_patch,
     UID: op.uid,
     Hwid: op.hwid,
-    LogOpration: op.log_operation,
-    log_operation: op.log_operation
+    // Make sure log_operation exists in the operations interface
+    LogOpration: op.log_operation || null,
+    log_operation: op.log_operation || null
   }));
 };
 

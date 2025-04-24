@@ -80,8 +80,18 @@ export default function UsersManager() {
     }
   };
 
-  // Filter users based on search query, status and license type
+  // Filter users based on search query, status and license type - but admin sees all users
   const filteredUsers = users.filter(user => {
+    // Admin can see everything, just apply search filter
+    if (role === "admin") {
+      return searchQuery.trim() === "" || 
+        (user.Email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.Name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.Phone?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.Country?.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    
+    // For non-admin users, apply all filters
     // Apply search filter if there's a search query
     const matchesSearch = searchQuery.trim() === "" || 
       (user.Email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
