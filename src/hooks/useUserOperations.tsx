@@ -123,7 +123,7 @@ export const useUserOperations = () => {
         name: newUser.Name || '',
         phone: newUser.Phone || '',
         country: newUser.Country,
-        activate: newUser.Activate || 'Activate',
+        activate: 'Activate',
         block: newUser.Block || 'Not Blocked',
         credits: newUser.Credits || '0.0',
         user_type: newUser.User_Type,
