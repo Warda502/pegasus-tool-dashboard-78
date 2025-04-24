@@ -2,32 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { Search, Edit, Trash, UserPlus, ArrowLeft, Eye, RefreshCw, PlusCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { ViewUserDialog } from "@/components/users/ViewUserDialog";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { UserSearch } from "@/components/users/UserSearch";
+import { UsersTable } from "@/components/users/UsersTable";
+import { UserHeaderActions } from "@/components/users/UserHeaderActions";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -312,114 +300,28 @@ export default function UsersManager() {
               <CardDescription>{t("usersDescription")}</CardDescription>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleRefresh} className="flex items-center" variant="outline">
-              <RefreshCw className="h-5 w-5 mr-2" />
-              {t("refresh")}
-            </Button>
-            {role === "admin" && (
-              <>
-                <Button onClick={handleAddCredits} className="flex items-center" variant="outline">
-                  <PlusCircle className="h-5 w-5 mr-2" />
-                  {t("addCredit")}
-                </Button>
-                <Button onClick={handleAddUser} className="flex items-center" variant="outline">
-                  <UserPlus className="h-5 w-5 mr-2" />
-                  {t("addUser")}
-                </Button>
-              </>
-            )}
-          </div>
+          <UserHeaderActions
+            isAdmin={role === "admin"}
+            onRefresh={handleRefresh}
+            onAddCredits={handleAddCredits}
+            onAddUser={handleAddUser}
+          />
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            <div className="relative flex-1 max-w-xs">
-              <Search className={`absolute ${isRTL ? "right-3" : "left-3"} top-1/2 transform -translate-y-1/2 text-gray-400`} />
-              <Input
-                placeholder={t("searchUsers")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={isRTL ? "pl-3 pr-10 w-full" : "pl-10 pr-3 w-full"}
-              />
-            </div>
+            <UserSearch value={searchQuery} onChange={setSearchQuery} />
           </div>
           {isLoading ? (
             <div className="text-center py-8">{t("loadingData")}</div>
           ) : filteredUsers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("email")}</TableHead>
-                    <TableHead>{t("userType")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead>{t("country")}</TableHead>
-                    <TableHead>{t("credit")}</TableHead>
-                    <TableHead>{t("startDate")}</TableHead>
-                    <TableHead>{t("expiryDate")}</TableHead>
-                    <TableHead className={isRTL ? "text-right" : "text-left"}>{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.Email}</TableCell>
-                      <TableCell>{user.User_Type}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${user.Block === "Not Blocked" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                          {user.Block}
-                        </span>
-                      </TableCell>
-                      <TableCell>{user.Country}</TableCell>
-                      <TableCell>{user.Credits}</TableCell>
-                      <TableCell>{user.Start_Date}</TableCell>
-                      <TableCell>{user.Expiry_Time}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewDetails(user)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            {t("viewDetails")}
-                          </Button>
-                          {role === "admin" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                {t("edit")}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRenewUser(user)}
-                              >
-                                <RefreshCw className="h-4 w-4 mr-1" />
-                                {t("renew")}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                <Trash className="h-4 w-4 mr-1" />
-                                {t("delete")}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <UsersTable
+              users={filteredUsers}
+              isAdmin={role === "admin"}
+              onViewUser={handleViewDetails}
+              onEditUser={handleEditUser}
+              onRenewUser={handleRenewUser}
+              onDeleteUser={handleDeleteUser}
+            />
           ) : (
             <div className="text-center py-8">
               {t("noUsers")}
