@@ -129,7 +129,7 @@ export const useUserOperations = () => {
         user_type: newUser.User_Type,
         email_type: 'User',
         expiry_time: newUser.Expiry_Time,
-        start_date: newUser.Start_Date || new Date().toISOString().split('T')[0],
+        start_date: new Date().toISOString().split('T')[0],
         hwid: 'Null'
       });
 
