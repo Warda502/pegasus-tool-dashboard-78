@@ -68,7 +68,6 @@ const fetchUsers = async (): Promise<User[]> => {
   // Map Supabase data to the structure expected by the app
   return data.map(user => ({
     ...user,
-    operation_id: user.id,
     Name: user.name,
     Email: user.email,
     Password: user.password,
@@ -99,8 +98,8 @@ const fetchOperations = async (): Promise<Operation[]> => {
   // Map Supabase data to the structure expected by the app
   return data.map(op => ({
     ...op,
-    operation_id: op.id,
-    OprationID: op.id,
+    operation_id: op.operation_id,
+    OprationID: op.operation_id,
     OprationTypes: op.operation_type,
     Phone_SN: op.phone_sn,
     Brand: op.brand,
@@ -223,7 +222,7 @@ export const refundOperation = async (operation: Operation): Promise<boolean> =>
         status: "Failed",
         credit: "0.0"
       })
-      .eq('id', operation.operation_id);
+      .eq('operation_id', operation.operation_id);
     
     if (operationError) throw new Error("Failed to update operation");
     

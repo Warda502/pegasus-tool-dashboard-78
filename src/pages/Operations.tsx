@@ -21,28 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/sonner";
-import { useSharedData, formatTimeString, useLanguage, refundOperation } from "@/hooks/useSharedData";
+import { useSharedData, formatTimeString, useLanguage, Operation, refundOperation } from "@/hooks/useSharedData";
 import { OperationDetailsDialog } from "@/components/operations/OperationDetailsDialog";
-
-interface Operation {
-  OprationID: string;
-  OprationTypes: string;
-  Phone_SN: string;
-  Brand: string;
-  Model: string;
-  Imei: string;
-  UserName: string;
-  Credit: string;
-  Time: string;
-  Status: string;
-  Android: string;
-  Baseband: string;
-  Carrier: string;
-  Security_Patch: string;
-  UID: string;
-  Hwid: string;
-  LogOpration: string;
-}
 
 export default function Operations() {
   const { operations, isLoading, refreshData } = useSharedData();
@@ -231,9 +211,9 @@ export default function Operations() {
                 <TableCell dir="ltr" className="text-right">{formatTimeString(op.Time)}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded text-xs ${
-                    op.Status.toLowerCase() === "success" || op.Status.toLowerCase() === "succeeded"
+                    op.Status?.toLowerCase() === "success" || op.Status?.toLowerCase() === "succeeded"
                       ? "bg-green-100 text-green-800"
-                      : op.Status.toLowerCase() === "failed" || op.Status.toLowerCase() === "failure"
+                      : op.Status?.toLowerCase() === "failed" || op.Status?.toLowerCase() === "failure"
                       ? "bg-red-100 text-red-800"
                       : "bg-yellow-100 text-yellow-800"
                   }`}>

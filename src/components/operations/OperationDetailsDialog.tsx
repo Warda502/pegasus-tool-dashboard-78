@@ -3,26 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage, formatTimeString } from "@/hooks/useSharedData";
-
-interface Operation {
-  OprationID: string;
-  OprationTypes: string;
-  Phone_SN: string;
-  Brand: string;
-  Model: string;
-  Imei: string;
-  UserName: string;
-  Credit: string;
-  Time: string;
-  Status: string;
-  Android: string;
-  Baseband: string;
-  Carrier: string;
-  Security_Patch: string;
-  UID: string;
-  Hwid: string;
-  LogOpration: string;
-}
+import type { Operation } from "@/hooks/useSharedData";
 
 interface OperationDetailsDialogProps {
   operation: Operation | null;

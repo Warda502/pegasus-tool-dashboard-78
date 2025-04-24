@@ -8,18 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/hooks/useLanguage";
-
-interface User {
-  id: string;
-  Name: string;
-  Email: string;
-  Password: string;
-  Phone: string;
-  Country: string;
-  Activate: string;
-  Block: string;
-  [key: string]: string;
-}
+import type { User } from "@/hooks/useSharedData";
 
 interface EditUserDialogProps {
   isOpen: boolean;
@@ -93,27 +82,27 @@ export function EditUserDialog({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">{t("name") || "الاسم"}</Label>
-              <Input id="name" value={editedUser.Name} onChange={e => handleChange("Name", e.target.value)} />
+              <Input id="name" value={editedUser.Name || ''} onChange={e => handleChange("Name", e.target.value)} />
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="email">{t("email") || "البريد الإلكتروني"}</Label>
-              <Input id="email" type="email" value={editedUser.Email} onChange={e => handleChange("Email", e.target.value)} />
+              <Input id="email" type="email" value={editedUser.Email || ''} onChange={e => handleChange("Email", e.target.value)} />
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="password">{t("password") || "كلمة المرور"}</Label>
-              <Input id="password" type="password" value={editedUser.Password} onChange={e => handleChange("Password", e.target.value)} />
+              <Input id="password" type="password" value={editedUser.Password || ''} onChange={e => handleChange("Password", e.target.value)} />
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="phone">{t("phone") || "رقم الهاتف"}</Label>
-              <Input id="phone" value={editedUser.Phone} onChange={e => handleChange("Phone", e.target.value)} />
+              <Input id="phone" value={editedUser.Phone || ''} onChange={e => handleChange("Phone", e.target.value)} />
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="country">{t("country") || "الدولة"}</Label>
-              <Input id="country" value={editedUser.Country} onChange={e => handleChange("Country", e.target.value)} />
+              <Input id="country" value={editedUser.Country || ''} onChange={e => handleChange("Country", e.target.value)} />
             </div>
             
             <div className="flex items-center gap-4">

@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSharedData, useLanguage } from "@/hooks/useSharedData";
+import { useSharedData, useLanguage, User } from "@/hooks/useSharedData";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -36,7 +37,7 @@ export default function UsersManager() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog states
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
@@ -59,13 +60,14 @@ export default function UsersManager() {
     }
     
     try {
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${userId}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'DELETE'
-      });
+      // Delete the user from Supabase
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
       
-      if (!response.ok) {
-        throw new Error(`فشل حذف المستخدم: ${response.status}`);
+      if (error) {
+        throw new Error(`Failed to delete user: ${error.message}`);
       }
       
       toast(t("deleteSuccess"), {
@@ -74,20 +76,19 @@ export default function UsersManager() {
       
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
-      console.error("فشل في حذف المستخدم:", error);
-      toast("خطأ", {
-        description: "فشل في حذف المستخدم"
+      console.error("Failed to delete user:", error);
+      toast("Error", {
+        description: "Failed to delete user"
       });
-      handleLogout();
     }
   };
   
-  const handleViewDetails = (user: any) => {
+  const handleViewDetails = (user: User) => {
     setSelectedUser(user);
     setIsViewDialogOpen(true);
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
@@ -96,7 +97,7 @@ export default function UsersManager() {
     setIsAddDialogOpen(true);
   };
   
-  const handleRenewUser = (user: any) => {
+  const handleRenewUser = (user: User) => {
     setSelectedUser(user);
     setIsRenewDialogOpen(true);
   };
@@ -105,7 +106,7 @@ export default function UsersManager() {
     setIsAddCreditsDialogOpen(true);
   };
   
-  const handleSaveEditedUser = async (updatedUser: any) => {
+  const handleSaveEditedUser = async (updatedUser: User) => {
     const token = localStorage.getItem("userToken");
     if (!token) {
       navigate("/login");
@@ -113,21 +114,21 @@ export default function UsersManager() {
     }
     
     try {
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${updatedUser.id}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          Name: updatedUser.Name,
-          Email: updatedUser.Email,
-          Password: updatedUser.Password,
-          Phone: updatedUser.Phone,
-          Country: updatedUser.Country,
-          Activate: updatedUser.Activate,
-          Block: updatedUser.Block,
-        }),
-      });
+      // Update user in Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: updatedUser.Name,
+          email: updatedUser.Email,
+          password: updatedUser.Password,
+          phone: updatedUser.Phone,
+          country: updatedUser.Country,
+          activate: updatedUser.Activate,
+          block: updatedUser.Block,
+        })
+        .eq('id', updatedUser.id);
 
-      if (!response.ok) {
+      if (error) {
         throw new Error("Failed to update user");
       }
 
@@ -139,10 +140,9 @@ export default function UsersManager() {
       
     } catch (error) {
       console.error("Error updating user:", error);
-      toast("خطأ", {
-        description: "فشل في تحديث بيانات المستخدم"
+      toast("Error", {
+        description: "Failed to update user data"
       });
-      handleLogout();
     }
   };
   
@@ -154,39 +154,42 @@ export default function UsersManager() {
     }
     
     try {
-      // First create Firebase Auth user
-      const authUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAoZXmXFEvXAujyaI1ahFolBf06in5R4P4`;
-      const authResponse = await fetch(authUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: newUser.Email,
-          password: newUser.Password,
-          returnSecureToken: true
-        })
+      // Create a new user entry in Supabase users table
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUser.Email,
+        password: newUser.Password,
       });
       
-      if (!authResponse.ok) {
-        const errorData = await authResponse.json();
-        throw new Error(handleAuthError(errorData.error?.message || "فشل في إنشاء المستخدم"));
+      if (authError) {
+        throw new Error(authError.message);
       }
       
-      const authData = await authResponse.json();
-      const localId = authData.localId;
+      if (!authData.user) {
+        throw new Error("Failed to create auth user");
+      }
       
-      // Now save user data to Firebase Realtime Database
-      newUser.UID = localId;
-      newUser.Hwid = "Null"; // As specified in the code
+      const userId = authData.user.id;
 
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${localId}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'PUT',
-        body: JSON.stringify(newUser),
+      // Create user data in users table
+      const { error: userError } = await supabase.from('users').insert({
+        id: userId,
+        uid: userId,
+        email: newUser.Email,
+        password: newUser.Password, // Note: In production apps, passwords are normally not stored in the users table
+        name: newUser.Name || '',
+        phone: newUser.Phone || '',
+        country: newUser.Country || 'السعودية',
+        activate: newUser.Activate || 'Active',
+        block: newUser.Block || 'Not Blocked',
+        credits: newUser.Credits || '0.0',
+        user_type: newUser.User_Type || 'Credits License',
+        email_type: 'User',
+        expiry_time: newUser.Expiry_Time || null,
+        start_date: newUser.Start_Date || new Date().toISOString().split('T')[0],
+        hwid: 'Null'
       });
 
-      if (!response.ok) {
+      if (userError) {
         throw new Error("Failed to add user data");
       }
       
@@ -198,8 +201,8 @@ export default function UsersManager() {
       
     } catch (error) {
       console.error("Error adding user:", error);
-      toast("خطأ", {
-        description: error instanceof Error ? error.message : "فشل في إضافة المستخدم"
+      toast("Error", {
+        description: error instanceof Error ? error.message : "Failed to add user"
       });
     }
   };
@@ -219,16 +222,16 @@ export default function UsersManager() {
       expiryDate.setMonth(expiryDate.getMonth() + parseInt(months));
       const newExpiryDate = expiryDate.toISOString().split('T')[0];
       
-      const url = `https://pegasus-tool-database-default-rtdb.firebaseio.com/users/${selectedUser.id}.json?auth=${token}`;
-      const response = await fetch(url, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          User_Type: "Monthly License",
-          Expiry_Time: newExpiryDate
-        }),
-      });
+      // Update user in Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({
+          user_type: "Monthly License",
+          expiry_time: newExpiryDate
+        })
+        .eq('id', selectedUser.id);
 
-      if (!response.ok) {
+      if (error) {
         throw new Error("Failed to renew user");
       }
 
@@ -240,10 +243,9 @@ export default function UsersManager() {
       
     } catch (error) {
       console.error("Error renewing user:", error);
-      toast("خطأ", {
-        description: "فشل في تجديد حساب المستخدم"
+      toast("Error", {
+        description: "Failed to renew user account"
       });
-      handleLogout();
     }
   };
 
@@ -257,8 +259,8 @@ export default function UsersManager() {
       });
     } catch (error) {
       console.error("Error adding credits:", error);
-      toast("خطأ", {
-        description: "فشل في إضافة الرصيد"
+      toast("Error", {
+        description: "Failed to add credits"
       });
     }
   };
