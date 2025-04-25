@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Eye, EyeOff } from "lucide-react";
 
 // Schema for password step
 const passwordSchema = z.object({
@@ -35,6 +36,8 @@ const ChangeMyPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isDirectPasswordReset, setIsDirectPasswordReset] = useState(false);
   const [email, setEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Form for password change
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
@@ -136,6 +139,16 @@ const ChangeMyPassword = () => {
     }
   };
   
+  // Toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
+  };
+  
+  // Toggle confirm password visibility
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(prev => !prev);
+  };
+  
   // Render the appropriate form based on whether we're coming from a recovery link
   const renderContent = () => {
     if (isDirectPasswordReset) {
@@ -149,13 +162,26 @@ const ChangeMyPassword = () => {
                 <FormItem>
                   <FormLabel>{t("newPassword")}</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password" 
-                      {...field} 
-                      disabled={isLoading} 
-                      autoComplete="new-password"
-                      dir={isRTL ? "rtl" : "ltr"}
-                    />
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        {...field}
+                        disabled={isLoading} 
+                        autoComplete="new-password"
+                        dir={isRTL ? "rtl" : "ltr"}
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={togglePasswordVisibility}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,13 +195,26 @@ const ChangeMyPassword = () => {
                 <FormItem>
                   <FormLabel>{t("confirmPassword")}</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password" 
-                      {...field} 
-                      disabled={isLoading} 
-                      autoComplete="new-password"
-                      dir={isRTL ? "rtl" : "ltr"}
-                    />
+                    <div className="relative">
+                      <Input 
+                        type={showConfirmPassword ? "text" : "password"}
+                        {...field} 
+                        disabled={isLoading} 
+                        autoComplete="new-password"
+                        dir={isRTL ? "rtl" : "ltr"}
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={toggleConfirmPasswordVisibility}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
