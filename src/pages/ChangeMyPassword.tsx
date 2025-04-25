@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,27 +9,9 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { 
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-
-// Define the different steps of the password change flow
-type Step = "request" | "verifyOtp" | "changePassword";
-
-// Schema for email step
-const emailSchema = z.object({
-  email: z.string().email(),
-});
-
-// Schema for OTP step
-const otpSchema = z.object({
-  otp: z.string().length(6, { message: "OTP must be 6 characters" }),
-});
 
 // Schema for password step
 const passwordSchema = z.object({
@@ -40,30 +22,19 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Schema for email step (when not coming from recovery link)
+const emailSchema = z.object({
+  email: z.string().email(),
+});
+
 const ChangeMyPassword = () => {
   const { t, isRTL } = useLanguage();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState<Step>("request");
+  const [isDirectPasswordReset, setIsDirectPasswordReset] = useState(false);
   const [email, setEmail] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-  
-  // Form for email verification request
-  const emailForm = useForm<z.infer<typeof emailSchema>>({
-    resolver: zodResolver(emailSchema),
-    defaultValues: {
-      email: user?.email || "",
-    }
-  });
-  
-  // Form for OTP verification
-  const otpForm = useForm<z.infer<typeof otpSchema>>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: {
-      otp: "",
-    }
-  });
   
   // Form for password change
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
@@ -74,76 +45,74 @@ const ChangeMyPassword = () => {
     }
   });
   
-  // Step 1: Request OTP
-  const onRequestOtp = async (values: z.infer<typeof emailSchema>) => {
+  // Form for email verification request
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: "",
+    }
+  });
+
+  // Check if we're coming from a password recovery link
+  useEffect(() => {
+    const checkForRecoverySession = async () => {
+      // Try to get the session from the URL
+      try {
+        // If we have both type=recovery and access_token or refresh_token in the URL,
+        // we can directly show the password change form
+        const type = searchParams.get("type");
+        
+        if (type === "recovery") {
+          console.log("Coming from recovery link");
+          setIsDirectPasswordReset(true);
+          
+          // Try to extract email from the recovery session
+          const { data, error } = await supabase.auth.getSession();
+          if (!error && data.session) {
+            setEmail(data.session.user.email || "");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking for recovery session:", error);
+      }
+    };
+    
+    checkForRecoverySession();
+  }, [searchParams]);
+
+  // Request a password reset link
+  const onRequestResetLink = async (values: z.infer<typeof emailSchema>) => {
     try {
       setIsLoading(true);
       setEmail(values.email);
       
       const { error } = await supabase.auth.resetPasswordForEmail(
         values.email,
-        { redirectTo: window.location.origin + '/change-password' }
+        { redirectTo: window.location.origin + '/change-password?type=recovery' }
       );
       
       if (error) throw error;
       
-      toast(t("otpSent"), {
+      toast(t("resetLinkSent"), {
         description: t("checkYourEmail")
       });
       
-      setCurrentStep("verifyOtp");
     } catch (error) {
-      console.error("Error requesting OTP:", error);
+      console.error("Error requesting password reset:", error);
       toast(t("error"), {
-        description: error instanceof Error ? error.message : t("errorRequestingOtp")
+        description: error instanceof Error ? error.message : t("errorRequestingReset")
       });
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Step 2: Verify OTP
-  const onVerifyOtp = async (values: z.infer<typeof otpSchema>) => {
-    try {
-      setIsLoading(true);
-      
-      // In Supabase, we need to verify the OTP by attempting to exchange it for a session token
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: values.otp,
-        type: 'recovery'
-      });
-      
-      if (error) throw error;
-      
-      if (data && data.session) {
-        // Store the access token to use for password reset
-        setAccessToken(data.session.access_token);
-        
-        toast(t("otpVerified"), {
-          description: t("proceedToChangePassword")
-        });
-        
-        setCurrentStep("changePassword");
-      } else {
-        throw new Error("Failed to verify OTP");
-      }
-    } catch (error) {
-      console.error("Error verifying OTP:", error);
-      toast(t("error"), {
-        description: error instanceof Error ? error.message : t("invalidOtp")
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Step 3: Change Password
+  // Change Password
   const onChangePassword = async (values: z.infer<typeof passwordSchema>) => {
     try {
       setIsLoading(true);
       
-      // Update the password using the access token or session
+      // Update the password using the current session
       const { error } = await supabase.auth.updateUser({
         password: values.password
       });
@@ -167,118 +136,70 @@ const ChangeMyPassword = () => {
     }
   };
   
-  // Render the appropriate form based on the current step
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case "request":
-        return (
-          <Form {...emailForm}>
-            <form onSubmit={emailForm.handleSubmit(onRequestOtp)} className="space-y-6">
-              <FormField
-                control={emailForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("email")}</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} disabled={isLoading} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? t("sending") : t("sendVerificationCode")}
-              </Button>
-            </form>
-          </Form>
-        );
-        
-      case "verifyOtp":
-        return (
-          <Form {...otpForm}>
-            <form onSubmit={otpForm.handleSubmit(onVerifyOtp)} className="space-y-6">
-              <FormField
-                control={otpForm.control}
-                name="otp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("verificationCode")}</FormLabel>
-                    <FormControl>
-                      <div className="flex justify-center">
-                        <InputOTP maxLength={6} {...field}>
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex flex-col space-y-2">
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading ? t("verifying") : t("verifyCode")}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  onClick={() => setCurrentStep("request")} 
-                  className="w-full"
-                >
-                  {t("backToEmailInput")}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        );
-        
-      case "changePassword":
-        return (
-          <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-6">
-              <FormField
-                control={passwordForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("newPassword")}</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} disabled={isLoading} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={passwordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("confirmPassword")}</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} disabled={isLoading} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? t("updating") : t("updatePassword")}
-              </Button>
-            </form>
-          </Form>
-        );
+  // Render the appropriate form based on whether we're coming from a recovery link
+  const renderContent = () => {
+    if (isDirectPasswordReset) {
+      return (
+        <Form {...passwordForm}>
+          <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-6">
+            <FormField
+              control={passwordForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("newPassword")}</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={passwordForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("confirmPassword")}</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? t("updating") : t("updatePassword")}
+            </Button>
+          </form>
+        </Form>
+      );
+    } else {
+      return (
+        <Form {...emailForm}>
+          <form onSubmit={emailForm.handleSubmit(onRequestResetLink)} className="space-y-6">
+            <FormField
+              control={emailForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("email")}</FormLabel>
+                  <FormControl>
+                    <Input type="email" {...field} disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? t("sending") : t("sendResetLink")}
+            </Button>
+          </form>
+        </Form>
+      );
     }
   };
   
@@ -288,13 +209,13 @@ const ChangeMyPassword = () => {
         <CardHeader>
           <CardTitle>{t("changePassword")}</CardTitle>
           <CardDescription>
-            {currentStep === "request" && t("requestVerificationDescription")}
-            {currentStep === "verifyOtp" && t("enterVerificationDescription")}
-            {currentStep === "changePassword" && t("enterNewPasswordDescription")}
+            {isDirectPasswordReset ? 
+              t("enterNewPasswordDescription") : 
+              t("requestResetLinkDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {renderStepContent()}
+          {renderContent()}
         </CardContent>
       </Card>
     </div>

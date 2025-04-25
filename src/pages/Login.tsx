@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,22 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t, isRTL } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuth();
+
+  // Handle any query params (like from password reset)
+  useEffect(() => {
+    const passwordReset = searchParams.get("passwordReset");
+    if (passwordReset === "success") {
+      toast(t("passwordResetSuccess"), {
+        description: t("pleaseLoginWithNewPassword")
+      });
+    }
+  }, [searchParams, t]);
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -91,6 +102,17 @@ export default function Login() {
           >
             {loading ? t("loggingIn") : t("login")}
           </Button>
+
+          <div className="text-center mt-2">
+            <Button
+              variant="link"
+              className="p-0 mx-1"
+              onClick={() => navigate("/change-password")}
+            >
+              {t("forgotPassword")}
+            </Button>
+          </div>
+          
           <div className="text-center mt-4">
             <p>
               {t("noAccount")}{" "}
@@ -107,4 +129,4 @@ export default function Login() {
       </div>
     </div>
   );
-}
+};
