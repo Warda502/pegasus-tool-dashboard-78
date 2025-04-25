@@ -149,7 +149,13 @@ const ChangeMyPassword = () => {
                 <FormItem>
                   <FormLabel>{t("newPassword")}</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} disabled={isLoading} />
+                    <Input 
+                      type="password" 
+                      {...field} 
+                      disabled={isLoading} 
+                      autoComplete="new-password"
+                      dir={isRTL ? "rtl" : "ltr"}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -163,7 +169,13 @@ const ChangeMyPassword = () => {
                 <FormItem>
                   <FormLabel>{t("confirmPassword")}</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} disabled={isLoading} />
+                    <Input 
+                      type="password" 
+                      {...field} 
+                      disabled={isLoading} 
+                      autoComplete="new-password"
+                      dir={isRTL ? "rtl" : "ltr"}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,7 +199,13 @@ const ChangeMyPassword = () => {
                 <FormItem>
                   <FormLabel>{t("email")}</FormLabel>
                   <FormControl>
-                    <Input type="email" {...field} disabled={isLoading} />
+                    <Input 
+                      type="email" 
+                      {...field} 
+                      disabled={isLoading} 
+                      dir={isRTL ? "rtl" : "ltr"}
+                      autoComplete="email"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
