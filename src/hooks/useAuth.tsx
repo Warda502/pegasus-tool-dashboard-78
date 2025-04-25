@@ -20,85 +20,122 @@ export const useAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { t } = useLanguage();
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setRole(null);
-          setUser(null);
-          setIsAuthenticated(false);
-          navigate('/login');
-        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY')) {
-          setIsAuthenticated(true);
-          
-          // Use setTimeout to avoid potential deadlock
-          setTimeout(async () => {
-            const { data: userData, error } = await supabase
-              .from('users')
-              .select('email_type, email')
-              .eq('id', session.user.id)
-              .single();
-
-            if (error || !userData) {
-              console.error("Error fetching user role on auth change:", error);
-              return;
-            }
-
-            const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
-            setRole(userRole);
-            setUser({
-              id: session.user.id,
-              email: userData.email || session.user.email || '',
-              role: userRole
-            });
-          }, 0);
-        }
-      }
-    );
-
-    // Initial session check
-    const initAuth = async () => {
+    let unsubscribe: (() => void) | null = null;
+    
+    // تحسين طريقة الاستماع لتغيرات حالة المصادقة
+    const setupAuthListener = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // إعداد مستمع لتغييرات الحالة
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            console.log("Auth state changed:", event, session ? "session active" : "no session");
+            
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+              setRole(null);
+              setUser(null);
+              setIsAuthenticated(false);
+            } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'PASSWORD_RECOVERY')) {
+              setIsAuthenticated(true);
+              
+              // استخدام setTimeout لتجنب التعارض المحتمل
+              setTimeout(async () => {
+                try {
+                  const { data: userData, error } = await supabase
+                    .from('users')
+                    .select('email_type, email')
+                    .eq('id', session.user.id)
+                    .single();
+
+                  if (error) {
+                    console.error("Error fetching user role on auth change:", error);
+                    return;
+                  }
+
+                  const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
+                  setRole(userRole);
+                  setUser({
+                    id: session.user.id,
+                    email: userData?.email || session.user.email || '',
+                    role: userRole
+                  });
+                } catch (err) {
+                  console.error("Failed to fetch user data:", err);
+                }
+              }, 0);
+            }
+          }
+        );
+
+        unsubscribe = () => {
+          subscription.unsubscribe();
+        };
+
+        // التحقق من الجلسة الحالية بعد إعداد المستمع
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          setLoading(false);
+          setSessionChecked(true);
+          return;
+        }
         
         if (!session) {
+          console.log("No active session found");
           setLoading(false);
+          setSessionChecked(true);
           return;
         }
 
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('email_type, email')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error || !userData) {
-          console.error("Error fetching user role:", error);
-          setLoading(false);
-          return;
-        }
-
-        const userRole = ((userData.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
-        setRole(userRole);
-        setUser({
-          id: session.user.id,
-          email: userData.email || session.user.email || '',
-          role: userRole
-        });
-        setIsAuthenticated(true);
+        console.log("Active session found for:", session.user.email);
         
-      } catch (error) {
-        console.error("Auth error:", error);
-      } finally {
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('email_type, email')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error) {
+            console.error("Error fetching user role:", error);
+            setLoading(false);
+            setSessionChecked(true);
+            return;
+          }
+
+          const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
+          setRole(userRole);
+          setUser({
+            id: session.user.id,
+            email: userData?.email || session.user.email || '',
+            role: userRole
+          });
+          setIsAuthenticated(true);
+          
+        } catch (error) {
+          console.error("Auth error:", error);
+        } finally {
+          setLoading(false);
+          setSessionChecked(true);
+        }
+      } catch (err) {
+        console.error("Setup auth listener error:", err);
         setLoading(false);
+        setSessionChecked(true);
       }
     };
 
-    initAuth();
-    
+    // إضافة تأخير صغير لضمان استقرار الحالة
+    const timer = setTimeout(() => {
+      setupAuthListener();
+    }, 100);
+
     return () => {
-      subscription.unsubscribe();
+      clearTimeout(timer);
+      if (unsubscribe) unsubscribe();
     };
   }, [navigate]);
 
@@ -131,6 +168,11 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // تنظيف حالة المصادقة
+      setRole(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
       toast(t("logoutSuccess"), {
         description: t("comeBackSoon")
       });
@@ -146,13 +188,28 @@ export const useAuth = () => {
     }
   };
 
+  // يساعد في التعامل مع جلسات منتهية الصلاحية
+  const handleSessionExpired = () => {
+    setRole(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    
+    toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
+      description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
+    });
+    
+    navigate('/login');
+  };
+
   return { 
     role, 
-    loading, 
+    loading,
     user,
     login,
     logout,
+    handleSessionExpired,
     isAdmin: role === 'admin',
-    isAuthenticated
+    isAuthenticated,
+    sessionChecked
   };
 };

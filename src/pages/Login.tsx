@@ -18,9 +18,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionChecked } = useAuth();
 
-  // Handle any query params (like from password reset)
+  // Handle any query params (like from password reset or session expired)
   useEffect(() => {
     const passwordReset = searchParams.get("passwordReset");
     if (passwordReset === "success") {
@@ -28,13 +28,29 @@ export default function Login() {
         description: t("pleaseLoginWithNewPassword")
       });
     }
+    
+    const sessionExpired = searchParams.get("sessionExpired");
+    if (sessionExpired === "true") {
+      toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
+        description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
+      });
+    }
+    
+    const loggedOut = searchParams.get("loggedOut");
+    if (loggedOut === "true") {
+      toast(t("logoutSuccess"), {
+        description: t("comeBackSoon")
+      });
+    }
   }, [searchParams, t]);
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (sessionChecked && isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate, sessionChecked]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +84,23 @@ export default function Login() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  // اعرض شاشة تحميل حتى نتأكد من حالة المصادقة
+  if (!sessionChecked) {
+    return (
+      <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-700">{t("checkingSession") || "جاري التحقق من حالة الجلسة..."}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // لا تعرض نموذج تسجيل الدخول إذا كان المستخدم مسجل دخوله بالفعل
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -149,4 +182,4 @@ export default function Login() {
       </div>
     </div>
   );
-};
+}

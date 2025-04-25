@@ -38,6 +38,7 @@ const ChangeMyPassword = () => {
   const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   
   // Form for password change
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
@@ -75,8 +76,11 @@ const ChangeMyPassword = () => {
             setEmail(data.session.user.email || "");
           }
         }
+        
+        setFormInitialized(true);
       } catch (error) {
         console.error("Error checking for recovery session:", error);
+        setFormInitialized(true);
       }
     };
     
@@ -115,6 +119,9 @@ const ChangeMyPassword = () => {
     try {
       setIsLoading(true);
       
+      // تسجيل القيم للتأكد من وصولها بشكل صحيح
+      console.log("Changing password with values:", values);
+      
       // Update the password using the current session
       const { error } = await supabase.auth.updateUser({
         password: values.password
@@ -128,7 +135,7 @@ const ChangeMyPassword = () => {
       
       // Log user out and redirect to login page
       await logout();
-      navigate('/login');
+      navigate('/login?passwordReset=success');
     } catch (error) {
       console.error("Error changing password:", error);
       toast(t("error"), {
@@ -148,6 +155,18 @@ const ChangeMyPassword = () => {
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(prev => !prev);
   };
+  
+  // إظهار شاشة التحميل حتى يتم تهيئة النموذج
+  if (!formInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-gray-700">{t("loading")}</p>
+        </div>
+      </div>
+    );
+  }
   
   // Render the appropriate form based on whether we're coming from a recovery link
   const renderContent = () => {

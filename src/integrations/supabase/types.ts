@@ -125,8 +125,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deduct_user_credit: {
+        Args: { pxu: string; pxc: string }
+        Returns: string
+      }
       is_admin: {
-        Args: Record<PropertyKey, never> | { uid: string }
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
