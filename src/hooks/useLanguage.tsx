@@ -581,9 +581,178 @@ export const translations: Translations = {
   system: {
     en: "System",
     ar: "النظام"
+  },
+  editProfile: {
+    en: "Edit Profile",
+    ar: "تعديل الملف الشخصي"
+  },
+  profileUpdated: {
+    en: "Profile updated successfully",
+    ar: "تم تحديث الملف الشخصي بنجاح"
+  },
+  errorUpdatingProfile: {
+    en: "Error updating profile",
+    ar: "خطأ في تحديث الملف الشخصي"
+  },
+  errorFetchingProfile: {
+    en: "Error fetching profile data",
+    ar: "خطأ في جلب بيانات الملف الشخصي"
+  },
+  saving: {
+    en: "Saving...",
+    ar: "جاري الحفظ..."
+  },
+  success: {
+    en: "Success",
+    ar: "تم بنجاح"
+  },
+  welcomeBack: {
+    en: "Welcome back!",
+    ar: "مرحباً بعودتك!"
+  },
+  changePassword: {
+    en: "Change Password",
+    ar: "تغيير كلمة المرور"
+  },
+  sendVerificationCode: {
+    en: "Send Verification Code",
+    ar: "إرسال رمز التحقق"
+  },
+  verificationCode: {
+    en: "Verification Code",
+    ar: "رمز التحقق"
+  },
+  verifyCode: {
+    en: "Verify Code",
+    ar: "تحقق من الرمز"
+  },
+  newPassword: {
+    en: "New Password",
+    ar: "كلمة المرور الجديدة"
+  },
+  confirmPassword: {
+    en: "Confirm Password",
+    ar: "تأكيد كلمة المرور"
+  },
+  updatePassword: {
+    en: "Update Password",
+    ar: "تحديث كلمة المرور"
+  },
+  passwordUpdated: {
+    en: "Password Updated",
+    ar: "تم تحديث كلمة المرور"
+  },
+  loginWithNewPassword: {
+    en: "Please login with your new password",
+    ar: "الرجاء تسجيل الدخول باستخدام كلمة المرور الجديدة"
+  },
+  otpSent: {
+    en: "Verification Code Sent",
+    ar: "تم إرسال رمز التحقق"
+  },
+  checkYourEmail: {
+    en: "Please check your email for the verification code",
+    ar: "الرجاء التحقق من بريدك الإلكتروني للحصول على رمز التحقق"
+  },
+  otpVerified: {
+    en: "Code Verified",
+    ar: "تم التحقق من الرمز"
+  },
+  proceedToChangePassword: {
+    en: "You can now set your new password",
+    ar: "يمكنك الآن تعيين كلمة المرور الجديدة"
+  },
+  errorRequestingOtp: {
+    en: "Error requesting verification code",
+    ar: "خطأ في طلب رمز التحقق"
+  },
+  invalidOtp: {
+    en: "Invalid verification code",
+    ar: "رمز التحقق غير صالح"
+  },
+  errorChangingPassword: {
+    en: "Error changing password",
+    ar: "خطأ في تغيير كلمة المرور"
+  },
+  requestVerificationDescription: {
+    en: "We'll send a verification code to your email",
+    ar: "سنرسل رمز التحقق إلى بريدك الإلكتروني"
+  },
+  enterVerificationDescription: {
+    en: "Enter the verification code sent to your email",
+    ar: "أدخل رمز التحقق المرسل إلى بريدك الإلكتروني"
+  },
+  enterNewPasswordDescription: {
+    en: "Create a new password for your account",
+    ar: "إنشاء كلمة مرور جديدة لحسابك"
+  },
+  backToEmailInput: {
+    en: "Back to Email",
+    ar: "العودة إلى البريد الإلكتروني"
+  },
+  sending: {
+    en: "Sending...",
+    ar: "جاري الإرسال..."
+  },
+  verifying: {
+    en: "Verifying...",
+    ar: "جاري التحقق..."
+  },
+  updating: {
+    en: "Updating...",
+    ar: "جاري التحديث..."
+  },
+  jan: {
+    en: "Jan",
+    ar: "يناير"
+  },
+  feb: {
+    en: "Feb",
+    ar: "فبراير"
+  },
+  mar: {
+    en: "Mar",
+    ar: "مارس"
+  },
+  apr: {
+    en: "Apr",
+    ar: "أبريل"
+  },
+  may: {
+    en: "May",
+    ar: "مايو"
+  },
+  jun: {
+    en: "Jun",
+    ar: "يونيو"
+  },
+  jul: {
+    en: "Jul",
+    ar: "يوليو"
+  },
+  aug: {
+    en: "Aug",
+    ar: "أغسطس"
+  },
+  sep: {
+    en: "Sep",
+    ar: "سبتمبر"
+  },
+  oct: {
+    en: "Oct",
+    ar: "أكتوبر"
+  },
+  nov: {
+    en: "Nov",
+    ar: "نوفمبر"
+  },
+  dec: {
+    en: "Dec",
+    ar: "ديسمبر"
   }
 };
 
+// Create the context with default values
 const LanguageContext = createContext<LanguageContextType>({
   language: 'en',
   setLanguage: () => {},
@@ -592,6 +761,7 @@ const LanguageContext = createContext<LanguageContextType>({
   isRTL: false,
 });
 
+// Custom hook to use the language context
 export const useLanguage = () => useContext(LanguageContext);
 
 interface LanguageProviderProps {
@@ -605,6 +775,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     return browserLang === 'ar' ? 'ar' : 'en';
   };
 
+  // Initialize with detected language
   const [language, setLanguage] = useState<Language>(detectLanguage());
   const isRTL = language === 'ar';
 
