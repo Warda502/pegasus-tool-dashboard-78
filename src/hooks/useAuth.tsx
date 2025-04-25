@@ -29,7 +29,7 @@ export const useAuth = () => {
           setUser(null);
           setIsAuthenticated(false);
           navigate('/login');
-        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY')) {
           setIsAuthenticated(true);
           
           // Use setTimeout to avoid potential deadlock

@@ -47,6 +47,7 @@ const ChangeMyPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>("request");
   const [email, setEmail] = useState("");
+  const [accessToken, setAccessToken] = useState("");
   
   // Form for email verification request
   const emailForm = useForm<z.infer<typeof emailSchema>>({
@@ -106,15 +107,27 @@ const ChangeMyPassword = () => {
     try {
       setIsLoading(true);
       
-      // In a real implementation, you would verify the OTP with Supabase
-      // For now, we're just moving to the next step
-      // This is where you'd typically make a verification API call
-      
-      toast(t("otpVerified"), {
-        description: t("proceedToChangePassword")
+      // In Supabase, we need to verify the OTP by attempting to exchange it for a session token
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: values.otp,
+        type: 'recovery'
       });
       
-      setCurrentStep("changePassword");
+      if (error) throw error;
+      
+      if (data && data.session) {
+        // Store the access token to use for password reset
+        setAccessToken(data.session.access_token);
+        
+        toast(t("otpVerified"), {
+          description: t("proceedToChangePassword")
+        });
+        
+        setCurrentStep("changePassword");
+      } else {
+        throw new Error("Failed to verify OTP");
+      }
     } catch (error) {
       console.error("Error verifying OTP:", error);
       toast(t("error"), {
@@ -127,11 +140,10 @@ const ChangeMyPassword = () => {
   
   // Step 3: Change Password
   const onChangePassword = async (values: z.infer<typeof passwordSchema>) => {
-    if (!user) return;
-    
     try {
       setIsLoading(true);
       
+      // Update the password using the access token or session
       const { error } = await supabase.auth.updateUser({
         password: values.password
       });
