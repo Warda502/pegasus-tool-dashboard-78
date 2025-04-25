@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -11,7 +12,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Lock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { t, isRTL } = useLanguage();
-  const { role, logout, user } = useAuth();
+  const { role, logout, user, isAdmin } = useAuth();
 
   const menuItems = [
     {
@@ -48,6 +49,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: Settings,
       show: true,
     },
+    {
+      title: t("editProfile"),
+      path: "/edit-profile",
+      icon: User,
+      show: !isAdmin,
+    },
+    {
+      title: t("changePassword"),
+      path: "/change-password",
+      icon: Lock,
+      show: !isAdmin,
+    }
   ].filter(item => item.show);
 
   const getCurrentPageTitle = () => {
