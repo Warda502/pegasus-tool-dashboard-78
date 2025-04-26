@@ -2,8 +2,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, CalendarDays, BarChart as BarChartIcon, RefreshCw } from "lucide-react";
-import { useSharedData, useLanguage } from "@/hooks/useSharedData";
+import { useSharedData } from "@/hooks/useSharedData";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
+import { Loading } from "@/components/ui/loading";
 
 export default function Dashboard() {
   const { users, operations, isLoading } = useSharedData();
@@ -26,7 +28,7 @@ export default function Dashboard() {
     
     // Calculate user-specific stats if not admin
     const userOperations = operations.filter(op => op.uid === user?.id);
-    const userRefundOperations = userOperations.filter(op => op.status === 'Refunded').length;
+    const userRefundOperations = userOperations.filter(op => op.status === 'Refounded' || op.status === 'Refunded').length;
 
     setStats({
       totalUsers: users.length,
@@ -40,6 +42,13 @@ export default function Dashboard() {
 
   // Find current user's data for credits and expiry time
   const currentUserData = users?.find(u => u.id === user?.id);
+  
+  // Process the user's credits - remove quotes and parse as number
+  const userCredits = currentUserData?.credits ? 
+    parseFloat(currentUserData.credits.toString().replace(/"/g, '')) : 0;
+  
+  // Format expiry time for display
+  const expiryTime = currentUserData?.expiry_time || "-";
 
   const AdminDashboard = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -93,7 +102,7 @@ export default function Dashboard() {
           <CreditCard className="h-7 w-7 text-blue-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-extrabold text-gray-800">{currentUserData?.credits || "0"}</div>
+          <div className="text-3xl font-extrabold text-gray-800">{userCredits}</div>
         </CardContent>
       </Card>
       
@@ -103,7 +112,7 @@ export default function Dashboard() {
           <CalendarDays className="h-7 w-7 text-green-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-extrabold text-gray-800">{currentUserData?.expiry_time || "-"}</div>
+          <div className="text-3xl font-extrabold text-gray-800">{expiryTime}</div>
         </CardContent>
       </Card>
       
@@ -140,10 +149,7 @@ export default function Dashboard() {
         </header>
         
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-80">
-            <div className="loader mb-4"></div>
-            <span className="text-lg text-gray-600">{t("loadingData")}</span>
-          </div>
+          <Loading text={t("loadingData")} size="lg" className="h-80" />
         ) : (
           isAdmin ? <AdminDashboard /> : <UserDashboard />
         )}

@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -27,7 +28,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Get user's name from users data
   const currentUser = users?.find(u => u.id === user?.id);
-  const userName = currentUser?.name || user?.email || t("guest");
+  // Use the user's name, fall back to the user's name from auth, then to email if both are unavailable
+  const userName = currentUser?.name || user?.email?.split('@')[0] || t("guest");
 
   // Handler for logout with error protection
   const handleLogout = async () => {

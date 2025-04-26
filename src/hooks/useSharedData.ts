@@ -71,23 +71,27 @@ const fetchUsers = async (): Promise<User[]> => {
   
   console.log("Fetched users:", data?.length || 0);
   
-  return data.map(user => ({
-    ...user,
-    Name: user.name || "",
-    Email: user.email || "",
-    Password: user.password || "",
-    Phone: user.phone || "",
-    Country: user.country || "",
-    Activate: user.activate || "Not Activate",
-    Block: user.block || "Not Blocked",
-    Credits: user.credits || "0.0",
-    User_Type: user.user_type || "Credits License",
-    Email_Type: user.email_type || "User",
-    Expiry_Time: user.expiry_time || "",
-    Start_Date: user.start_date || "",
-    Hwid: user.hwid || "",
-    UID: user.uid || ""
-  }));
+  return data.map(user => {
+    const creditsValue = user.credits ? user.credits.toString().replace(/"/g, '') : "0.0";
+    
+    return {
+      ...user,
+      Name: user.name || "",
+      Email: user.email || "",
+      Password: user.password || "",
+      Phone: user.phone || "",
+      Country: user.country || "",
+      Activate: user.activate || "Not Activate",
+      Block: user.block || "Not Blocked",
+      Credits: creditsValue,
+      User_Type: user.user_type || "Credits License",
+      Email_Type: user.email_type || "User",
+      Expiry_Time: user.expiry_time || "",
+      Start_Date: user.start_date || "",
+      Hwid: user.hwid || "",
+      UID: user.uid || ""
+    };
+  });
 };
 
 const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Promise<Operation[]> => {
@@ -197,7 +201,7 @@ export const addCreditToUser = async (userId: string, creditsToAdd: number): Pro
     
     let currentCredit = 0;
     try {
-      currentCredit = parseFloat(userData.credits.replace(/"/g, "")) || 0;
+      currentCredit = parseFloat(userData.credits.toString().replace(/"/g, "")) || 0;
     } catch (e) {
       console.error("Error parsing credit:", e);
     }
@@ -224,7 +228,9 @@ export const addCreditToUser = async (userId: string, creditsToAdd: number): Pro
 
 export const refundOperation = async (operation: Operation) => {
   try {
-    const creditValue = parseFloat(operation.Credit?.replace(/"/g, "") || "0");
+    const creditString = operation.Credit?.toString().replace(/"/g, "") || "0";
+    const creditValue = parseFloat(creditString);
+    
     if (isNaN(creditValue) || creditValue <= 0) {
       console.log("Invalid credit value for refund:", operation.Credit);
       return false;
@@ -239,7 +245,7 @@ export const refundOperation = async (operation: Operation) => {
     const { error } = await supabase
       .from('operations')
       .update({
-        status: 'Refounded',
+        status: 'Refunded',
         credit: '0.0'
       })
       .eq('operation_id', operation.OprationID);
