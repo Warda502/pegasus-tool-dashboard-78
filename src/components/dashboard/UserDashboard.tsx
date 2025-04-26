@@ -1,4 +1,3 @@
-
 import { useMemo, useEffect } from "react";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -15,47 +14,47 @@ export function UserDashboard() {
 
   useEffect(() => {
     if (user) {
-      console.log("UserDashboard: Mounted for user:", user.id);
-      console.log("Available user IDs:", users.map(u => `id:${u.id}, uid:${u.uid}`).join('; '));
+      console.log("UserDashboard: Current user ID:", user.id);
+      console.log("UserDashboard: Available users:", users);
       refreshData();
     }
   }, [user, refreshData]);
   
   const stats = useMemo(() => {
-    if (!user) return null;
-    
-    console.log("Calculating user stats for:", user.id);
-    console.log("User object from auth:", user);
-    console.log("Available users:", users.length);
-    
-    // Find user data trying both id and uid
-    const currentUser = users.find(u => 
-      u.id === user.id || u.uid === user.id
-    );
-    
-    if (!currentUser) {
-      console.log("User data not found in users array");
+    if (!user) {
+      console.log("UserDashboard: No user data available");
       return null;
     }
     
-    console.log("Found user data:", currentUser);
+    // Find user data trying both id and uid
+    const currentUser = users.find(u => 
+      u.id === user.id || u.uid === user.id || u.UID === user.id
+    );
+    
+    if (!currentUser) {
+      console.log("UserDashboard: User data not found in users array");
+      console.log("UserDashboard: User IDs available:", users.map(u => 
+        `id:${u.id}, uid:${u.uid}, UID:${u.UID}`
+      ).join('; '));
+      return null;
+    }
+    
+    console.log("UserDashboard: Found user data:", currentUser);
     
     const userCredit = currentUser.Credits || "0.0";
     const expiryTime = currentUser.Expiry_Time || "-";
     
     // Filter operations for the current user
     const userOperations = operations.filter(op => 
-      op.UID === currentUser.id || op.UID === currentUser.uid
+      op.UID === currentUser.id || op.UID === currentUser.uid || op.UID === currentUser.UID
     );
     
-    console.log("User operations:", userOperations.length);
+    console.log("UserDashboard: User operations:", userOperations.length);
     
     // Count refunded operations
     const refundedOperations = userOperations.filter(
       op => op.Status?.toLowerCase() === 'refunded'
     ).length;
-    
-    console.log("Refunded operations:", refundedOperations);
     
     return {
       credits: userCredit,

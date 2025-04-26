@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useFetchUsers } from "./useFetchUsers";
 import { useFetchOperations } from "./useFetchOperations";
@@ -7,7 +6,6 @@ import { SharedDataContextType } from "./types";
 import { useAuth } from "../auth/AuthContext";
 import { toast } from "@/components/ui/sonner";
 
-// Create context
 const DataContext = createContext<SharedDataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
@@ -31,7 +29,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   
   const { refreshData: originalRefreshData, addCreditToUser, refundOperation } = useDataActions();
   
-  // Enhanced refresh function with retry mechanism
   const refreshData = async () => {
     console.log("DataContext: Refreshing data explicitly");
     
@@ -39,23 +36,25 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const userResults = await refetchUsers();
       const opsResults = await refetchOperations();
       
-      // Check if user data exists after refresh
       if (user && userResults.data && userResults.data.length > 0) {
         const foundUser = userResults.data.find(u => 
-          u.uid === user.id || u.id === user.id
+          u.id === user.id || u.uid === user.id || u.UID === user.id
         );
         
         if (!foundUser && retryCount < maxRetries) {
-          console.log(`User data not found, retrying... (${retryCount + 1}/${maxRetries})`);
+          console.log(`DataContext: User data not found, retrying... (${retryCount + 1}/${maxRetries})`);
           setRetryCount(prev => prev + 1);
           setTimeout(() => refreshData(), 1000);
         } else if (!foundUser) {
-          console.error("Failed to find user data after max retries");
+          console.error("DataContext: Failed to find user data after max retries");
+          console.log("DataContext: Available user IDs:", userResults.data.map(u => 
+            `id:${u.id}, uid:${u.uid}, UID:${u.UID}`
+          ).join('; '));
           toast.error("Error", {
             description: "Failed to load user data after multiple attempts"
           });
         } else {
-          console.log("User data found after refresh:", foundUser);
+          console.log("DataContext: User data found after refresh:", foundUser);
           setRetryCount(0);
         }
       }
@@ -69,7 +68,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  // Initial data load
   useEffect(() => {
     if (isAuthenticated && user) {
       console.log("DataContext: Initial data load for user:", user.id);
@@ -77,19 +75,19 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isAuthenticated, user]);
   
-  // Debug data loading
   useEffect(() => {
     if (isAuthenticated && user) {
       console.log("DataContext: User is authenticated, ID:", user.id);
       console.log("DataContext: Users data loaded:", users.length);
       
-      // Check if the current user exists in the users array by checking both uid and id fields
-      const currentUser = users.find(u => u.uid === user.id || u.id === user.id);
+      const currentUser = users.find(u => u.uid === user.id || u.id === user.id || u.UID === user.id);
       if (currentUser) {
         console.log("DataContext: Current user found in users data:", currentUser);
       } else {
         console.log("DataContext: Current user NOT found in users data");
-        console.log("DataContext: Available user IDs:", users.map(u => `uid:${u.uid}, id:${u.id}`).join(', '));
+        console.log("DataContext: Available user IDs:", users.map(u => 
+          `id:${u.id}, uid:${u.uid}, UID:${u.UID}`
+        ).join(', '));
         
         if (users.length > 0) {
           toast.warning("Data Warning", {
@@ -101,18 +99,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log("DataContext: Operations loaded:", operations.length);
       
-      // Check operations for the current user
       const userOps = operations.filter(op => op.UID === user.id);
       console.log("DataContext: User operations count:", userOps.length);
       
-      // Count refunded operations
       const refundedOps = userOps.filter(op => op.Status?.toLowerCase() === 'refunded');
       console.log("DataContext: Refunded operations:", refundedOps.length);
       console.log("DataContext: Refunded operations details:", refundedOps);
     }
   }, [isAuthenticated, user, users, operations]);
   
-  // Combine all data and actions
   const dataContext = {
     users,
     operations,
@@ -138,6 +133,5 @@ export const useSharedData = (): SharedDataContextType => {
   return context;
 };
 
-// Re-export from here to maintain backward compatibility
 export { formatTimeString } from "./useDataActions";
 export type { User, Operation } from "./types";
