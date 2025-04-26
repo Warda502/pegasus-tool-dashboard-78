@@ -24,7 +24,12 @@ export default function ServerApiData() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-3xl font-bold tracking-tight">{t("serverApiData") || "Server API Data"}</h2>
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">{t("serverApiData") || "Server API Data"}</h2>
+        <p className="text-muted-foreground">
+          {t("viewServerData") || "View and manage server API data"}
+        </p>
+      </div>
       <ApiDataTable data={data} />
     </div>
   );
