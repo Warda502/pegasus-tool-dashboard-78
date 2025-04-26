@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define supported languages
@@ -29,6 +30,18 @@ export const translations: Translations = {
   operations: {
     en: "Operations",
     ar: "العمليات"
+  },
+  refundedOperations: {
+    en: "Refunded Operations",
+    ar: "العمليات المستردة"
+  },
+  expiryTime: {
+    en: "Expiry Time",
+    ar: "تاريخ الانتهاء"
+  },
+  myCredits: {
+    en: "My Credits",
+    ar: "رصيدي"
   },
   users: {
     en: "Users Manager",
@@ -833,6 +846,50 @@ export const translations: Translations = {
   errorResettingHwid: {
     en: "Error resetting HWID",
     ar: "خطأ في إعادة تعيين HWID"
+  },
+  accountBlocked: {
+    en: "Account Blocked",
+    ar: "الحساب محظور"
+  },
+  accountBlockedDescription: {
+    en: "Your account has been blocked. Please contact admin for assistance.",
+    ar: "تم حظر حسابك. يرجى الاتصال بالمسؤول للحصول على المساعدة."
+  },
+  noCreditsLeft: {
+    en: "No Credits Left",
+    ar: "لا يوجد رصيد"
+  },
+  noCreditsLeftDescription: {
+    en: "You don't have any credits left. Please contact admin to add credits.",
+    ar: "ليس لديك أي رصيد متبقي. يرجى الاتصال بالمسؤول لإضافة رصيد."
+  },
+  checkingSession: {
+    en: "Checking session...",
+    ar: "جاري التحقق من حالة الجلسة..."
+  },
+  sessionExpired: {
+    en: "Session expired",
+    ar: "انتهت صلاحية الجلسة"
+  },
+  pleaseLoginAgain: {
+    en: "Please login again",
+    ar: "يرجى تسجيل الدخول مجددًا"
+  },
+  loginFailed: {
+    en: "Login failed",
+    ar: "فشل تسجيل الدخول"
+  },
+  comeBackSoon: {
+    en: "Come back soon!",
+    ar: "نراك قريبًا!"
+  },
+  logoutFailed: {
+    en: "Logout failed",
+    ar: "فشل تسجيل الخروج"
+  },
+  guest: {
+    en: "Guest",
+    ar: "زائر"
   }
 };
 

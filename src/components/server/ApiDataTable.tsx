@@ -59,24 +59,23 @@ export function ApiDataTable({ data }: ApiDataTableProps) {
   const currentItems = filteredData.slice(startIndex, endIndex);
 
   const handleExportRow = (row: ApiData) => {
-    const exportData = {
-      Email: row.Email,
-      Hwid: row.Hwid,
-      Imei: row.Imei,
-      Model: row.Model,
-      Notes: row.Notes,
-      Phone_sn: row.Phone_sn,
-      uid: row.uid,
-      ImeiSign: row.ImeiSign,
-      PubKey: row.PubKey,
-      PubKeySign: row.PubKeySign
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    // Format data according to the requested format
+    const exportData = `[notes]\nIMEI=${row.Imei || ''}\nImeiSign=${row.ImeiSign || ''}\nPubKey=${row.PubKey || ''}\nPubKeySign=${row.PubKeySign || ''}`;
+    
+    // Create file name using the format: {Model}_{IMEI}_{PhoneSN}.Cert
+    const model = row.Model || 'Unknown';
+    const imei = row.Imei || 'Unknown';
+    const phoneSn = row.Phone_sn || 'Unknown';
+    const fileName = `${model}_${imei}_${phoneSn}.Cert`;
+    
+    // Create a blob with the data
+    const blob = new Blob([exportData], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
+    
+    // Create a link and trigger download
     const link = document.createElement('a');
     link.href = url;
-    link.download = `data_${row.Imei}.json`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { isAuthenticated, sessionChecked, loading, login } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -50,7 +53,50 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    setIsSubmitting(true);
+
+    try {
+      // First, check if email exists and if the user is blocked or has no credits
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, email_type, block, credits')
+        .eq('email', email)
+        .single();
+
+      if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error("Error checking user:", userError);
+        // Continue with login attempt as normal
+      } else if (userData) {
+        // Check if this is a regular user (not an admin)
+        if (userData.email_type.toLowerCase() !== 'admin') {
+          // Check if user is blocked
+          if (userData.block === 'Blocked') {
+            toast(t("accountBlocked"), {
+              description: t("accountBlockedDescription")
+            });
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Check if user has no credits
+          const creditsValue = parseFloat(userData.credits.toString().replace(/"/g, ''));
+          if (!isNaN(creditsValue) && creditsValue <= 0) {
+            toast(t("noCreditsLeft"), {
+              description: t("noCreditsLeftDescription")
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
+      // Proceed with normal login if all checks pass
+      await login(email, password);
+    } catch (err) {
+      console.error("Login validation error:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -113,10 +159,10 @@ export default function Login() {
           </div>
           <Button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting || loading}
             className="w-full"
           >
-            {loading ? t("loggingIn") : t("login")}
+            {isSubmitting ? t("loggingIn") : t("login")}
           </Button>
         </form>
       </div>

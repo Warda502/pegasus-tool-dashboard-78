@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -36,43 +37,43 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("dashboard"),
       path: "/dashboard",
       icon: Home,
-      show: true,
+      show: true
     },
     {
       title: t("editProfile"),
       path: "/edit-profile",
       icon: User,
-      show: !isAdmin,
+      show: !isAdmin
     },
     {
       title: t("users"),
       path: "/users-manager",
       icon: Users,
-      show: role === "admin",
+      show: role === "admin"
     },
     {
       title: t("operations"),
       path: "/operations",
       icon: LineChart,
-      show: true,
+      show: true
     },
     {
       title: t("serverApiData"),
       path: "/server-api-data",
       icon: Database,
-      show: role === "admin",
+      show: role === "admin"
     },
     {
       title: t("serverStorage"),
       path: "/server-storage",
       icon: FileQuestion,
-      show: role === "admin",
+      show: role === "admin"
     },
     {
       title: t("settings"),
       path: "/settings",
       icon: Settings,
-      show: true,
+      show: true
     }
   ].filter(item => item.show);
 
