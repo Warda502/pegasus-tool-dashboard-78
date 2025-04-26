@@ -31,16 +31,21 @@ export default function Login() {
     
     const sessionExpired = searchParams.get("sessionExpired");
     if (sessionExpired === "true") {
-      toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
-        description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
-      });
+      console.log("Session expired param detected");
+      setTimeout(() => {
+        toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
+          description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
+        });
+      }, 300);
     }
     
     const loggedOut = searchParams.get("loggedOut");
     if (loggedOut === "true") {
-      toast(t("logoutSuccess"), {
-        description: t("comeBackSoon")
-      });
+      setTimeout(() => {
+        toast(t("logoutSuccess"), {
+          description: t("comeBackSoon")
+        });
+      }, 300);
     }
   }, [searchParams, t]);
 

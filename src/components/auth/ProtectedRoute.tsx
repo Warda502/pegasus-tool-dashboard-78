@@ -36,7 +36,11 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
             handleSessionExpired();
             return;
           }
-          navigate("/login?sessionExpired=true");
+          
+          // تجنب إعادة التوجيه المتكرر
+          if (window.location.pathname !== '/login') {
+            navigate("/login");
+          }
           return;
         }
         
@@ -61,19 +65,31 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
   }, [sessionChecked, navigate, handleSessionExpired, isAuthenticated, t]);
 
   useEffect(() => {
+    let redirectTimeout: number | null = null;
+    
     if (!loading && sessionChecked && !isChecking) {
       if (!isAuthenticated) {
-        toast(t("accessDenied"), {
-          description: t("pleaseLogin")
-        });
-        navigate("/login?sessionExpired=true");
+        // تجنب عرض رسائل متكررة والتوجيه المستمر
+        if (window.location.pathname !== '/login') {
+          redirectTimeout = window.setTimeout(() => {
+            navigate("/login");
+          }, 100);
+        }
       } else if (allowedRoles && !allowedRoles.includes(role as UserRole)) {
         toast(t("accessDenied"), {
           description: t("noPermission")
         });
-        navigate("/dashboard");
+        redirectTimeout = window.setTimeout(() => {
+          navigate("/dashboard");
+        }, 100);
       }
     }
+    
+    return () => {
+      if (redirectTimeout) {
+        window.clearTimeout(redirectTimeout);
+      }
+    };
   }, [role, loading, navigate, allowedRoles, t, isAuthenticated, sessionChecked, isChecking]);
 
   if (loading || isChecking) {

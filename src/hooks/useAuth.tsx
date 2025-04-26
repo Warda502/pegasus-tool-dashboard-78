@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +29,7 @@ export const useAuth = () => {
     const setupAuthListener = async () => {
       try {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, session) => {
+          (event: AuthChangeEvent, session) => {
             console.log("Auth state changed:", event, session ? "session active" : "no session");
             
             switch(event) {
@@ -49,7 +50,6 @@ export const useAuth = () => {
                 // Handle sign-in or session update events
                 setIsAuthenticated(true);
                 
-                // استخدام setTimeout لتجنب التعارض المحتمل
                 setTimeout(async () => {
                   try {
                     if (!session?.user?.id) return;
@@ -181,19 +181,22 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      // تنظيف حالة المصادقة
+      // تنظيف حالة المصادقة قبل تسجيل الخروج
       setRole(null);
       setUser(null);
       setIsAuthenticated(false);
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
       toast(t("logoutSuccess"), {
         description: t("comeBackSoon")
       });
       
-      navigate('/login');
+      // التأخير قليلاً قبل التوجيه لضمان تنظيف الحالة
+      setTimeout(() => {
+        navigate('/login');
+      }, 100);
       return true;
     } catch (error) {
       console.error("Logout error:", error);
