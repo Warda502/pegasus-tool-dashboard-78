@@ -29,6 +29,7 @@ export const fetchUsers = async (): Promise<User[]> => {
     }
     
     console.log("Fetched users:", data?.length || 0);
+    console.log("User data sample:", data?.length > 0 ? data[0] : "No users");
     
     return data.map(user => {
       const creditsValue = user.credits ? user.credits.toString().replace(/"/g, '') : "0.0";
@@ -66,15 +67,16 @@ export const useFetchUsers = () => {
     data = [], 
     isLoading, 
     isError,
-    isSuccess 
+    isSuccess,
+    refetch
   } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
     staleTime: CACHE_STALE_TIME,
     gcTime: CACHE_GC_TIME,
-    refetchOnMount: false,
+    refetchOnMount: true, // Changed to true to ensure fresh data on mount
     refetchOnWindowFocus: false,
-    retry: 1,
+    retry: 2, // Increased retries
     enabled: isAuthenticated,
     meta: {
       onSuccess: (data) => {
@@ -99,6 +101,7 @@ export const useFetchUsers = () => {
     users: data,
     isLoading,
     isError,
-    isSuccess
+    isSuccess,
+    refetch
   };
 };

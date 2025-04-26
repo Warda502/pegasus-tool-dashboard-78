@@ -5,6 +5,7 @@ import { useFetchOperations } from "./useFetchOperations";
 import { useDataActions } from "./useDataActions";
 import { SharedDataContextType } from "./types";
 import { useAuth } from "../auth/AuthContext";
+import { toast } from "@/components/ui/sonner";
 
 // Create context
 const DataContext = createContext<SharedDataContextType | undefined>(undefined);
@@ -15,16 +16,26 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const { 
     users, 
     isLoading: isLoadingUsers, 
-    isError: isUsersError
+    isError: isUsersError,
+    refetch: refetchUsers
   } = useFetchUsers();
   
   const { 
     operations, 
     isLoading: isLoadingOperations, 
-    isError: isOperationsError 
+    isError: isOperationsError,
+    refetch: refetchOperations
   } = useFetchOperations();
   
-  const { refreshData, addCreditToUser, refundOperation } = useDataActions();
+  const { refreshData: originalRefreshData, addCreditToUser, refundOperation } = useDataActions();
+  
+  // Enhanced refresh function
+  const refreshData = async () => {
+    console.log("DataContext: Refreshing data explicitly");
+    await refetchUsers();
+    await refetchOperations();
+    originalRefreshData();
+  };
   
   // Debug data loading
   useEffect(() => {
@@ -32,12 +43,20 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("DataContext: User is authenticated, ID:", user.id);
       console.log("DataContext: Users data loaded:", users.length);
       
-      // Check if the current user exists in the users array
-      const currentUser = users.find(u => u.uid === user.id);
+      // Check if the current user exists in the users array by checking both uid and id fields
+      const currentUser = users.find(u => u.uid === user.id || u.id === user.id);
       if (currentUser) {
         console.log("DataContext: Current user found in users data:", currentUser);
       } else {
         console.log("DataContext: Current user NOT found in users data");
+        console.log("DataContext: Available user IDs:", users.map(u => `uid:${u.uid}, id:${u.id}`).join(', '));
+        
+        if (users.length > 0) {
+          toast.warning("Data Warning", {
+            description: "Your user profile was not found in the data. This might affect dashboard display.",
+            duration: 7000
+          });
+        }
       }
       
       console.log("DataContext: Operations loaded:", operations.length);

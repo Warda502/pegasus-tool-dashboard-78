@@ -6,6 +6,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { CreditCard, Clock, RefreshCcw, FileBarChart } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
+import { toast } from "@/components/ui/sonner";
 
 export function UserDashboard() {
   const { operations, users, refreshData } = useSharedData();
@@ -24,14 +25,17 @@ export function UserDashboard() {
     console.log("Available users:", users.length);
     console.log("Available operations:", operations.length);
     
-    // Find current user in users array to get most up-to-date credit
-    // Note: The user's ID in auth.users is mapped to the UID field in our custom users table
-    const currentUser = users.find(u => u.uid === user.id);
+    // Find current user in users array by checking both uid and id fields
+    const currentUser = users.find(u => u.uid === user.id || u.id === user.id);
     
     if (currentUser) {
       console.log("Found user data:", currentUser);
     } else {
       console.log("User data not found in users array");
+      console.log("User IDs in database:", users.map(u => `uid:${u.uid}, id:${u.id}`).join(', '));
+      toast.warning("User Data Warning", {
+        description: "Failed to find your user data. Please try refreshing or logging in again.",
+      });
     }
     
     const userCredit = currentUser?.Credits || "0.0";
@@ -47,6 +51,7 @@ export function UserDashboard() {
     ).length;
     
     console.log("Refunded operations count:", refundedOperations);
+    console.log("Refunded operations details:", userOperations.filter(op => op.Status?.toLowerCase() === 'refunded'));
     
     return {
       credits: userCredit,

@@ -35,6 +35,7 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
         .order('time', { ascending: false });
       
       if (!isAdmin && userId) {
+        // Check if UID matches user.id
         query = query.eq('uid', userId);
       }
       
@@ -58,6 +59,10 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
     }
 
     console.log(`Total operations fetched: ${allOperations.length}`);
+    
+    if (!isAdmin && userId && allOperations.length > 0) {
+      console.log("Sample operation data for user:", allOperations[0]);
+    }
 
     return allOperations.map(op => ({
       operation_id: op.operation_id,
@@ -93,15 +98,17 @@ export const useFetchOperations = () => {
   const { 
     data = [], 
     isLoading,
-    isError
+    isError,
+    refetch
   } = useQuery({
     queryKey: ['operations', isAdmin, user?.id],
     queryFn: () => fetchOperations(isAdmin, user?.id),
     staleTime: CACHE_STALE_TIME,
     gcTime: CACHE_GC_TIME,
-    refetchOnMount: false,
+    refetchOnMount: true, // Changed to true to ensure fresh data on mount
     refetchOnWindowFocus: false,
     enabled: isAuthenticated,
+    retry: 2, // Increased retries
     meta: {
       onError: (error) => {
         console.error("Error loading operations:", error);
@@ -115,6 +122,7 @@ export const useFetchOperations = () => {
   return {
     operations: data,
     isLoading,
-    isError
+    isError,
+    refetch
   };
 };

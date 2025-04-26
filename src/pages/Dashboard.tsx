@@ -19,15 +19,17 @@ export default function Dashboard() {
     console.log("Dashboard mounted, refreshing data");
     refreshData();
     
-    // Display toast with debugging info
     if (user) {
       console.log("Current user ID:", user.id);
       console.log("Is admin:", isAdmin);
       console.log("Users loaded:", users.length);
       console.log("Operations loaded:", operations.length);
       
-      // Find current user in users data
-      const currentUserData = users.find(u => u.uid === user.id);
+      // Try to find current user data by checking both uid and id fields
+      const currentUserData = users.find(u => 
+        u.uid === user.id || u.id === user.id
+      );
+      
       if (currentUserData) {
         console.log("User data found:", currentUserData);
         toast.info("Debug Info", {
@@ -35,11 +37,14 @@ export default function Dashboard() {
           duration: 5000
         });
       } else {
-        console.log("User data not found in users array");
+        console.log("User data not found in users array. User IDs available:", users.map(u => `uid:${u.uid}, id:${u.id}`).join('; '));
         toast.warning("Debug Warning", {
-          description: "User data not found in users array",
+          description: "User data not found in users array. Trying to refresh data...",
           duration: 5000
         });
+        
+        // Try refreshing again after a short delay
+        setTimeout(() => refreshData(), 1000);
       }
     }
   }, [refreshData, user, isAdmin, users, operations]);
