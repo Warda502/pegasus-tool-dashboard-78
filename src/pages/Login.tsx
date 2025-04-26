@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff } from "lucide-react";
+import { Loading } from "@/components/ui/loading";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,46 +16,35 @@ export default function Login() {
   const { t, isRTL } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { isAuthenticated, sessionChecked } = useAuth();
+  const { isAuthenticated, sessionChecked, loading, login } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
 
   // Handle any query params (like from password reset or session expired)
   useEffect(() => {
-    if (notificationsShown) return;
+    if (notificationsShown || !sessionChecked) return;
     
     // Only show notifications once to avoid duplicates
     setNotificationsShown(true);
     
     const passwordReset = searchParams.get("passwordReset");
     if (passwordReset === "success") {
-      setTimeout(() => {
-        toast(t("passwordResetSuccess"), {
-          description: t("pleaseLoginWithNewPassword")
-        });
-      }, 300);
+      toast(t("passwordResetSuccess"), {
+        description: t("pleaseLoginWithNewPassword")
+      });
     }
     
     const sessionExpired = searchParams.get("sessionExpired");
     if (sessionExpired === "true") {
       console.log("Session expired param detected");
-      setTimeout(() => {
-        toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
-          description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
-        });
-      }, 300);
+      // Toast is already shown by the handleSessionExpired function in useAuth
     }
     
     const loggedOut = searchParams.get("loggedOut");
     if (loggedOut === "true") {
-      setTimeout(() => {
-        toast(t("logoutSuccess"), {
-          description: t("comeBackSoon")
-        });
-      }, 300);
+      // Toast is already shown by the logout function in useAuth
     }
-  }, [searchParams, t, notificationsShown]);
+  }, [searchParams, t, notificationsShown, sessionChecked]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -66,30 +56,7 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data?.session) {
-        toast(t("loginSuccess"), {
-          description: t("welcomeBack")
-        });
-        navigate("/dashboard");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast(t("error"), {
-        description: error instanceof Error ? error.message : t("unexpectedError")
-      });
-    } finally {
-      setLoading(false);
-    }
+    await login(email, password);
   };
 
   // Toggle password visibility
@@ -98,15 +65,8 @@ export default function Login() {
   };
 
   // اعرض شاشة تحميل حتى نتأكد من حالة المصادقة
-  if (!sessionChecked) {
-    return (
-      <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-700">{t("checkingSession") || "جاري التحقق من حالة الجلسة..."}</p>
-        </div>
-      </div>
-    );
+  if (!sessionChecked || loading) {
+    return <Loading text={t("checkingSession") || "جاري التحقق من حالة الجلسة..."} className="min-h-screen" />;
   }
 
   // لا تعرض نموذج تسجيل الدخول إذا كان المستخدم مسجل دخوله بالفعل

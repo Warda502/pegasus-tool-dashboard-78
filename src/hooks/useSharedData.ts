@@ -51,6 +51,9 @@ export interface Operation {
 
 let hasShownSuccessToast = false;
 
+const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
+const CACHE_GC_TIME = 1000 * 60 * 10; // 10 minutes
+
 const fetchUsers = async (): Promise<User[]> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("No authentication session");
@@ -91,7 +94,7 @@ const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Pr
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("No authentication session");
   
-  console.log(`Fetching operations with pagination (isAdmin: ${isAdmin}, userId: ${userId || 'unknown'})`);
+  console.log(`Fetching operations (isAdmin: ${isAdmin}, userId: ${userId || 'unknown'})`);
   
   let allOperations: any[] = [];
   let page = 0;
@@ -133,7 +136,7 @@ const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Pr
     page++;
   }
 
-  console.log(`Total operations fetched across all batches: ${allOperations.length}`);
+  console.log(`Total operations fetched: ${allOperations.length}`);
 
   return allOperations.map(op => ({
     operation_id: op.operation_id,
@@ -275,10 +278,10 @@ export const useSharedData = () => {
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    staleTime: 1000,
-    gcTime: 1000 * 60 * 5,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: CACHE_STALE_TIME,
+    gcTime: CACHE_GC_TIME,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     retry: 1,
     enabled: isAuthenticated,
     meta: {
@@ -297,10 +300,10 @@ export const useSharedData = () => {
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
     queryKey: ['operations', isAdmin, user?.id],
     queryFn: () => fetchOperations(isAdmin, user?.id),
-    staleTime: 1000,
-    gcTime: 1000 * 60 * 5,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: CACHE_STALE_TIME,
+    gcTime: CACHE_GC_TIME,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     enabled: isAuthenticated,
   });
 
