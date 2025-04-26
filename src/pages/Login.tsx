@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -20,11 +19,9 @@ export default function Login() {
   const { isAuthenticated, sessionChecked, loading, login } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
 
-  // Handle any query params (like from password reset or session expired)
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
     
-    // Only show notifications once to avoid duplicates
     setNotificationsShown(true);
     
     const passwordReset = searchParams.get("passwordReset");
@@ -37,16 +34,13 @@ export default function Login() {
     const sessionExpired = searchParams.get("sessionExpired");
     if (sessionExpired === "true") {
       console.log("Session expired param detected");
-      // Toast is already shown by the handleSessionExpired function in useAuth
     }
     
     const loggedOut = searchParams.get("loggedOut");
     if (loggedOut === "true") {
-      // Toast is already shown by the logout function in useAuth
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (sessionChecked && isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
@@ -59,17 +53,14 @@ export default function Login() {
     await login(email, password);
   };
 
-  // Toggle password visibility
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  // اعرض شاشة تحميل حتى نتأكد من حالة المصادقة
   if (!sessionChecked || loading) {
     return <Loading text={t("checkingSession") || "جاري التحقق من حالة الجلسة..."} className="min-h-screen" />;
   }
 
-  // لا تعرض نموذج تسجيل الدخول إذا كان المستخدم مسجل دخوله بالفعل
   if (isAuthenticated) {
     return null;
   }
@@ -127,29 +118,6 @@ export default function Login() {
           >
             {loading ? t("loggingIn") : t("login")}
           </Button>
-
-          <div className="text-center mt-2">
-            <Button
-              variant="link"
-              className="p-0 mx-1"
-              onClick={() => navigate("/change-password")}
-            >
-              {t("forgotPassword")}
-            </Button>
-          </div>
-          
-          <div className="text-center mt-4">
-            <p>
-              {t("noAccount")}{" "}
-              <Button
-                variant="link"
-                className="p-0 mx-1"
-                onClick={() => navigate("/signup")}
-              >
-                {t("createAccount")}
-              </Button>
-            </p>
-          </div>
         </form>
       </div>
     </div>
