@@ -31,54 +31,56 @@ export const useAuth = () => {
           (event, session) => {
             console.log("Auth state changed:", event, session ? "session active" : "no session");
             
-            // Check for logout events
-            if (event === 'SIGNED_OUT') {
-              setRole(null);
-              setUser(null);
-              setIsAuthenticated(false);
-            }
-            // Separate check for user deleted event
-            else if (event === 'USER_DELETED') {
-              setRole(null);
-              setUser(null);
-              setIsAuthenticated(false);
-            } 
-            // Check for sign-in or session update events
-            else if (session && (
-              event === 'SIGNED_IN' || 
-              event === 'TOKEN_REFRESHED' || 
-              event === 'USER_UPDATED' || 
-              event === 'PASSWORD_RECOVERY' ||
-              event === 'MFA_CHALLENGE_VERIFIED' ||
-              event === 'INITIAL_SESSION'
-            )) {
-              setIsAuthenticated(true);
+            switch(event) {
+              case 'SIGNED_OUT':
+              case 'USER_DELETED':
+                // Handle logout events
+                setRole(null);
+                setUser(null);
+                setIsAuthenticated(false);
+                break;
               
-              // استخدام setTimeout لتجنب التعارض المحتمل
-              setTimeout(async () => {
-                try {
-                  const { data: userData, error } = await supabase
-                    .from('users')
-                    .select('email_type, email')
-                    .eq('id', session.user.id)
-                    .single();
+              case 'SIGNED_IN':
+              case 'TOKEN_REFRESHED':
+              case 'USER_UPDATED':
+              case 'PASSWORD_RECOVERY':
+              case 'MFA_CHALLENGE_VERIFIED':
+              case 'INITIAL_SESSION':
+                // Handle sign-in or session update events
+                setIsAuthenticated(true);
+                
+                // استخدام setTimeout لتجنب التعارض المحتمل
+                setTimeout(async () => {
+                  try {
+                    if (!session?.user?.id) return;
+                    
+                    const { data: userData, error } = await supabase
+                      .from('users')
+                      .select('email_type, email')
+                      .eq('id', session.user.id)
+                      .single();
 
-                  if (error) {
-                    console.error("Error fetching user role on auth change:", error);
-                    return;
+                    if (error) {
+                      console.error("Error fetching user role on auth change:", error);
+                      return;
+                    }
+
+                    const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
+                    setRole(userRole);
+                    setUser({
+                      id: session.user.id,
+                      email: userData?.email || session.user.email || '',
+                      role: userRole
+                    });
+                  } catch (err) {
+                    console.error("Failed to fetch user data:", err);
                   }
-
-                  const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
-                  setRole(userRole);
-                  setUser({
-                    id: session.user.id,
-                    email: userData?.email || session.user.email || '',
-                    role: userRole
-                  });
-                } catch (err) {
-                  console.error("Failed to fetch user data:", err);
-                }
-              }, 0);
+                }, 0);
+                break;
+              
+              default:
+                console.log("Unhandled auth event:", event);
+                break;
             }
           }
         );
