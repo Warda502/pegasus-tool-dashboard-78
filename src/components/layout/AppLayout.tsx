@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -12,10 +11,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Lock } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
+import { useSharedData } from "@/hooks/useSharedData";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -23,6 +23,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const { t, isRTL } = useLanguage();
   const { role, logout, user, isAdmin } = useAuth();
+  const { users } = useSharedData();
+
+  // Get user's name from users data
+  const currentUser = users?.find(u => u.id === user?.id);
+  const userName = currentUser?.name || user?.email || t("guest");
 
   // Handler for logout with error protection
   const handleLogout = async () => {
@@ -76,7 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold">{t("pegasusTool")}</h1>
             <div className="flex items-center justify-between w-full mt-2">
               <span className="text-sm text-muted-foreground">
-                {t("welcome")}, {user?.email}
+                {t("welcome")}, {userName}
               </span>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 ml-1" />

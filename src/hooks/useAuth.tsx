@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +22,6 @@ export const useAuth = () => {
   const { t } = useLanguage();
   const [sessionChecked, setSessionChecked] = useState(false);
   
-  // Centralized function to fetch user role and details
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       const { data: userData, error } = await supabase
@@ -50,7 +48,6 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Centralized session handling - updates state based on session
   const handleSession = useCallback(async (session: Session | null) => {
     if (!session) {
       console.log("No active session");
@@ -70,7 +67,6 @@ export const useAuth = () => {
     }
   }, [fetchUserData]);
   
-  // Setup auth listener once on component mount
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
     
@@ -79,14 +75,12 @@ export const useAuth = () => {
         console.log("Setting up auth listener");
         setLoading(true);
         
-        // First set up the auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event: AuthChangeEvent, session) => {
             console.log("Auth state changed:", event);
             
             switch(event) {
               case 'SIGNED_OUT':
-              case 'USER_DELETED':
                 // Handle logout events
                 setRole(null);
                 setUser(null);
@@ -96,12 +90,9 @@ export const useAuth = () => {
               case 'SIGNED_IN':
               case 'TOKEN_REFRESHED':
               case 'USER_UPDATED':
-              case 'PASSWORD_RECOVERY':
-              case 'MFA_CHALLENGE_VERIFIED':
               case 'INITIAL_SESSION':
                 // Don't set loading to true here, as we'll handle with setTimeout
                 if (session) {
-                  // Use setTimeout to avoid potential deadlock with Supabase
                   setTimeout(() => {
                     handleSession(session);
                   }, 0);
@@ -115,7 +106,6 @@ export const useAuth = () => {
           subscription.unsubscribe();
         };
 
-        // Then check for existing session (after listener is set up)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -139,7 +129,6 @@ export const useAuth = () => {
     };
   }, [navigate, handleSession]);
 
-  // Centralized session checking function - doesn't affect loading state
   const checkSession = useCallback(async () => {
     try {
       const { data, error } = await supabase.auth.getSession();
@@ -154,7 +143,6 @@ export const useAuth = () => {
         return false;
       }
       
-      // Check if session is expired
       const currentTime = Math.floor(Date.now() / 1000);
       if (data.session.expires_at && data.session.expires_at < currentTime) {
         console.log("Session expired");
@@ -168,14 +156,12 @@ export const useAuth = () => {
     }
   }, []);
   
-  // Centralized session expiration handling
   const handleSessionExpired = useCallback(() => {
     console.log("Handling session expiration");
     setRole(null);
     setUser(null);
     setIsAuthenticated(false);
     
-    // Only show toast and redirect if not already on login page
     if (window.location.pathname !== '/login') {
       toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
         description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
@@ -212,31 +198,25 @@ export const useAuth = () => {
     }
   };
 
-  // Modified logout function to handle multi-tab scenarios
   const logout = async () => {
     try {
       setLoading(true);
       
-      // First, check if we have a valid session before attempting to sign out
       const isSessionValid = await checkSession();
       
       if (!isSessionValid) {
         console.log("No valid session found, cleaning up local state");
-        // Clean up local state even if there's no valid session
         setRole(null);
         setUser(null);
         setIsAuthenticated(false);
         
-        // Redirect to login
         navigate('/login?loggedOut=true');
         return true;
       }
       
-      // We have a valid session, proceed with signOut
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Clear local state after successful sign out
       setRole(null);
       setUser(null);
       setIsAuthenticated(false);
@@ -258,41 +238,32 @@ export const useAuth = () => {
     }
   };
 
-  // Add a special broadcast channel to synchronize logout across tabs
   useEffect(() => {
-    // Create a broadcast channel for auth sync
     const authChannel = new BroadcastChannel('auth_state_channel');
     
-    // Listen for logout events from other tabs
     authChannel.onmessage = (event) => {
       if (event.data === 'SIGNED_OUT') {
         console.log("Received logout event from another tab");
-        // Clean up local state without trying to call signOut again
         setRole(null);
         setUser(null);
         setIsAuthenticated(false);
         
-        // Show toast for user awareness
         if (window.location.pathname !== '/login') {
           toast(t("loggedOutInAnotherTab") || "تم تسجيل الخروج في نافذة أخرى", {
             description: t("sessionEnded") || "تم إنهاء جلستك"
           });
           
-          // Navigate to login
           navigate('/login?loggedOutInAnotherTab=true');
         }
       }
     };
     
-    // Setup listener for auth changes to broadcast to other tabs
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
-        // Broadcast the logout event to other tabs
         authChannel.postMessage('SIGNED_OUT');
       }
     });
     
-    // Cleanup function
     return () => {
       subscription.unsubscribe();
       authChannel.close();
