@@ -1,9 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "./useLanguage";
+import { AuthChangeEvent } from "@supabase/supabase-js";
 
 export type UserRole = "admin" | "user";
 

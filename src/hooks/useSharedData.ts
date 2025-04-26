@@ -221,6 +221,18 @@ export const addCreditToUser = async (userId: string, creditsToAdd: number): Pro
 
 export const refundOperation = async (operation: Operation) => {
   try {
+    const creditValue = parseFloat(operation.Credit?.replace(/"/g, "") || "0");
+    if (isNaN(creditValue) || creditValue <= 0) {
+      console.log("Invalid credit value for refund:", operation.Credit);
+      return false;
+    }
+    
+    const userId = operation.UID;
+    if (!userId) {
+      console.log("No user ID found for operation:", operation.OprationID);
+      return false;
+    }
+    
     const { error } = await supabase
       .from('operations')
       .update({
@@ -230,6 +242,24 @@ export const refundOperation = async (operation: Operation) => {
       .eq('operation_id', operation.OprationID);
 
     if (error) throw error;
+    
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('uid', userId)
+      .single();
+      
+    if (userError) {
+      console.error("Error finding user record:", userError);
+      throw new Error("Failed to find user record");
+    }
+    
+    const refundSuccess = await addCreditToUser(userData.id, creditValue);
+    if (!refundSuccess) {
+      throw new Error("Failed to add credits back to user");
+    }
+    
+    console.log(`Successfully refunded ${creditValue} credits to user ${userId}`);
     return true;
   } catch (error) {
     console.error('Error refunding operation:', error);
