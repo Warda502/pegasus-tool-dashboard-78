@@ -57,12 +57,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       show: true,
     },
     {
-      title: t("settings"),
-      path: "/settings",
-      icon: Settings,
-      show: true,
-    },
-    {
       title: t("serverApiData"),
       path: "/server-api-data",
       icon: Database,
@@ -73,6 +67,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       path: "/server-storage",
       icon: FileQuestion,
       show: role === "admin",
+    }
+    {
+      title: t("settings"),
+      path: "/settings",
+      icon: Settings,
+      show: true,
     }
   ].filter(item => item.show);
 
