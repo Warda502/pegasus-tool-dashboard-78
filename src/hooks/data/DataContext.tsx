@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { useFetchUsers } from "./useFetchUsers";
 import { useFetchOperations } from "./useFetchOperations";
 import { useDataActions } from "./useDataActions";
@@ -12,6 +11,8 @@ const DataContext = createContext<SharedDataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuth();
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
   
   const { 
     users, 
@@ -29,13 +30,46 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   
   const { refreshData: originalRefreshData, addCreditToUser, refundOperation } = useDataActions();
   
-  // Enhanced refresh function
+  // Enhanced refresh function with retry mechanism
   const refreshData = async () => {
     console.log("DataContext: Refreshing data explicitly");
-    await refetchUsers();
-    await refetchOperations();
+    
+    const results = await Promise.all([
+      refetchUsers(),
+      refetchOperations()
+    ]);
+    
+    // Check if user data exists after refresh
+    if (user && results[0]?.length > 0) {
+      const foundUser = results[0].find(u => 
+        u.uid === user.id || u.id === user.id
+      );
+      
+      if (!foundUser && retryCount < maxRetries) {
+        console.log(`User data not found, retrying... (${retryCount + 1}/${maxRetries})`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => refreshData(), 1000);
+      } else if (!foundUser) {
+        console.error("Failed to find user data after max retries");
+        toast.error("Error", {
+          description: "Failed to load user data after multiple attempts"
+        });
+      } else {
+        console.log("User data found after refresh:", foundUser);
+        setRetryCount(0);
+      }
+    }
+    
     originalRefreshData();
   };
+  
+  // Initial data load
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log("DataContext: Initial data load for user:", user.id);
+      refreshData();
+    }
+  }, [isAuthenticated, user]);
   
   // Debug data loading
   useEffect(() => {

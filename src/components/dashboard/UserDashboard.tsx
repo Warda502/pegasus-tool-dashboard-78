@@ -13,45 +13,49 @@ export function UserDashboard() {
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  // Refresh data when component mounts to ensure we have latest data
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    if (user) {
+      console.log("UserDashboard: Mounted for user:", user.id);
+      console.log("Available user IDs:", users.map(u => `id:${u.id}, uid:${u.uid}`).join('; '));
+      refreshData();
+    }
+  }, [user, refreshData]);
   
   const stats = useMemo(() => {
     if (!user) return null;
     
     console.log("Calculating user stats for:", user.id);
+    console.log("User object from auth:", user);
     console.log("Available users:", users.length);
-    console.log("Available operations:", operations.length);
     
-    // Find current user in users array by checking both uid and id fields
-    const currentUser = users.find(u => u.uid === user.id || u.id === user.id);
+    // Find user data trying both id and uid
+    const currentUser = users.find(u => 
+      u.id === user.id || u.uid === user.id
+    );
     
-    if (currentUser) {
-      console.log("Found user data:", currentUser);
-    } else {
+    if (!currentUser) {
       console.log("User data not found in users array");
-      console.log("User IDs in database:", users.map(u => `uid:${u.uid}, id:${u.id}`).join(', '));
-      toast.warning("User Data Warning", {
-        description: "Failed to find your user data. Please try refreshing or logging in again.",
-      });
+      return null;
     }
     
-    const userCredit = currentUser?.Credits || "0.0";
-    const expiryTime = currentUser?.Expiry_Time || "-";
+    console.log("Found user data:", currentUser);
+    
+    const userCredit = currentUser.Credits || "0.0";
+    const expiryTime = currentUser.Expiry_Time || "-";
     
     // Filter operations for the current user
-    const userOperations = operations.filter(op => op.UID === user.id);
-    console.log("User operations count:", userOperations.length);
+    const userOperations = operations.filter(op => 
+      op.UID === currentUser.id || op.UID === currentUser.uid
+    );
+    
+    console.log("User operations:", userOperations.length);
     
     // Count refunded operations
     const refundedOperations = userOperations.filter(
       op => op.Status?.toLowerCase() === 'refunded'
     ).length;
     
-    console.log("Refunded operations count:", refundedOperations);
-    console.log("Refunded operations details:", userOperations.filter(op => op.Status?.toLowerCase() === 'refunded'));
+    console.log("Refunded operations:", refundedOperations);
     
     return {
       credits: userCredit,
@@ -62,10 +66,12 @@ export function UserDashboard() {
   }, [operations, users, user]);
 
   if (!stats) {
-    return <ErrorAlert 
-      title={t("userDataError") || "User Data Error"}
-      description={t("userDataNotFound") || "User information could not be loaded"} 
-    />;
+    return (
+      <ErrorAlert 
+        title={t("userDataError") || "User Data Error"}
+        description={t("userDataNotFound") || "Please try refreshing the page"} 
+      />
+    );
   }
 
   return (

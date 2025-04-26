@@ -13,9 +13,11 @@ export const useAuthState = (): AuthState => {
 
   const fetchUserData = useCallback(async (userId: string) => {
     try {
+      console.log("Fetching complete user data for ID:", userId);
+      
       const { data: userData, error } = await supabase
         .from('users')
-        .select('email, name, email_type')
+        .select('*')
         .eq('id', userId)
         .single();
 
@@ -24,15 +26,36 @@ export const useAuthState = (): AuthState => {
         return null;
       }
 
+      if (!userData) {
+        console.log("No user data found, trying with UID...");
+        const { data: userDataByUid, error: uidError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', userId)
+          .single();
+          
+        if (uidError || !userDataByUid) {
+          console.error("Error fetching user by UID:", uidError);
+          return null;
+        }
+        
+        userData = userDataByUid;
+      }
+
+      console.log("User data fetched successfully:", userData);
+      
       const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') 
         ? 'admin' as UserRole 
         : 'user' as UserRole;
       
       return {
-        id: userId,
-        email: userData?.email || '',
-        name: userData?.name || '',
-        role: userRole
+        id: userData.id,
+        email: userData.email,
+        name: userData.name || '',
+        role: userRole,
+        credits: userData.credits,
+        expiryTime: userData.expiry_time,
+        uid: userData.uid
       };
     } catch (err) {
       console.error("Failed to fetch user data:", err);
@@ -52,11 +75,17 @@ export const useAuthState = (): AuthState => {
     console.log("Processing session for:", session.user.email);
     setIsAuthenticated(true);
     
-    const userData = await fetchUserData(session.user.id);
-    if (userData) {
-      setUser(userData as AuthUser);
-      setRole(userData.role as UserRole);
-    }
+    // Fetch user data with a small delay to ensure DB is ready
+    setTimeout(async () => {
+      const userData = await fetchUserData(session.user.id);
+      if (userData) {
+        console.log("Setting user data:", userData);
+        setUser(userData as AuthUser);
+        setRole(userData.role as UserRole);
+      } else {
+        console.error("Failed to fetch user data after login");
+      }
+    }, 500);
   }, [fetchUserData]);
 
   useEffect(() => {
