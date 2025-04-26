@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface FileInfo {
   name: string;
@@ -11,6 +12,7 @@ interface FileInfo {
 export function useFileManager() {
   const [currentPath, setCurrentPath] = useState('');
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['files', currentPath],
@@ -143,7 +145,7 @@ export function useFileManager() {
       console.error('Download error:', error);
       toast.error(t("failedToDownloadFile") || 'Failed to download file');
     }
-  }, [currentPath]);
+  }, [currentPath, t]);
 
   return {
     files,
