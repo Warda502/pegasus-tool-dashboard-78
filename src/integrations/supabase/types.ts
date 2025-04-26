@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      certsave: {
+        Row: {
+          Email: string | null
+          Hwid: string | null
+          Imei: string
+          ImeiSign: string | null
+          Model: string | null
+          Notes: string | null
+          Phone_sn: string | null
+          PubKey: string | null
+          PubKeySign: string | null
+          uid: string
+        }
+        Insert: {
+          Email?: string | null
+          Hwid?: string | null
+          Imei: string
+          ImeiSign?: string | null
+          Model?: string | null
+          Notes?: string | null
+          Phone_sn?: string | null
+          PubKey?: string | null
+          PubKeySign?: string | null
+          uid?: string
+        }
+        Update: {
+          Email?: string | null
+          Hwid?: string | null
+          Imei?: string
+          ImeiSign?: string | null
+          Model?: string | null
+          Notes?: string | null
+          Phone_sn?: string | null
+          PubKey?: string | null
+          PubKeySign?: string | null
+          uid?: string
+        }
+        Relationships: []
+      }
       operations: {
         Row: {
           android: string | null

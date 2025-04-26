@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -12,7 +11,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileQuestion } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -26,10 +25,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, logout, user, isAdmin } = useAuth();
   const { users } = useSharedData();
 
-  // Get user's name directly from user object or find it in users data if needed
   const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
 
-  // Handler for logout with error protection
   const handleLogout = async () => {
     await logout();
   };
@@ -64,6 +61,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       path: "/settings",
       icon: Settings,
       show: true,
+    },
+    {
+      title: t("serverApiData"),
+      path: "/server-api-data",
+      icon: Database,
+      show: role === "admin",
+    },
+    {
+      title: t("serverStorage"),
+      path: "/server-storage",
+      icon: FileQuestion,
+      show: role === "admin",
     }
   ].filter(item => item.show);
 
