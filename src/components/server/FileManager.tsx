@@ -112,7 +112,7 @@ export function FileManager() {
       </ScrollArea>
 
       <div className="text-sm text-muted-foreground">
-        {t("totalFiles") || "Total files"}: {filteredFiles.length}
+        {t("Total Files") || "Total files"}: {filteredFiles.length}
       </div>
     </div>
   );
