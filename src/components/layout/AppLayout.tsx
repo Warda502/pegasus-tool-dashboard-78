@@ -76,7 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold">{t("pegasusTool")}</h1>
             <div className="flex items-center justify-between w-full mt-2">
               <span className="text-sm text-muted-foreground">
-                {t("welcome")}, {user?.email}
+                {t("welcome")}, {user?.name}
               </span>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 ml-1" />
