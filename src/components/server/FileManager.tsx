@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Upload, Trash2, FolderPlus, Folder, File } from "lucide-react";
+import { Upload, Trash2, FolderPlus, Folder, File, Download } from "lucide-react";
 import { useFileManager } from "@/hooks/useFileManager";
 
 export function FileManager() {
@@ -18,6 +18,7 @@ export function FileManager() {
     deleteItem,
     navigateToFolder,
     navigateUp,
+    downloadFile,
   } = useFileManager();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,14 +77,26 @@ export function FileManager() {
               )}
               <span>{file.name}</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => deleteItem(file.name, file.isFolder)}
-              className="hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {!file.isFolder && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => downloadFile(file.name)}
+                  className="hover:text-primary"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => deleteItem(file.name, file.isFolder)}
+                className="hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>

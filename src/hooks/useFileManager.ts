@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
@@ -118,6 +117,34 @@ export function useFileManager() {
     });
   }, []);
 
+  const downloadFile = useCallback(async (fileName: string) => {
+    try {
+      const fullPath = currentPath ? `${currentPath}/${fileName}` : fileName;
+      
+      const { data, error } = await supabase
+        .storage
+        .from('services247')
+        .download(fullPath);
+
+      if (error) throw error;
+      
+      // Create a URL for the file and trigger download
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(t("fileDownloadedSuccessfully") || 'File downloaded successfully');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error(t("failedToDownloadFile") || 'Failed to download file');
+    }
+  }, [currentPath]);
+
   return {
     files,
     currentPath,
@@ -127,5 +154,6 @@ export function useFileManager() {
     createFolder,
     navigateToFolder,
     navigateUp,
+    downloadFile,
   };
 }
