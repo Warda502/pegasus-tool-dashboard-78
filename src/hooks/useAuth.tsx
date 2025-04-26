@@ -25,19 +25,26 @@ export const useAuth = () => {
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
     
-    // تحسين طريقة الاستماع لتغيرات حالة المصادقة
     const setupAuthListener = async () => {
       try {
-        // إعداد مستمع لتغييرات الحالة
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
             console.log("Auth state changed:", event, session ? "session active" : "no session");
             
+            // Check for logout or user deleted events
             if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
               setRole(null);
               setUser(null);
               setIsAuthenticated(false);
-            } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'PASSWORD_RECOVERY')) {
+            } 
+            // Check for sign-in or session update events
+            else if (session && (
+              event === 'SIGNED_IN' || 
+              event === 'TOKEN_REFRESHED' || 
+              event === 'USER_UPDATED' || 
+              event === 'PASSWORD_RECOVERY' ||
+              event === 'MFA_CHALLENGE_VERIFIED'
+            )) {
               setIsAuthenticated(true);
               
               // استخدام setTimeout لتجنب التعارض المحتمل
