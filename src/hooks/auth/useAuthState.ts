@@ -15,47 +15,68 @@ export const useAuthState = (): AuthState => {
     try {
       console.log("Fetching complete user data for ID:", userId);
       
-      const { data: userData, error } = await supabase
+      // Try first with ID
+      const { data: userDataById, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
       if (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Error fetching user data by ID:", error);
+      }
+
+      // If found by ID, use it
+      if (userDataById) {
+        console.log("User data found by ID:", userDataById);
+        
+        const userRole = ((userDataById.email_type || '').toLowerCase() === 'admin') 
+          ? 'admin' as UserRole 
+          : 'user' as UserRole;
+        
+        return {
+          id: userDataById.id,
+          email: userDataById.email,
+          name: userDataById.name || '',
+          role: userRole,
+          credits: userDataById.credits,
+          expiryTime: userDataById.expiry_time,
+          uid: userDataById.uid
+        };
+      }
+
+      // If not found by ID, try with UID
+      console.log("No user data found by ID, trying with UID...");
+      const { data: userDataByUid, error: uidError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('uid', userId)
+        .single();
+        
+      if (uidError) {
+        console.error("Error fetching user by UID:", uidError);
+        return null;
+      }
+      
+      if (!userDataByUid) {
+        console.error("No user data found by either ID or UID");
         return null;
       }
 
-      if (!userData) {
-        console.log("No user data found, trying with UID...");
-        const { data: userDataByUid, error: uidError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('uid', userId)
-          .single();
-          
-        if (uidError || !userDataByUid) {
-          console.error("Error fetching user by UID:", uidError);
-          return null;
-        }
-        
-        userData = userDataByUid;
-      }
-
-      console.log("User data fetched successfully:", userData);
+      console.log("User data found by UID:", userDataByUid);
       
-      const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') 
+      const userRole = ((userDataByUid.email_type || '').toLowerCase() === 'admin') 
         ? 'admin' as UserRole 
         : 'user' as UserRole;
       
       return {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name || '',
+        id: userDataByUid.id,
+        email: userDataByUid.email,
+        name: userDataByUid.name || '',
         role: userRole,
-        credits: userData.credits,
-        expiryTime: userData.expiry_time,
-        uid: userData.uid
+        credits: userDataByUid.credits,
+        expiryTime: userDataByUid.expiry_time,
+        uid: userDataByUid.uid
       };
     } catch (err) {
       console.error("Failed to fetch user data:", err);
