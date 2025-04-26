@@ -749,6 +749,70 @@ export const translations: Translations = {
   dec: {
     en: "Dec",
     ar: "ديسمبر"
+  },
+  serverStorage: {
+    en: "Server Storage",
+    ar: "تخزين الخادم"
+  },
+  manageServerFiles: {
+    en: "Manage and organize server files and folders",
+    ar: "إدارة وتنظيم ملفات ومجلدات الخادم"
+  },
+  uploadFile: {
+    en: "Upload File",
+    ar: "رفع ملف"
+  },
+  newFolder: {
+    en: "New Folder",
+    ar: "مجلد جديد"
+  },
+  enterFolderName: {
+    en: "Enter folder name",
+    ar: "أدخل اسم المجلد"
+  },
+  upOneLevel: {
+    en: "Up one level",
+    ar: "مستوى واحد للأعلى"
+  },
+  totalFiles: {
+    en: "Total Files",
+    ar: "إجمالي الملفات"
+  },
+  fileDownloadedSuccessfully: {
+    en: "File downloaded successfully",
+    ar: "تم تحميل الملف بنجاح"
+  },
+  failedToDownloadFile: {
+    en: "Failed to download file",
+    ar: "فشل في تحميل الملف"
+  },
+  serverApiData: {
+    en: "Server API Data",
+    ar: "بيانات API الخادم"
+  },
+  viewServerData: {
+    en: "View and manage server API data",
+    ar: "عرض وإدارة بيانات API الخادم"
+  },
+  totalRecords: {
+    en: "total records",
+    ar: "إجمالي السجلات"
+  },
+  exportData: {
+    en: "Export Data",
+    ar: "تصدير البيانات"
+  },
+  showingResults: {
+    en: "Showing",
+    ar: "عرض"
+  },
+  of: {
+    en: "of",
+    ar: "من"
+  },
+  phoneSn: {
+    en: "Phone S/N",
+    ar: "الرقم التسلسلي"
   }
 };
 

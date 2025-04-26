@@ -52,19 +52,27 @@ export function FileManager() {
           className="hidden"
           id="file-upload"
         />
-        <Button onClick={() => document.getElementById('file-upload')?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          {t("uploadFile") || "Upload File"}
+        <Button
+          variant="outline"
+          className="gap-2 whitespace-nowrap"
+          onClick={() => document.getElementById('file-upload')?.click()}
+        >
+          <Upload className="h-4 w-4" />
+          {t("uploadFile")}
         </Button>
-        <Button onClick={() => createFolder(prompt(t("enterFolderName") || "Enter folder name:") || '')}>
-          <FolderPlus className="h-4 w-4 mr-2" />
-          {t("newFolder") || "New Folder"}
+        <Button
+          variant="outline"
+          className="gap-2 whitespace-nowrap"
+          onClick={() => createFolder(prompt(t("enterFolderName")) || '')}
+        >
+          <FolderPlus className="h-4 w-4" />
+          {t("newFolder")}
         </Button>
       </div>
 
       {currentPath && (
-        <Button variant="ghost" onClick={navigateUp}>
-          ../ {t("upOneLevel") || "Up one level"}
+        <Button variant="ghost" onClick={navigateUp} className="gap-2">
+          ../ {t("upOneLevel")}
         </Button>
       )}
 
@@ -92,7 +100,7 @@ export function FileManager() {
                     variant="ghost"
                     size="sm"
                     onClick={() => downloadFile(file.name)}
-                    className="hover:text-primary"
+                    className="h-8 w-8 p-0"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
@@ -101,7 +109,7 @@ export function FileManager() {
                   variant="ghost"
                   size="sm"
                   onClick={() => deleteItem(file.name, file.isFolder)}
-                  className="hover:text-destructive"
+                  className="h-8 w-8 p-0 hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -112,7 +120,7 @@ export function FileManager() {
       </ScrollArea>
 
       <div className="text-sm text-muted-foreground">
-        {t("Total Files") || "Total files"}: {filteredFiles.length}
+        {t("totalFiles")}: {filteredFiles.length}
       </div>
     </div>
   );
