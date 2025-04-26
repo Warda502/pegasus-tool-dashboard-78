@@ -37,7 +37,7 @@ export const useAuth = () => {
         return null;
       }
 
-      const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' : 'user';
+      const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' as UserRole : 'user' as UserRole;
       
       return {
         id: userId,
@@ -65,8 +65,8 @@ export const useAuth = () => {
     
     const userData = await fetchUserData(session.user.id);
     if (userData) {
-      setUser(userData);
-      setRole(userData.role);
+      setUser(userData as AuthUser);
+      setRole(userData.role as UserRole);
     }
   }, [fetchUserData]);
   
@@ -212,11 +212,27 @@ export const useAuth = () => {
     }
   };
 
+  // Modified logout function to handle multi-tab scenarios
   const logout = async () => {
     try {
       setLoading(true);
       
-      // Sign out from Supabase first
+      // First, check if we have a valid session before attempting to sign out
+      const isSessionValid = await checkSession();
+      
+      if (!isSessionValid) {
+        console.log("No valid session found, cleaning up local state");
+        // Clean up local state even if there's no valid session
+        setRole(null);
+        setUser(null);
+        setIsAuthenticated(false);
+        
+        // Redirect to login
+        navigate('/login?loggedOut=true');
+        return true;
+      }
+      
+      // We have a valid session, proceed with signOut
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -241,6 +257,47 @@ export const useAuth = () => {
       setLoading(false);
     }
   };
+
+  // Add a special broadcast channel to synchronize logout across tabs
+  useEffect(() => {
+    // Create a broadcast channel for auth sync
+    const authChannel = new BroadcastChannel('auth_state_channel');
+    
+    // Listen for logout events from other tabs
+    authChannel.onmessage = (event) => {
+      if (event.data === 'SIGNED_OUT') {
+        console.log("Received logout event from another tab");
+        // Clean up local state without trying to call signOut again
+        setRole(null);
+        setUser(null);
+        setIsAuthenticated(false);
+        
+        // Show toast for user awareness
+        if (window.location.pathname !== '/login') {
+          toast(t("loggedOutInAnotherTab") || "تم تسجيل الخروج في نافذة أخرى", {
+            description: t("sessionEnded") || "تم إنهاء جلستك"
+          });
+          
+          // Navigate to login
+          navigate('/login?loggedOutInAnotherTab=true');
+        }
+      }
+    };
+    
+    // Setup listener for auth changes to broadcast to other tabs
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        // Broadcast the logout event to other tabs
+        authChannel.postMessage('SIGNED_OUT');
+      }
+    });
+    
+    // Cleanup function
+    return () => {
+      subscription.unsubscribe();
+      authChannel.close();
+    };
+  }, [navigate, t]);
 
   return { 
     role, 

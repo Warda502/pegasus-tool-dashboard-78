@@ -24,6 +24,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, isRTL } = useLanguage();
   const { role, logout, user, isAdmin } = useAuth();
 
+  // Handler for logout with error protection
+  const handleLogout = async () => {
+    await logout();
+  };
+
   const menuItems = [
     {
       title: t("dashboard"),
@@ -73,7 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="text-sm text-muted-foreground">
                 {t("welcome")}, {user?.email}
               </span>
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 ml-1" />
                 <span className="text-xs">{t("logout")}</span>
               </Button>
