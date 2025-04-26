@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,6 @@ import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 import { LanguageProvider } from "./hooks/useLanguage";
 import EditMyProfile from "./pages/EditMyProfile";
-import ChangeMyPassword from "./pages/ChangeMyPassword";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,11 +54,6 @@ const App = () => (
             <Route path="/edit-profile" element={
               <ProtectedRoute>
                 <AppLayout><EditMyProfile /></AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/change-password" element={
-              <ProtectedRoute>
-                <AppLayout><ChangeMyPassword /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

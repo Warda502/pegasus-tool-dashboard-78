@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -9,21 +9,32 @@ import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ProfileFormValues {
   name: string;
-  email: string;
+  phone: string;
 }
 
 const EditMyProfile = () => {
   const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showHwidDialog, setShowHwidDialog] = useState(false);
   
   const form = useForm<ProfileFormValues>({
     defaultValues: {
       name: "",
-      email: ""
+      phone: ""
     }
   });
   
@@ -35,7 +46,7 @@ const EditMyProfile = () => {
         setIsLoading(true);
         const { data, error } = await supabase
           .from('users')
-          .select('name, email')
+          .select('name, phone')
           .eq('id', user.id)
           .single();
           
@@ -44,7 +55,7 @@ const EditMyProfile = () => {
         if (data) {
           form.reset({
             name: data.name || "",
-            email: data.email || ""
+            phone: data.phone || ""
           });
         }
       } catch (error) {
@@ -70,7 +81,7 @@ const EditMyProfile = () => {
         .from('users')
         .update({
           name: values.name,
-          email: values.email
+          phone: values.phone
         })
         .eq('id', user.id);
         
@@ -83,6 +94,36 @@ const EditMyProfile = () => {
       console.error("Error updating profile:", error);
       toast(t("error"), {
         description: error instanceof Error ? error.message : t("errorUpdatingProfile")
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangeHwid = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({
+          hwid: 'Null'
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      toast(t("success"), {
+        description: t("hwidReset")
+      });
+      
+      setShowHwidDialog(false);
+    } catch (error) {
+      console.error("Error resetting HWID:", error);
+      toast(t("error"), {
+        description: error instanceof Error ? error.message : t("errorResettingHwid")
       });
     } finally {
       setIsLoading(false);
@@ -114,25 +155,53 @@ const EditMyProfile = () => {
               
               <FormField
                 control={form.control}
-                name="email"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("email")}</FormLabel>
+                    <FormLabel>{t("phone")}</FormLabel>
                     <FormControl>
-                      <Input type="email" {...field} disabled={isLoading} />
+                      <Input type="tel" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? t("saving") : t("saveChanges")}
-              </Button>
+              <div className="flex gap-4">
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? t("saving") : t("saveChanges")}
+                </Button>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowHwidDialog(true)}
+                  disabled={isLoading}
+                >
+                  {t("changeHwid")}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showHwidDialog} onOpenChange={setShowHwidDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmHwidReset")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("hwidResetWarning")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleChangeHwid}>
+              {t("confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

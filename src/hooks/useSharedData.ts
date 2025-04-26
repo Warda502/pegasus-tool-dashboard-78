@@ -6,13 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "./useAuth";
 
-// Define types based on Supabase database schema
 type UserRow = Database['public']['Tables']['users']['Row'];
 type OperationRow = Database['public']['Tables']['operations']['Row'];
 
-// Extended User interface to match the structure used in the app
 export interface User extends UserRow {
-  Name: string; // Making this required to match expected usage in components
+  Name: string;
   Email: string;
   Password: string;
   Phone: string;
@@ -29,7 +27,6 @@ export interface User extends UserRow {
   [key: string]: any;
 }
 
-// Extended Operation interface to match the structure used in the app
 export interface Operation {
   operation_id?: string;
   OprationID?: string;
@@ -48,11 +45,10 @@ export interface Operation {
   Security_Patch?: string;
   UID?: string;
   Hwid?: string;
-  LogOpration?: string; // Keep this for consistency with existing code
+  LogOpration?: string;
   [key: string]: any;
 }
 
-// Variable to track if the success toast has been shown
 let hasShownSuccessToast = false;
 
 const fetchUsers = async (): Promise<User[]> => {
@@ -91,7 +87,6 @@ const fetchUsers = async (): Promise<User[]> => {
   }));
 };
 
-// Modified function to fetch operations with pagination and user-specific filtering
 const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Promise<Operation[]> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("No authentication session");
@@ -100,7 +95,7 @@ const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Pr
   
   let allOperations: any[] = [];
   let page = 0;
-  const pageSize = 1000; // Supabase's maximum limit
+  const pageSize = 1000;
   let hasMore = true;
   
   while (hasMore) {
@@ -109,14 +104,12 @@ const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Pr
     
     console.log(`Fetching operations batch ${page + 1}, range: ${from}-${to}`);
     
-    // Build the query with conditional filtering based on user role
     let query = supabase
       .from('operations')
       .select('*')
       .range(from, to)
       .order('time', { ascending: false });
     
-    // If not admin and userId is available, filter by user ID
     if (!isAdmin && userId) {
       query = query.eq('uid', userId);
     }
@@ -142,7 +135,6 @@ const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Pr
 
   console.log(`Total operations fetched across all batches: ${allOperations.length}`);
 
-  // Map Supabase data to the structure expected by the app
   return allOperations.map(op => ({
     operation_id: op.operation_id,
     OprationID: op.operation_id,
@@ -161,21 +153,17 @@ const fetchOperations = async (isAdmin: boolean, userId: string | undefined): Pr
     Security_Patch: op.security_patch,
     UID: op.uid,
     Hwid: op.hwid,
-    // Add LogOpration but don't reference op.log_operation since it doesn't exist
     LogOpration: null
   }));
 };
 
-// Helper function to format time strings
 export const formatTimeString = (timeStr: string): string => {
   if (!timeStr) return "";
   
-  // Convert Arabic AM/PM indicators to English
   const normalizedTime = timeStr
     .replace("-م", "-PM")
     .replace("-ص", "-AM");
   
-  // Parse the date and format it
   try {
     const date = new Date(normalizedTime);
     return format(date, "yyyy/MM/dd hh:mm -aa");
@@ -184,18 +172,15 @@ export const formatTimeString = (timeStr: string): string => {
   }
 };
 
-// Add credit to user function
 export const addCreditToUser = async (userId: string, creditsToAdd: number): Promise<boolean> => {
   if (!userId || isNaN(creditsToAdd) || creditsToAdd <= 0) {
     return false;
   }
   
   try {
-    // Get current session from Supabase
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No authentication session");
     
-    // Get current credits for the user
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('credits')
@@ -207,7 +192,6 @@ export const addCreditToUser = async (userId: string, creditsToAdd: number): Pro
       throw new Error("Failed to get user credits");
     }
     
-    // Calculate new credits
     let currentCredit = 0;
     try {
       currentCredit = parseFloat(userData.credits.replace(/"/g, "")) || 0;
@@ -217,7 +201,6 @@ export const addCreditToUser = async (userId: string, creditsToAdd: number): Pro
     
     const newCredit = currentCredit + creditsToAdd;
     
-    // Update user's credit
     const { error: updateError } = await supabase
       .from('users')
       .update({ credits: newCredit.toString() + ".0" })
@@ -236,60 +219,20 @@ export const addCreditToUser = async (userId: string, creditsToAdd: number): Pro
   }
 };
 
-// Refund operation function
-export const refundOperation = async (operation: Operation): Promise<boolean> => {
-  if (!operation) return false;
-  
+export const refundOperation = async (operation: Operation) => {
   try {
-    // Get current session from Supabase
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No authentication session");
-    
-    // The refund amount from the operation
-    const refundAmountStr = operation.Credit;
-    const refundAmount = parseFloat(refundAmountStr || "0") || 0;
-    
-    // Get current credits for the user
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('credits')
-      .eq('id', operation.UID)
-      .single();
-    
-    if (userError) throw new Error("Failed to get user credits");
-    
-    // Calculate new credits
-    let currentCredit = 0;
-    try {
-      currentCredit = parseFloat(userData.credits.replace(/"/g, "")) || 0;
-    } catch (e) {
-      console.error("Error parsing credit:", e);
-    }
-    
-    const newCredit = currentCredit + refundAmount;
-    
-    // Update user's credit
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ credits: newCredit.toString() + ".0" })
-      .eq('id', operation.UID);
-    
-    if (updateError) throw new Error("Failed to update credits");
-    
-    // Update operation status and credit
-    const { error: operationError } = await supabase
+    const { error } = await supabase
       .from('operations')
       .update({
-        status: "Failed",
-        credit: "0.0"
+        status: 'Refounded',
+        credit: '0.0'
       })
-      .eq('operation_id', operation.operation_id);
-    
-    if (operationError) throw new Error("Failed to update operation");
-    
+      .eq('operation_id', operation.OprationID);
+
+    if (error) throw error;
     return true;
   } catch (error) {
-    console.error("Error refunding operation:", error);
+    console.error('Error refunding operation:', error);
     return false;
   }
 };
@@ -302,16 +245,15 @@ export const useSharedData = () => {
   const { data: users = [], isLoading: isLoadingUsers, isSuccess: isUsersSuccess } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
-    staleTime: 1000, // Reduced to 1 second for more frequent updates
-    gcTime: 1000 * 60 * 5, // Cache for 5 minutes instead of an hour
-    refetchOnMount: true, // Refetch data when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    retry: 1, // Only retry once on failure
-    enabled: isAuthenticated, // Only run query when authenticated
+    staleTime: 1000,
+    gcTime: 1000 * 60 * 5,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: 1,
+    enabled: isAuthenticated,
     meta: {
       onSuccess: (data) => {
-        // Show success toast only once after data is first loaded
-        console.log("Users loaded successfully:", data.length); // Debug log
+        console.log("Users loaded successfully:", data.length);
         if (!hasShownSuccessToast) {
           toast(t("fetchSuccessTitle") || "Success", {
             description: t("fetchSuccessDescription") || "Data loaded successfully"
@@ -325,17 +267,16 @@ export const useSharedData = () => {
   const { data: operations = [], isLoading: isLoadingOperations } = useQuery({
     queryKey: ['operations', isAdmin, user?.id],
     queryFn: () => fetchOperations(isAdmin, user?.id),
-    staleTime: 1000, // Reduced stale time for more frequent updates
-    gcTime: 1000 * 60 * 5, // Cache for 5 minutes
-    refetchOnMount: true, // Refetch data when component mounts
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    enabled: isAuthenticated, // Only run query when authenticated
+    staleTime: 1000,
+    gcTime: 1000 * 60 * 5,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    enabled: isAuthenticated,
   });
 
-  // Function to refresh data
   const refreshData = () => {
     if (isAuthenticated) {
-      console.log("Refreshing data..."); // Debug log
+      console.log("Refreshing data...");
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['operations'] });
     }
@@ -351,5 +292,4 @@ export const useSharedData = () => {
   };
 };
 
-// Export the language hook
 export { useLanguage } from './useLanguage';
