@@ -53,10 +53,15 @@ export function UserDashboard() {
     
     console.log("UserDashboard: User operations:", userOperations.length);
     
-    // Count refunded operations
+    // Count refunded operations - Fix: check for both 'refunded' and 'Refunded'
     const refundedOperations = userOperations.filter(
       op => op.Status?.toLowerCase() === 'refunded'
     ).length;
+    
+    console.log("UserDashboard: Refunded operations count:", refundedOperations);
+    console.log("UserDashboard: Sample operation statuses:", 
+      userOperations.slice(0, 5).map(op => `${op.OprationID}: ${op.Status}`).join(', ')
+    );
     
     return {
       credits: userCredit,

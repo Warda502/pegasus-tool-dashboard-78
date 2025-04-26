@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Users, Calendar, CreditCard, FileBarChart } from "lucide-react";
+import { Users, Calendar, CreditCard, FileBarChart, RefreshCcw } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
 
@@ -26,11 +26,22 @@ export function AdminDashboard() {
     
     const totalOperations = operations.length;
     
+    // Count refunded operations - Added to admin dashboard
+    const refundedOperations = operations.filter(
+      op => op.Status?.toLowerCase() === 'refunded'
+    ).length;
+    
+    console.log("AdminDashboard: Refunded operations count:", refundedOperations);
+    console.log("AdminDashboard: Sample operation statuses:", 
+      operations.slice(0, 5).map(op => `${op.OprationID}: ${op.Status}`).join(', ')
+    );
+    
     return {
       totalUsers,
       monthlyLicenseUsers,
       creditsLicenseUsers,
-      totalOperations
+      totalOperations,
+      refundedOperations
     };
   }, [operations, users]);
 
@@ -42,7 +53,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       <StatCard
         title={t("totalUsers")}
         value={stats.totalUsers}
@@ -66,6 +77,12 @@ export function AdminDashboard() {
         value={stats.totalOperations}
         icon={<FileBarChart className="h-4 w-4 text-muted-foreground" />}
         variant="default"
+      />
+      <StatCard
+        title={t("refundedOperations") || "Refunded Operations"}
+        value={stats.refundedOperations}
+        icon={<RefreshCcw className="h-4 w-4 text-muted-foreground" />}
+        variant="success"
       />
     </div>
   );

@@ -60,8 +60,20 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
 
     console.log(`Total operations fetched: ${allOperations.length}`);
     
-    if (!isAdmin && userId && allOperations.length > 0) {
-      console.log("Sample operation data for user:", allOperations[0]);
+    if (allOperations.length > 0) {
+      // Log status values to debug
+      const statuses = allOperations.map(op => op.status).filter(Boolean);
+      const statusCounts = statuses.reduce((acc: any, status: string) => {
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("Operation status counts:", statusCounts);
+      console.log("Sample operations:", allOperations.slice(0, 3).map(op => ({
+        id: op.operation_id,
+        status: op.status,
+        uid: op.uid
+      })));
     }
 
     return allOperations.map(op => ({
@@ -105,10 +117,10 @@ export const useFetchOperations = () => {
     queryFn: () => fetchOperations(isAdmin, user?.id),
     staleTime: CACHE_STALE_TIME,
     gcTime: CACHE_GC_TIME,
-    refetchOnMount: true, // Changed to true to ensure fresh data on mount
+    refetchOnMount: true, 
     refetchOnWindowFocus: false,
     enabled: isAuthenticated,
-    retry: 2, // Increased retries
+    retry: 2,
     meta: {
       onError: (error) => {
         console.error("Error loading operations:", error);
