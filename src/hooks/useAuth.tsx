@@ -31,8 +31,14 @@ export const useAuth = () => {
           (event, session) => {
             console.log("Auth state changed:", event, session ? "session active" : "no session");
             
-            // Check for logout or user deleted events
-            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            // Check for logout events
+            if (event === 'SIGNED_OUT') {
+              setRole(null);
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+            // Separate check for user deleted event
+            else if (event === 'USER_DELETED') {
               setRole(null);
               setUser(null);
               setIsAuthenticated(false);
@@ -43,7 +49,8 @@ export const useAuth = () => {
               event === 'TOKEN_REFRESHED' || 
               event === 'USER_UPDATED' || 
               event === 'PASSWORD_RECOVERY' ||
-              event === 'MFA_CHALLENGE_VERIFIED'
+              event === 'MFA_CHALLENGE_VERIFIED' ||
+              event === 'INITIAL_SESSION'
             )) {
               setIsAuthenticated(true);
               
