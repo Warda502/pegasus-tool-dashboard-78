@@ -1,3 +1,4 @@
+
 import { useMemo, useEffect } from "react";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -26,16 +27,17 @@ export function UserDashboard() {
       return null;
     }
     
-    // Find user data trying both id and uid
-    const currentUser = users.find(u => 
-      u.id === user.id || u.uid === user.id || u.UID === user.id
-    );
+    if (!users || users.length === 0) {
+      console.log("UserDashboard: No users data loaded yet");
+      return null;
+    }
+    
+    // Since we're now fetching only the current user's data for regular users,
+    // users array should have only one item or be empty
+    const currentUser = users[0];
     
     if (!currentUser) {
       console.log("UserDashboard: User data not found in users array");
-      console.log("UserDashboard: User IDs available:", users.map(u => 
-        `id:${u.id}, uid:${u.uid}, UID:${u.UID}`
-      ).join('; '));
       return null;
     }
     

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useFetchUsers } from "./useFetchUsers";
 import { useFetchOperations } from "./useFetchOperations";
@@ -9,7 +10,7 @@ import { toast } from "@/components/ui/sonner";
 const DataContext = createContext<SharedDataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   
@@ -36,25 +37,19 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const userResults = await refetchUsers();
       const opsResults = await refetchOperations();
       
-      if (user && userResults.data && userResults.data.length > 0) {
-        const foundUser = userResults.data.find(u => 
-          u.id === user.id || u.uid === user.id || u.UID === user.id
-        );
-        
-        if (!foundUser && retryCount < maxRetries) {
+      // For regular users, check if we have their data
+      if (!isAdmin && user && userResults.data) {
+        if (userResults.data.length === 0 && retryCount < maxRetries) {
           console.log(`DataContext: User data not found, retrying... (${retryCount + 1}/${maxRetries})`);
           setRetryCount(prev => prev + 1);
           setTimeout(() => refreshData(), 1000);
-        } else if (!foundUser) {
+        } else if (userResults.data.length === 0) {
           console.error("DataContext: Failed to find user data after max retries");
-          console.log("DataContext: Available user IDs:", userResults.data.map(u => 
-            `id:${u.id}, uid:${u.uid}, UID:${u.UID}`
-          ).join('; '));
           toast.error("Error", {
             description: "Failed to load user data after multiple attempts"
           });
         } else {
-          console.log("DataContext: User data found after refresh:", foundUser);
+          console.log("DataContext: User data found after refresh:", userResults.data[0]);
           setRetryCount(0);
         }
       }
@@ -80,16 +75,23 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("DataContext: User is authenticated, ID:", user.id);
       console.log("DataContext: Users data loaded:", users.length);
       
-      const currentUser = users.find(u => u.uid === user.id || u.id === user.id || u.UID === user.id);
-      if (currentUser) {
-        console.log("DataContext: Current user found in users data:", currentUser);
+      if (users.length > 0) {
+        if (isAdmin) {
+          // For admin, find their user data in the full list
+          const adminUser = users.find(u => u.uid === user.id || u.id === user.id || u.UID === user.id);
+          if (adminUser) {
+            console.log("DataContext: Admin user found in users data:", adminUser);
+          } else {
+            console.log("DataContext: Admin user NOT found in users data");
+          }
+        } else {
+          // For regular user, the first item should be their data (since we're fetching only their data)
+          console.log("DataContext: Regular user data:", users[0]);
+        }
       } else {
-        console.log("DataContext: Current user NOT found in users data");
-        console.log("DataContext: Available user IDs:", users.map(u => 
-          `id:${u.id}, uid:${u.uid}, UID:${u.UID}`
-        ).join(', '));
-        
-        if (users.length > 0) {
+        console.log("DataContext: No user data loaded yet");
+        if (retryCount === 0) {
+          // Only show this warning once, not on every retry
           toast.warning("Data Warning", {
             description: "Your user profile was not found in the data. This might affect dashboard display.",
             duration: 7000
@@ -104,9 +106,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       
       const refundedOps = userOps.filter(op => op.Status?.toLowerCase() === 'refunded');
       console.log("DataContext: Refunded operations:", refundedOps.length);
-      console.log("DataContext: Refunded operations details:", refundedOps);
     }
-  }, [isAuthenticated, user, users, operations]);
+  }, [isAuthenticated, user, users, operations, isAdmin, retryCount]);
   
   const dataContext = {
     users,
