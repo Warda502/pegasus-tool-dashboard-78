@@ -106,8 +106,7 @@ export const useFetchOperations = () => {
       onError: (error) => {
         console.error("Error loading operations:", error);
         toast("Error", {
-          description: t("failedToLoadOperations") || "Failed to load operations data",
-          variant: "destructive"
+          description: t("failedToLoadOperations") || "Failed to load operations data"
         });
       }
     }

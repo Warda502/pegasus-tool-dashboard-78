@@ -89,8 +89,7 @@ export const useFetchUsers = () => {
       onError: (error) => {
         console.error("Error loading users:", error);
         toast("Error", {
-          description: "Failed to load user data",
-          variant: "destructive"
+          description: "Failed to load user data"
         });
       }
     }
