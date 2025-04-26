@@ -32,6 +32,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       show: true,
     },
     {
+      title: t("editProfile"),
+      path: "/edit-profile",
+      icon: User,
+      show: !isAdmin,
+    },
+    {
       title: t("users"),
       path: "/users-manager",
       icon: Users,
@@ -48,18 +54,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       path: "/settings",
       icon: Settings,
       show: true,
-    },
-    {
-      title: t("editProfile"),
-      path: "/edit-profile",
-      icon: User,
-      show: !isAdmin,
-    },
-    {
-      title: t("changePassword"),
-      path: "/change-password",
-      icon: Lock,
-      show: !isAdmin,
     }
   ].filter(item => item.show);
 
