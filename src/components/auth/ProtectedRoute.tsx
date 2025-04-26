@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth, UserRole } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,73 +11,49 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { role, loading, isAuthenticated, sessionChecked, handleSessionExpired } = useAuth();
+  const { role, loading, isAuthenticated, sessionChecked, checkSession } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isChecking, setIsChecking] = useState(true);
 
+  // Check session when the component mounts and sessionChecked is true
   useEffect(() => {
-    // التحقق من صلاحية الجلسة عند كل تحميل للمسار المحمي
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          handleSessionExpired();
-          return;
-        }
-        
-        if (!data.session) {
-          console.log("ProtectedRoute: No active session found");
-          if (isAuthenticated) {
-            // تعارض في الحالة - المستخدم متوقع أن يكون مسجل دخوله ولكن لا توجد جلسة
-            handleSessionExpired();
-            return;
-          }
-          
-          // تجنب إعادة التوجيه المتكرر
-          if (window.location.pathname !== '/login') {
-            navigate("/login");
-          }
-          return;
-        }
-        
-        // هنا يمكن فحص انتهاء صلاحية الجلسة أيضًا إذا لزم الأمر
-        const currentTime = Math.floor(Date.now() / 1000);
-        if (data.session.expires_at && data.session.expires_at < currentTime) {
-          console.log("Session expired, redirecting to login");
-          handleSessionExpired();
-          return;
-        }
-        
-        setIsChecking(false);
-      } catch (err) {
-        console.error("Error in checkSession:", err);
-        setIsChecking(false);
-      }
+    const verifySession = async () => {
+      if (!sessionChecked) return;
+      
+      console.log("ProtectedRoute: Verifying session...");
+      setIsChecking(true);
+      
+      const isSessionValid = await checkSession();
+      console.log("ProtectedRoute: Session valid?", isSessionValid);
+      
+      setIsChecking(false);
     };
+    
+    verifySession();
+  }, [sessionChecked, checkSession]);
 
-    if (sessionChecked) {
-      checkSession();
-    }
-  }, [sessionChecked, navigate, handleSessionExpired, isAuthenticated, t]);
-
+  // Handle access control based on authentication and roles
   useEffect(() => {
     let redirectTimeout: number | null = null;
     
     if (!loading && sessionChecked && !isChecking) {
       if (!isAuthenticated) {
-        // تجنب عرض رسائل متكررة والتوجيه المستمر
+        console.log("ProtectedRoute: User not authenticated, redirecting to login");
+        
+        // Avoid redirecting when already on login page
         if (window.location.pathname !== '/login') {
           redirectTimeout = window.setTimeout(() => {
             navigate("/login");
           }, 100);
         }
       } else if (allowedRoles && !allowedRoles.includes(role as UserRole)) {
+        console.log(`ProtectedRoute: User role ${role} not allowed, redirecting to dashboard`);
+        
         toast(t("accessDenied"), {
           description: t("noPermission")
         });
+        
         redirectTimeout = window.setTimeout(() => {
           navigate("/dashboard");
         }, 100);
@@ -92,6 +67,7 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
     };
   }, [role, loading, navigate, allowedRoles, t, isAuthenticated, sessionChecked, isChecking]);
 
+  // Show loading state while checking
   if (loading || isChecking) {
     return <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">

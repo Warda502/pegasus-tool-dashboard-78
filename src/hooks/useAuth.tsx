@@ -29,7 +29,7 @@ export const useAuth = () => {
     const setupAuthListener = async () => {
       try {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event: AuthChangeEvent, session) => {
+          async (event: AuthChangeEvent, session) => {
             console.log("Auth state changed:", event, session ? "session active" : "no session");
             
             switch(event) {
@@ -48,12 +48,10 @@ export const useAuth = () => {
               case 'MFA_CHALLENGE_VERIFIED':
               case 'INITIAL_SESSION':
                 // Handle sign-in or session update events
-                setIsAuthenticated(true);
+                setIsAuthenticated(!!session);
                 
-                setTimeout(async () => {
+                if (session?.user?.id) {
                   try {
-                    if (!session?.user?.id) return;
-                    
                     const { data: userData, error } = await supabase
                       .from('users')
                       .select('email_type, email')
@@ -75,7 +73,7 @@ export const useAuth = () => {
                   } catch (err) {
                     console.error("Failed to fetch user data:", err);
                   }
-                }, 0);
+                }
                 break;
               
               default:
@@ -181,22 +179,25 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      // تنظيف حالة المصادقة قبل تسجيل الخروج
+      // First clear local state
       setRole(null);
       setUser(null);
-      setIsAuthenticated(false);
       
+      // Then sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      toast(t("logoutSuccess"), {
-        description: t("comeBackSoon")
-      });
+      // Finally set authentication status to false
+      setIsAuthenticated(false);
       
-      // التأخير قليلاً قبل التوجيه لضمان تنظيف الحالة
+      // Navigate after a small delay
       setTimeout(() => {
-        navigate('/login');
-      }, 100);
+        toast(t("logoutSuccess"), {
+          description: t("comeBackSoon")
+        });
+        navigate('/login?loggedOut=true');
+      }, 200);
+      
       return true;
     } catch (error) {
       console.error("Logout error:", error);
@@ -207,17 +208,55 @@ export const useAuth = () => {
     }
   };
 
-  // يساعد في التعامل مع جلسات منتهية الصلاحية
+  // Centralized session expiration handling
   const handleSessionExpired = () => {
+    console.log("Handling session expiration");
     setRole(null);
     setUser(null);
     setIsAuthenticated(false);
     
-    toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
-      description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
-    });
-    
-    navigate('/login');
+    // Only show toast and redirect if not already on login page
+    if (window.location.pathname !== '/login') {
+      toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
+        description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
+      });
+      
+      navigate('/login?sessionExpired=true');
+    }
+  };
+
+  // Check session validity (can be used by ProtectedRoute or other components)
+  const checkSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Session check error:", error);
+        handleSessionExpired();
+        return false;
+      }
+      
+      if (!data.session) {
+        console.log("No active session found in checkSession");
+        if (isAuthenticated) {
+          handleSessionExpired();
+        }
+        return false;
+      }
+      
+      // Check if session is expired
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (data.session.expires_at && data.session.expires_at < currentTime) {
+        console.log("Session expired, redirecting to login");
+        handleSessionExpired();
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Error in checkSession:", err);
+      return false;
+    }
   };
 
   return { 
@@ -227,6 +266,7 @@ export const useAuth = () => {
     login,
     logout,
     handleSessionExpired,
+    checkSession,
     isAdmin: role === 'admin',
     isAuthenticated,
     sessionChecked

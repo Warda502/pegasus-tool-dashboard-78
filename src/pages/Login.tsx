@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -19,14 +18,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { isAuthenticated, sessionChecked } = useAuth();
+  const [notificationsShown, setNotificationsShown] = useState(false);
 
   // Handle any query params (like from password reset or session expired)
   useEffect(() => {
+    if (notificationsShown) return;
+    
+    // Only show notifications once to avoid duplicates
+    setNotificationsShown(true);
+    
     const passwordReset = searchParams.get("passwordReset");
     if (passwordReset === "success") {
-      toast(t("passwordResetSuccess"), {
-        description: t("pleaseLoginWithNewPassword")
-      });
+      setTimeout(() => {
+        toast(t("passwordResetSuccess"), {
+          description: t("pleaseLoginWithNewPassword")
+        });
+      }, 300);
     }
     
     const sessionExpired = searchParams.get("sessionExpired");
@@ -47,7 +54,7 @@ export default function Login() {
         });
       }, 300);
     }
-  }, [searchParams, t]);
+  }, [searchParams, t, notificationsShown]);
 
   // Redirect if already authenticated
   useEffect(() => {
