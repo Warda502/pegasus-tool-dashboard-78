@@ -4,6 +4,8 @@ import { ApiDataTable } from "@/components/server/ApiDataTable";
 import { Loading } from "@/components/ui/loading";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
 import { useLanguage } from "@/hooks/useLanguage";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { LineChart } from "lucide-react";
 
 export default function ServerApiData() {
   const { data, isLoading, error } = useServerData();
@@ -23,14 +25,28 @@ export default function ServerApiData() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">{t("serverApiData") || "Server API Data"}</h2>
-        <p className="text-muted-foreground">
-          {t("viewServerData") || "View and manage server API data"}
-        </p>
-      </div>
-      <ApiDataTable data={data} />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <LineChart className="h-5 w-5" />
+              <span>{t("serverApiData") || "Server API Data"}</span>
+            </CardTitle>
+            <CardDescription>
+              {t("viewServerData") || "View and manage server API data"}
+              {data && data.length > 0 && (
+                <span className="ml-2 font-medium">
+                  ({data.length} {t("totalRecords") || "total records"})
+                </span>
+              )}
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ApiDataTable data={data || []} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
