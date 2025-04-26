@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Settings2 } from "lucide-react";
 
 interface ProfileFormValues {
   name: string;
@@ -130,10 +132,16 @@ const EditMyProfile = () => {
   };
   
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="container mx-auto py-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("editProfile")}</CardTitle>
+    <div dir={isRTL ? "rtl" : "ltr"} className="container mx-auto py-6 max-w-2xl">
+      <Card className="shadow-md">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5" />
+            <CardTitle>{t("editProfile")}</CardTitle>
+          </div>
+          <CardDescription>
+            {t("manageServerFiles")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -145,7 +153,7 @@ const EditMyProfile = () => {
                   <FormItem>
                     <FormLabel>{t("name")}</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={isLoading} />
+                      <Input {...field} className="bg-background" disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -159,7 +167,7 @@ const EditMyProfile = () => {
                   <FormItem>
                     <FormLabel>{t("phone")}</FormLabel>
                     <FormControl>
-                      <Input type="tel" {...field} disabled={isLoading} />
+                      <Input type="tel" {...field} className="bg-background" disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,7 +175,7 @@ const EditMyProfile = () => {
               />
               
               <div className="flex gap-4">
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" className="gap-2" disabled={isLoading}>
                   {isLoading ? t("saving") : t("saveChanges")}
                 </Button>
                 
@@ -175,6 +183,7 @@ const EditMyProfile = () => {
                   type="button" 
                   variant="outline" 
                   onClick={() => setShowHwidDialog(true)}
+                  className="gap-2"
                   disabled={isLoading}
                 >
                   {t("changeHwid")}
@@ -206,3 +215,4 @@ const EditMyProfile = () => {
 };
 
 export default EditMyProfile;
+

@@ -813,6 +813,26 @@ export const translations: Translations = {
   phoneSn: {
     en: "Phone S/N",
     ar: "الرقم التسلسلي"
+  },
+  changeHwid: {
+    en: "Change HWID",
+    ar: "تغيير HWID"
+  },
+  confirmHwidReset: {
+    en: "Confirm HWID Reset",
+    ar: "تأكيد إعادة تعيين HWID"
+  },
+  hwidResetWarning: {
+    en: "Are you sure you want to reset your HWID? This action cannot be undone.",
+    ar: "هل أنت متأكد من إعادة تعيين HWID؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  hwidReset: {
+    en: "HWID has been reset successfully",
+    ar: "تم إعادة تعيين HWID بنجاح"
+  },
+  errorResettingHwid: {
+    en: "Error resetting HWID",
+    ar: "خطأ في إعادة تعيين HWID"
   }
 };
 
