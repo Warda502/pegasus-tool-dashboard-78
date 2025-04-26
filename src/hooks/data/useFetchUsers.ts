@@ -18,38 +18,44 @@ export const fetchUsers = async (): Promise<User[]> => {
   
   console.log("Fetching users...");
   
-  const { data, error } = await supabase
-    .from('users')
-    .select('*');
-  
-  if (error) {
-    console.error("Error fetching users:", error);
-    throw new Error("Failed to fetch users");
-  }
-  
-  console.log("Fetched users:", data?.length || 0);
-  
-  return data.map(user => {
-    const creditsValue = user.credits ? user.credits.toString().replace(/"/g, '') : "0.0";
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*');
     
-    return {
-      ...user,
-      Name: user.name || "",
-      Email: user.email || "",
-      Password: user.password || "",
-      Phone: user.phone || "",
-      Country: user.country || "",
-      Activate: user.activate || "Not Activate",
-      Block: user.block || "Not Blocked",
-      Credits: creditsValue,
-      User_Type: user.user_type || "Credits License",
-      Email_Type: user.email_type || "User",
-      Expiry_Time: user.expiry_time || "",
-      Start_Date: user.start_date || "",
-      Hwid: user.hwid || "",
-      UID: user.uid || ""
-    };
-  });
+    if (error) {
+      console.error("Error fetching users:", error);
+      throw new Error("Failed to fetch users");
+    }
+    
+    console.log("Fetched users:", data?.length || 0);
+    
+    return data.map(user => {
+      const creditsValue = user.credits ? user.credits.toString().replace(/"/g, '') : "0.0";
+      
+      return {
+        ...user,
+        Name: user.name || "",
+        Email: user.email || "",
+        Password: user.password || "",
+        Phone: user.phone || "",
+        Country: user.country || "",
+        Activate: user.activate || "Not Activate",
+        Block: user.block || "Not Blocked",
+        Credits: creditsValue,
+        User_Type: user.user_type || "Credits License",
+        Email_Type: user.email_type || "User",
+        Expiry_Time: user.expiry_time || "",
+        Start_Date: user.start_date || "",
+        Hwid: user.hwid || "",
+        UID: user.uid || ""
+      };
+    });
+  } catch (error) {
+    console.error("Error in fetchUsers:", error);
+    // Return an empty array instead of throwing to prevent infinite loading
+    return [];
+  }
 };
 
 export const useFetchUsers = () => {
@@ -59,6 +65,7 @@ export const useFetchUsers = () => {
   const { 
     data = [], 
     isLoading, 
+    isError,
     isSuccess 
   } = useQuery({
     queryKey: ['users'],
@@ -78,6 +85,13 @@ export const useFetchUsers = () => {
           });
           hasShownSuccessToast = true;
         }
+      },
+      onError: (error) => {
+        console.error("Error loading users:", error);
+        toast("Error", {
+          description: "Failed to load user data",
+          variant: "destructive"
+        });
       }
     }
   });
@@ -85,6 +99,7 @@ export const useFetchUsers = () => {
   return {
     users: data,
     isLoading,
+    isError,
     isSuccess
   };
 };

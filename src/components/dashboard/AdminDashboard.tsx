@@ -4,12 +4,15 @@ import { useSharedData } from "@/hooks/data/DataContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Users, Calendar, CreditCard, FileBarChart } from "lucide-react";
 import { StatCard } from "./StatCard";
+import { ErrorAlert } from "@/components/common/ErrorAlert";
 
 export function AdminDashboard() {
   const { operations, users } = useSharedData();
   const { t } = useLanguage();
 
   const stats = useMemo(() => {
+    if (!users || users.length === 0) return null;
+    
     const totalUsers = users.length;
     
     // Count users by license type
@@ -30,6 +33,13 @@ export function AdminDashboard() {
       totalOperations
     };
   }, [operations, users]);
+
+  if (!stats) {
+    return <ErrorAlert 
+      title={t("adminDataError") || "Admin Data Error"}
+      description={t("adminDataNotFound") || "Admin data could not be loaded"} 
+    />;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

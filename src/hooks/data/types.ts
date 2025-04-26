@@ -1,22 +1,38 @@
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
-export interface User {
+export type UserRole = "admin" | "user";
+
+export interface AuthUser {
   id: string;
   email: string;
-  name: string;
-  uid: string;
-  password: string;
-  phone?: string;
-  country?: string;
-  activate: string;
-  block: string;
-  credits: string;
-  user_type: string;
-  email_type: string;
-  expiry_time?: string;
-  start_date?: string;
-  hwid?: string;
-  
-  // Legacy fields (for compatibility)
+  name?: string;
+  role: UserRole;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  user: AuthUser | null;
+  role: UserRole | null;
+  loading: boolean;
+  sessionChecked: boolean;
+}
+
+export interface AuthActions {
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<boolean>;
+  checkSession: () => Promise<boolean>;
+  handleSessionExpired: () => void;
+}
+
+export type AuthContextType = AuthState & AuthActions;
+
+import type { Database } from "@/integrations/supabase/types";
+
+type UserRow = Database['public']['Tables']['users']['Row'];
+type OperationRow = Database['public']['Tables']['operations']['Row'];
+
+export interface User extends UserRow {
   Name: string;
   Email: string;
   Password: string;
@@ -56,16 +72,12 @@ export interface Operation {
   [key: string]: any;
 }
 
-export interface SharedDataState {
+export interface SharedDataContextType {
   users: User[];
   operations: Operation[];
   isLoading: boolean;
-}
-
-export interface SharedDataActions {
+  isError?: boolean;
   refreshData: () => void;
   addCreditToUser: (userId: string, creditsToAdd: number) => Promise<boolean>;
   refundOperation: (operation: Operation) => Promise<boolean>;
 }
-
-export type SharedDataContextType = SharedDataState & SharedDataActions;

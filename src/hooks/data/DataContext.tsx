@@ -9,8 +9,8 @@ import { SharedDataContextType } from "./types";
 const DataContext = createContext<SharedDataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  const { users, isLoading: isLoadingUsers } = useFetchUsers();
-  const { operations, isLoading: isLoadingOperations } = useFetchOperations();
+  const { users, isLoading: isLoadingUsers, isError: isUsersError } = useFetchUsers();
+  const { operations, isLoading: isLoadingOperations, isError: isOperationsError } = useFetchOperations();
   const { refreshData, addCreditToUser, refundOperation } = useDataActions();
   
   // Combine all data and actions
@@ -18,6 +18,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     users,
     operations,
     isLoading: isLoadingUsers || isLoadingOperations,
+    isError: isUsersError || isOperationsError,
     refreshData,
     addCreditToUser,
     refundOperation

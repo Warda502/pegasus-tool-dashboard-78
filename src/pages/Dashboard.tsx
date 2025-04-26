@@ -6,19 +6,30 @@ import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { Loading } from "@/components/ui/loading";
 import { useLanguage } from "@/hooks/useLanguage";
+import { ErrorAlert } from "@/components/common/ErrorAlert";
 
 export default function Dashboard() {
-  const { isLoading, refreshData } = useSharedData();
+  const { isLoading, refreshData, isError } = useSharedData();
   const { isAdmin } = useAuth();
   const { t } = useLanguage();
 
   // Refresh data when dashboard mounts
   useEffect(() => {
+    console.log("Dashboard mounted, refreshing data");
     refreshData();
   }, [refreshData]);
 
   if (isLoading) {
     return <Loading text={t("loadingDashboard")} />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorAlert 
+        title={t("dataLoadError") || "Error Loading Data"}
+        description={t("dashboardDataError") || "Failed to load dashboard data. Please try refreshing the page."}
+      />
+    );
   }
 
   return (

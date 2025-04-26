@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/auth/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { CreditCard, Clock, RefreshCcw, FileBarChart } from "lucide-react";
 import { StatCard } from "./StatCard";
+import { ErrorAlert } from "@/components/common/ErrorAlert";
 
 export function UserDashboard() {
   const { operations, users } = useSharedData();
@@ -36,7 +37,12 @@ export function UserDashboard() {
     };
   }, [operations, users, user]);
 
-  if (!stats) return null;
+  if (!stats) {
+    return <ErrorAlert 
+      title={t("userDataError") || "User Data Error"}
+      description={t("userDataNotFound") || "User information could not be loaded"} 
+    />;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
