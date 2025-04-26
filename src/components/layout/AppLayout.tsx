@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Home, Users, LineChart, Settings, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useAuth } from "@/hooks/useAuth";
-import { useSharedData } from "@/hooks/useSharedData";
+import { useAuth } from "@/hooks/auth/AuthContext";
+import { useSharedData } from "@/hooks/data/DataContext";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -26,10 +26,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, logout, user, isAdmin } = useAuth();
   const { users } = useSharedData();
 
-  // Get user's name from users data
-  const currentUser = users?.find(u => u.id === user?.id);
-  // Use the user's name, fall back to the user's name from auth, then to email if both are unavailable
-  const userName = currentUser?.name || user?.email?.split('@')[0] || t("guest");
+  // Get user's name directly from user object or find it in users data if needed
+  const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
 
   // Handler for logout with error protection
   const handleLogout = async () => {

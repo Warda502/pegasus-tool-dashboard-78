@@ -1,10 +1,12 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, UserRole } from "@/hooks/useAuth";
+import { UserRole } from "@/hooks/auth/types";
+import { useAuth } from "@/hooks/auth/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "@/components/ui/sonner";
 import { Loading } from "@/components/ui/loading";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -57,5 +59,5 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
     return <Loading text={t("loading")} />;
   }
 
-  return <>{children}</>;
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 };
