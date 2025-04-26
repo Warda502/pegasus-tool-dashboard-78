@@ -31,10 +31,10 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
-      <AuthProvider>
-        <DataProvider>
-          <TooltipProvider>
-            <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
+          <DataProvider>
+            <TooltipProvider>
               <Routes>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
@@ -65,12 +65,12 @@ const App = () => (
                 } />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </DataProvider>
-      </AuthProvider>
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
+          </DataProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </LanguageProvider>
   </QueryClientProvider>
 );
