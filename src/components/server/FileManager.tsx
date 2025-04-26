@@ -54,11 +54,11 @@ export function FileManager() {
         />
         <Button onClick={() => document.getElementById('file-upload')?.click()}>
           <Upload className="h-4 w-4 mr-2" />
-          {t("uploadFile") || "Upload File"}
+          {t("Upload File") || "Upload File"}
         </Button>
         <Button onClick={() => createFolder(prompt(t("enterFolderName") || "Enter folder name:") || '')}>
           <FolderPlus className="h-4 w-4 mr-2" />
-          {t("newFolder") || "New Folder"}
+          {t("New Folder") || "New Folder"}
         </Button>
       </div>
 
