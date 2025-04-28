@@ -87,15 +87,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-100">
         <Sidebar dir={isRTL ? "rtl" : "ltr"} variant={isMobile ? "floating" : "sidebar"}>
-          <SidebarHeader className="flex flex-col items-center justify-center p-4 border-b">
-            <h1 className="text-xl font-bold">{t("pegasusTool")}</h1>
-            <div className="flex items-center justify-between w-full mt-2">
-              <span className="text-sm text-muted-foreground">
+          <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b">
+            <h1 className="text-lg sm:text-xl font-bold">{t("pegasusTool")}</h1>
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between w-full mt-2 gap-2">
+              <span className="text-xs sm:text-sm text-muted-foreground truncate">
                 {t("welcome")}, {userName}
               </span>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 ml-1" />
-                <span className="text-xs">{t("logout")}</span>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs h-7 px-2">
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span>{t("logout")}</span>
               </Button>
             </div>
           </SidebarHeader>
@@ -111,9 +111,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   >
                     <button 
                       onClick={() => navigate(item.path)}
-                      className="w-full"
+                      className="w-full text-xs sm:text-sm"
                     >
-                      <item.icon />
+                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                       <span>{item.title}</span>
                     </button>
                   </SidebarMenuButton>
@@ -122,15 +122,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           
-          <SidebarFooter className="p-4 text-xs text-center text-muted-foreground">
+          <SidebarFooter className="p-2 sm:p-4 text-xs text-center text-muted-foreground">
             {t("allRightsReserved")}
           </SidebarFooter>
         </Sidebar>
 
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
-          <div className="flex items-center mb-6">
-            <SidebarTrigger className={isRTL ? "ml-2" : "mr-2"} />
-            <h1 className="text-2xl font-bold text-gray-900">
+        <main className="flex-1 p-3 sm:p-6 overflow-auto">
+          <div className="flex items-center mb-4 sm:mb-6">
+            <SidebarTrigger className={`${isRTL ? "ml-2" : "mr-2"} text-sm sm:text-base`} />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {getCurrentPageTitle()}
             </h1>
           </div>

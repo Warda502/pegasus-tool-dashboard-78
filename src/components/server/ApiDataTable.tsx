@@ -103,62 +103,64 @@ export function ApiDataTable({ data }: ApiDataTableProps) {
         />
       </div>
 
-      <div className="rounded-md border">
-        <ScrollArea className="h-[calc(100vh-400px)]">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("email") || "Email"}</TableHead>
-                <TableHead>{t("hwid") || "HWID"}</TableHead>
-                <TableHead>{t("imei") || "IMEI"}</TableHead>
-                <TableHead>{t("model") || "Model"}</TableHead>
-                <TableHead>{t("phoneSn") || "Phone S/N"}</TableHead>
-                <TableHead>{t("notes") || "Notes"}</TableHead>
-                <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentItems.length > 0 ? (
-                currentItems.map((item) => (
-                  <TableRow key={item.uid}>
-                    <TableCell>{item.Email}</TableCell>
-                    <TableCell>{item.Hwid}</TableCell>
-                    <TableCell>{item.Imei}</TableCell>
-                    <TableCell>{item.Model}</TableCell>
-                    <TableCell>{item.Phone_sn}</TableCell>
-                    <TableCell>{item.Notes}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleExportRow(item)}
-                        className="hover:bg-accent"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        {t("export") || "Export"}
-                      </Button>
+      <div className="rounded-md border overflow-hidden">
+        <ScrollArea className="h-[calc(100vh-420px)] sm:h-[calc(100vh-400px)]">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">{t("email") || "Email"}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t("hwid") || "HWID"}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t("imei") || "IMEI"}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t("model") || "Model"}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t("phoneSn") || "Phone S/N"}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t("notes") || "Notes"}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">{t("actions") || "Actions"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentItems.length > 0 ? (
+                  currentItems.map((item) => (
+                    <TableRow key={item.uid} className="text-xs sm:text-sm">
+                      <TableCell className="max-w-[100px] truncate">{item.Email}</TableCell>
+                      <TableCell className="max-w-[80px] truncate">{item.Hwid}</TableCell>
+                      <TableCell className="max-w-[80px] truncate">{item.Imei}</TableCell>
+                      <TableCell className="max-w-[80px] truncate">{item.Model}</TableCell>
+                      <TableCell className="max-w-[80px] truncate">{item.Phone_sn}</TableCell>
+                      <TableCell className="max-w-[80px] truncate">{item.Notes}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleExportRow(item)}
+                          className="hover:bg-accent h-7 px-2 text-xs"
+                        >
+                          <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          {t("export")}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-4">
+                      {t("noData") || "No data available"}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
-                    {t("noData") || "No data available"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </ScrollArea>
       </div>
 
       {filteredData.length > itemsPerPage && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             {t("showingResults") || "Showing"} {startIndex + 1} - {Math.min(endIndex, filteredData.length)} {t("of") || "of"} {filteredData.length}
           </div>
-          <Pagination>
-            <PaginationContent>
+          <Pagination className="mt-0">
+            <PaginationContent className="flex-wrap">
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => paginate(currentPage - 1)}
@@ -166,7 +168,7 @@ export function ApiDataTable({ data }: ApiDataTableProps) {
                 />
               </PaginationItem>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page}>
+                <PaginationItem key={page} className={totalPages > 5 && (page > 2 && page < totalPages - 1 && page !== currentPage) ? "hidden sm:flex" : ""}>
                   <PaginationLink
                     onClick={() => paginate(page)}
                     isActive={currentPage === page}

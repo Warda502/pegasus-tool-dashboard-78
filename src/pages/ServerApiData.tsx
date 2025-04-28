@@ -27,7 +27,7 @@ export default function ServerApiData() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
               <LineChart className="h-5 w-5" />
@@ -43,7 +43,7 @@ export default function ServerApiData() {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           <ApiDataTable data={data || []} />
         </CardContent>
       </Card>
