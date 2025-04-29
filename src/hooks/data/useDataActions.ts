@@ -65,7 +65,7 @@ export const useDataActions = () => {
     }
   };
 
-  const refundOperation = async (operation: Operation) => {
+  const refundOperation = async (operation: Operation): Promise<boolean> => {
     try {
       const creditString = operation.Credit?.toString().replace(/"/g, "") || "0";
       const creditValue = parseFloat(creditString);

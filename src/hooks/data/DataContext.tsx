@@ -14,8 +14,8 @@ interface SharedDataContextType {
   isLoading: boolean;
   isError: boolean;
   refreshData: () => Promise<void>;
-  addCreditToUser: (userId: string, amount: number) => Promise<void>;
-  refundOperation: (operationId: string) => Promise<void>;
+  addCreditToUser: (userId: string, amount: number) => Promise<boolean>;
+  refundOperation: (operation: Operation) => Promise<boolean>;
 }
 
 const DataContext = createContext<SharedDataContextType | undefined>(undefined);
