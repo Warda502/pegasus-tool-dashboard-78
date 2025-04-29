@@ -1,57 +1,58 @@
-import { User as SupabaseUser } from "@supabase/supabase-js";
 
-export type UserRole = "admin" | "user";
-
-export interface AuthUser {
-  id: string;
-  email: string;
+export interface User {
+  id?: string;
+  uid?: string;
+  email?: string;
   name?: string;
-  role: UserRole;
-}
-
-export interface AuthState {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  user: AuthUser | null;
-  role: UserRole | null;
-  loading: boolean;
-  sessionChecked: boolean;
-}
-
-export interface AuthActions {
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<boolean>;
-  checkSession: () => Promise<boolean>;
-  handleSessionExpired: () => void;
-}
-
-export type AuthContextType = AuthState & AuthActions;
-
-import type { Database } from "@/integrations/supabase/types";
-
-type UserRow = Database['public']['Tables']['users']['Row'];
-type OperationRow = Database['public']['Tables']['operations']['Row'];
-
-export interface User extends UserRow {
-  Name: string;
-  Email: string;
-  Password: string;
-  Phone: string;
-  Country: string;
-  Activate: string;
-  Block: string;
-  Credits: string;
-  User_Type: string;
-  Email_Type: string;
-  Expiry_Time: string;
-  Start_Date: string;
-  Hwid: string;
-  UID: string;
-  [key: string]: any;
+  phone?: string;
+  country?: string;
+  password?: string;
+  hwid?: string;
+  credits?: string | number;
+  user_type?: string;
+  activate?: string;
+  block?: string;
+  email_type?: string;
+  expiry_time?: string;
+  start_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Legacy properties (uppercase)
+  Name?: string;
+  Email?: string;
+  Password?: string;
+  Phone?: string;
+  Country?: string;
+  Activate?: string;
+  Block?: string;
+  Credits?: string;
+  User_Type?: string;
+  Email_Type?: string;
+  Expiry_Time?: string;
+  Start_Date?: string;
+  Hwid?: string;
+  UID?: string;
 }
 
 export interface Operation {
+  id?: string;
+  uid?: string;
+  username?: string;
   operation_id?: string;
+  operation_type?: string;
+  phone_sn?: string;
+  brand?: string;
+  model?: string;
+  imei?: string;
+  credit?: string | number;
+  time?: string;
+  status?: string;
+  android?: string;
+  baseband?: string;
+  carrier?: string;
+  security_patch?: string;
+  hwid?: string;
+  // Legacy properties (uppercase)
   OprationID?: string;
   OprationTypes?: string;
   Phone_SN?: string;
@@ -68,16 +69,28 @@ export interface Operation {
   Security_Patch?: string;
   UID?: string;
   Hwid?: string;
-  LogOpration?: string;
-  [key: string]: any;
+  LogOpration?: string | null;
 }
 
-export interface SharedDataContextType {
-  users: User[];
-  operations: Operation[];
-  isLoading: boolean;
-  isError?: boolean;
-  refreshData: () => void;
-  addCreditToUser: (userId: string, creditsToAdd: number) => Promise<boolean>;
-  refundOperation: (operation: Operation) => Promise<boolean>;
+export interface ServerApiData {
+  id: string;
+  IMEI?: string;
+  ImeiSign?: string;
+  Model?: string;
+  PubKey?: string; 
+  PubKeySign?: string;
+  PhoneSN?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FileItem {
+  id: string;
+  name: string;
+  size: number;
+  created_at: string;
+  updated_at: string;
+  path: string;
+  type: 'file' | 'folder';
+  content?: string;
 }

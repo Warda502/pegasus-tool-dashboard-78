@@ -2,14 +2,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cva, type VariantProps } from "class-variance-authority";
 
-const cardVariants = cva("", {
+const cardVariants = cva("transition-all duration-200 hover:shadow-md", {
   variants: {
     variant: {
-      default: "",
-      primary: "border-primary/50",
-      success: "border-green-500/50",
-      warning: "border-yellow-500/50",
-      danger: "border-red-500/50",
+      default: "border-border/50",
+      primary: "border-primary/50 hover:border-primary/80",
+      success: "border-green-500/50 hover:border-green-500/80",
+      warning: "border-yellow-500/50 hover:border-yellow-500/80",
+      danger: "border-red-500/50 hover:border-red-500/80",
     }
   },
   defaultVariants: {
