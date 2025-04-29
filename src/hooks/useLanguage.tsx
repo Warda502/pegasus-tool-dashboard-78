@@ -25,8 +25,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguage(prev => (prev === "en" ? "ar" : "en"));
   };
 
-  const t = (key: string) => {
-    return TRANSLATIONS[language][key] || key;
+  const t = (key: string): string => {
+    if (!key) return '';
+    
+    // Check if the translation exists for the current language
+    if (TRANSLATIONS[language] && TRANSLATIONS[language][key]) {
+      return TRANSLATIONS[language][key];
+    }
+    
+    // Fallback to English if translation doesn't exist in current language
+    if (language !== "en" && TRANSLATIONS["en"] && TRANSLATIONS["en"][key]) {
+      console.log(`Missing translation for key "${key}" in language "${language}", falling back to English`);
+      return TRANSLATIONS["en"][key];
+    }
+    
+    // Return the key itself if no translation is found
+    return key;
   };
 
   // Translation keys
@@ -57,6 +71,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       dataLoadError: "Error Loading Data",
       dashboardDataError: "Failed to load dashboard data. Please try refreshing the page.",
       loadingDashboard: "Loading dashboard...",
+      // Login page translations
+      login: "Login",
+      email: "Email",
+      password: "Password",
+      loggingIn: "Logging in...",
+      searchUsers: "Search users",
+      checkingSession: "Checking session...",
+      passwordResetSuccess: "Password reset successful",
+      pleaseLoginWithNewPassword: "Please login with your new password",
+      accountBlocked: "Account Blocked",
+      accountBlockedDescription: "Your account has been blocked. Please contact support.",
+      noCreditsLeft: "No Credits",
+      noCreditsLeftDescription: "You have no credits left. Please recharge your account.",
       // New translations for charts
       monthlyOperationsChart: "Monthly Operations",
       operationsByType: "Operations by Type",
@@ -98,6 +125,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       dataLoadError: "خطأ في تحميل البيانات",
       dashboardDataError: "فشل في تحميل بيانات لوحة التحكم. يرجى محاولة تحديث الصفحة.",
       loadingDashboard: "جارٍ تحميل لوحة التحكم...",
+      // Login page translations
+      login: "تسجيل الدخول",
+      email: "البريد الإلكتروني",
+      password: "كلمة المرور",
+      loggingIn: "جاري تسجيل الدخول...",
+      searchUsers: "البحث عن المستخدمين",
+      checkingSession: "جاري التحقق من حالة الجلسة...",
+      passwordResetSuccess: "تم إعادة تعيين كلمة المرور بنجاح",
+      pleaseLoginWithNewPassword: "الرجاء تسجيل الدخول بكلمة المرور الجديدة",
+      accountBlocked: "الحساب محظور",
+      accountBlockedDescription: "تم حظر حسابك. يرجى الاتصال بالدعم.",
+      noCreditsLeft: "لا يوجد رصيد",
+      noCreditsLeftDescription: "ليس لديك رصيد متبقي. يرجى إعادة شحن حسابك.",
       // New translations for charts
       monthlyOperationsChart: "العمليات الشهرية",
       operationsByType: "العمليات حسب النوع",
@@ -138,5 +178,4 @@ export function useLanguage(): LanguageContextProps {
   return context;
 }
 
-// Remove the duplicate export here
-// export { useLanguage };
+// The duplicate export was removed
