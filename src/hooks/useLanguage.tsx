@@ -1,286 +1,977 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface LanguageContextProps {
-  language: string;
-  setLanguage: (language: string) => void;
-  isRTL: boolean;
-  toggleLanguage: () => void;
-  t: (key: string) => string;
+// Define supported languages
+export type Language = 'en' | 'ar';
+
+// Define the translation interface
+export interface Translations {
+  [key: string]: {
+    en: string;
+    ar: string;
+  };
 }
 
-const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
+// Context interface
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+  translations: Translations;
+  isRTL: boolean;
+}
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "en");
-  const isRTL = language === "ar";
+// Create translations
+export const translations: Translations = {
+  dashboard: {
+    en: "Dashboard",
+    ar: "الرئيسية"
+  },
+  operations: {
+    en: "Operations",
+    ar: "العمليات"
+  },
+  refundedOperations: {
+    en: "Refunded Operations",
+    ar: "العمليات المستردة"
+  },
+  expiryTime: {
+    en: "Expiry Time",
+    ar: "تاريخ الانتهاء"
+  },
+  myCredits: {
+    en: "My Credits",
+    ar: "رصيدي"
+  },
+  users: {
+    en: "Users Manager",
+    ar: "إدارة المستخدمين"
+  },
+  settings: {
+    en: "Settings",
+    ar: "الإعدادات"
+  },
+  search: {
+    en: "Search...",
+    ar: "بحث..."
+  },
+  filter: {
+    en: "Filter",
+    ar: "تصفية"
+  },
+  successfulOperations: {
+    en: "Successful Operations",
+    ar: "العمليات الناجحة"
+  },
+  failedOperations: {
+    en: "Failed Operations",
+    ar: "العمليات الفاشلة"
+  },
+  showAll: {
+    en: "Show All",
+    ar: "إظهار الكل"
+  },
+  basicView: {
+    en: "Basic View",
+    ar: "عرض أساسي"
+  },
+  detailedView: {
+    en: "Detailed View",
+    ar: "عرض مفصل"
+  },
+  loading: {
+    en: "Loading data...",
+    ar: "جاري تحميل البيانات..."
+  },
+  noData: {
+    en: "No operations found",
+    ar: "لا توجد عمليات مسجلة"
+  },
+  export: {
+    en: "Export Data",
+    ar: "تصدير البيانات"
+  },
+  refresh: {
+    en: "Refresh Data",
+    ar: "تحديث البيانات"
+  },
+  exported: {
+    en: "Exported",
+    ar: "تم التصدير"
+  },
+  exportSuccess: {
+    en: "Data exported successfully",
+    ar: "تم تصدير البيانات بنجاح"
+  },
+  operationID: {
+    en: "Operation ID",
+    ar: "رقم العملية"
+  },
+  operationType: {
+    en: "Operation Type",
+    ar: "نوع العملية"
+  },
+  serialNumber: {
+    en: "Serial Number",
+    ar: "الرقم التسلسلي"
+  },
+  brand: {
+    en: "Brand",
+    ar: "العلامة التجارية"
+  },
+  model: {
+    en: "Model",
+    ar: "الموديل"
+  },
+  imei: {
+    en: "IMEI",
+    ar: "IMEI"
+  },
+  user: {
+    en: "User",
+    ar: "المستخدم"
+  },
+  credit: {
+    en: "Credit",
+    ar: "الرصيد"
+  },
+  time: {
+    en: "Time",
+    ar: "الوقت"
+  },
+  status: {
+    en: "Status",
+    ar: "الحالة"
+  },
+  android: {
+    en: "Android",
+    ar: "أندرويد"
+  },
+  baseband: {
+    en: "Baseband",
+    ar: "الباسباند"
+  },
+  carrier: {
+    en: "Carrier",
+    ar: "المشغل"
+  },
+  securityPatch: {
+    en: "Security Patch",
+    ar: "تحديث الأمان"
+  },
+  uid: {
+    en: "UID",
+    ar: "UID"
+  },
+  hwid: {
+    en: "HWID",
+    ar: "HWID"
+  },
+  actions: {
+    en: "Actions",
+    ar: "الإجراءات"
+  },
+  details: {
+    en: "Details",
+    ar: "التفاصيل"
+  },
+  refund: {
+    en: "Refund",
+    ar: "استرداد"
+  },
+  operationsManagement: {
+    en: "View and manage system operations",
+    ar: "عرض وإدارة العمليات المسجلة في النظام"
+  },
+  totalOperations: {
+    en: "Total Operations",
+    ar: "إجمالي العمليات"
+  },
+  refundSuccess: {
+    en: "Refund completed",
+    ar: "تم الاسترداد"
+  },
+  refundDescription: {
+    en: "Credit has been refunded successfully",
+    ar: "تم استرداد الرصيد بنجاح"
+  },
+  addUser: {
+    en: "Add User",
+    ar: "إضافة مستخدم جديد"
+  },
+  addCredit: {
+    en: "Add Credit",
+    ar: "إضافة رصيد"
+  },
+  viewDetails: {
+    en: "View",
+    ar: "عرض"
+  },
+  edit: {
+    en: "Edit",
+    ar: "تعديل"
+  },
+  renew: {
+    en: "Renew",
+    ar: "تجديد"
+  },
+  delete: {
+    en: "Delete",
+    ar: "حذف"
+  },
+  usersTitle: {
+    en: "Users List",
+    ar: "قائمة المستخدمين"
+  },
+  usersDescription: {
+    en: "Manage all system users from here",
+    ar: "يمكنك إدارة جميع المستخدمين من هنا"
+  },
+  searchUsers: {
+    en: "Search for users...",
+    ar: "بحث عن مستخدم..."
+  },
+  email: {
+    en: "Email",
+    ar: "البريد الإلكتروني"
+  },
+  userType: {
+    en: "User Type",
+    ar: "نوع المستخدم"
+  },
+  country: {
+    en: "Country",
+    ar: "الدولة"
+  },
+  startDate: {
+    en: "Start Date",
+    ar: "تاريخ البداية"
+  },
+  expiryDate: {
+    en: "Expiry Date",
+    ar: "تاريخ الانتهاء"
+  },
+  noUsers: {
+    en: "No users match your search",
+    ar: "لا يوجد مستخدمين مطابقين لبحثك"
+  },
+  operationDetails: {
+    en: "Operation Details",
+    ar: "تفاصيل العملية"
+  },
+  close: {
+    en: "Close",
+    ar: "إغلاق"
+  },
+  home: {
+    en: "Home",
+    ar: "الرئيسية"
+  },
+  logout: {
+    en: "Logout",
+    ar: "تسجيل الخروج"
+  },
+  welcome: {
+    en: "Welcome",
+    ar: "مرحبًا"
+  },
+  userManagement: {
+    en: "User Management",
+    ar: "إدارة المستخدمين"
+  },
+  allRightsReserved: {
+    en: "© 2025 Pegasus Tool - All Rights Reserved",
+    ar: "© 2025 بيجاسوس تول - جميع الحقوق محفوظة"
+  },
+  pegasusTool: {
+    en: "Pegasus Tool",
+    ar: "بيجاسوس تول"
+  },
+  updateSuccess: {
+    en: "Updated",
+    ar: "تم التحديث"
+  },
+  updateUserSuccess: {
+    en: "User information updated successfully",
+    ar: "تم تحديث بيانات المستخدم بنجاح"
+  },
+  deleteSuccess: {
+    en: "Deleted",
+    ar: "تم الحذف"
+  },
+  deleteUserSuccess: {
+    en: "User deleted successfully",
+    ar: "تم حذف المستخدم بنجاح"
+  },
+  addSuccess: {
+    en: "Added",
+    ar: "تمت الإضافة"
+  },
+  addUserSuccess: {
+    en: "User added successfully",
+    ar: "تم إضافة المستخدم بنجاح"
+  },
+  renewSuccess: {
+    en: "Renewed",
+    ar: "تم التجديد"
+  },
+  renewUserSuccess: {
+    en: "User account renewed successfully",
+    ar: "تم تجديد حساب المستخدم بنجاح"
+  },
+  addCreditSuccess: {
+    en: "Credit Added",
+    ar: "تمت إضافة الرصيد"
+  },
+  addCreditDescription: {
+    en: "Credit added successfully",
+    ar: "تم إضافة الرصيد بنجاح"
+  },
+  selectUser: {
+    en: "Select user",
+    ar: "اختر مستخدم"
+  },
+  creditAmount: {
+    en: "Credit Amount",
+    ar: "قيمة الرصيد"
+  },
+  creditExplanation: {
+    en: "The amount will be added with the .0 identifier",
+    ar: "سيتم إضافة المبلغ مع علامة .0"
+  },
+  cancel: {
+    en: "Cancel",
+    ar: "إلغاء"
+  },
+  add: {
+    en: "Add",
+    ar: "إضافة"
+  },
+  adding: {
+    en: "Adding...",
+    ar: "جاري الإضافة..."
+  },
+  current: {
+    en: "Current",
+    ar: "الحالي"
+  },
+  fetchSuccessTitle: {
+    en: "Data Loaded",
+    ar: "تم تحميل البيانات"
+  },
+  fetchSuccessDescription: {
+    en: "Data loaded successfully",
+    ar: "تم جلب البيانات بنجاح"
+  },
+  login: {
+    en: "Login",
+    ar: "تسجيل الدخول"
+  },
+  password: {
+    en: "Password",
+    ar: "كلمة المرور"
+  },
+  loggingIn: {
+    en: "Logging in...",
+    ar: "جاري تسجيل الدخول..."
+  },
+  noAccount: {
+    en: "Don't have an account?",
+    ar: "ليس لديك حساب؟"
+  },
+  createAccount: {
+    en: "Create a new account",
+    ar: "إنشاء حساب جديد"
+  },
+  welcomeMessage: {
+    en: "Welcome to User Management System",
+    ar: "مرحباً بك في نظام إدارة المستخدمين"
+  },
+  systemDescription: {
+    en: "An integrated system for managing users and tracking activities with an easy-to-use interface",
+    ar: "نظام متكامل لإدارة المستخدمين وتتبع أنشطتهم بواجهة سهلة الاستخدام"
+  },
+  loginSuccess: {
+    en: "Login successful",
+    ar: "تم تسجيل الدخول بنجاح"
+  },
+  loadingData: {
+    en: "Loading data...",
+    ar: "جاري الآن جلب البيانات..."
+  },
+  error: {
+    en: "Error",
+    ar: "خطأ"
+  },
+  unexpectedError: {
+    en: "Unexpected error",
+    ar: "حدث خطأ غير متوقع"
+  },
+  loginError: {
+    en: "Login error",
+    ar: "حدث خطأ في تسجيل الدخول"
+  },
+  logoutSuccess: {
+    en: "Successfully logged out",
+    ar: "تم تسجيل الخروج بنجاح"
+  },
+  userDetails: {
+    en: "User Details",
+    ar: "تفاصيل المستخدم"
+  },
+  completeUserInfo: {
+    en: "Complete user information",
+    ar: "معلومات كاملة عن المستخدم"
+  },
+  name: {
+    en: "Name",
+    ar: "الاسم"
+  },
+  phone: {
+    en: "Phone Number",
+    ar: "رقم الهاتف"
+  },
+  activation: {
+    en: "Activation",
+    ar: "التفعيل"
+  },
+  renewUser: {
+    en: "Renew User Account",
+    ar: "تجديد حساب المستخدم"
+  },
+  chooseRenewalMonths: {
+    en: "Choose the number of months to renew the account",
+    ar: "اختر عدد الأشهر التي تود تجديد الحساب بها"
+  },
+  numberOfMonths: {
+    en: "Number of Months",
+    ar: "عدد الأشهر"
+  },
+  selectMonths: {
+    en: "Select months",
+    ar: "اختر عدد الأشهر"
+  },
+  threeMonths: {
+    en: "3 Months",
+    ar: "3 أشهر"
+  },
+  sixMonths: {
+    en: "6 Months",
+    ar: "6 أشهر"
+  },
+  nineMonths: {
+    en: "9 Months",
+    ar: "9 أشهر"
+  },
+  twelveMonths: {
+    en: "12 Months",
+    ar: "12 أشهر"
+  },
+  editUser: {
+    en: "Edit User",
+    ar: "تعديل المستخدم"
+  },
+  editUserDescription: {
+    en: "Edit user information",
+    ar: "قم بتعديل بيانات المستخدم"
+  },
+  activate: {
+    en: "Activate",
+    ar: "تفعيل"
+  },
+  block: {
+    en: "Block",
+    ar: "حظر"
+  },
+  saveChanges: {
+    en: "Save Changes",
+    ar: "حفظ التغييرات"
+  },
+  updateUserError: {
+    en: "Failed to update user data",
+    ar: "فشل في حفظ بيانات المستخدم"
+  },
+  addNewUser: {
+    en: "Add New User",
+    ar: "إضافة مستخدم جديد"
+  },
+  enterNewUserData: {
+    en: "Enter new user information",
+    ar: "أدخل بيانات المستخدم الجديد"
+  },
+  selectUserType: {
+    en: "Select user type",
+    ar: "اختر نوع المستخدم"
+  },
+  creditsLicense: {
+    en: "Credits License",
+    ar: "رخصة رصيد"
+  },
+  monthlyLicense: {
+    en: "Monthly License",
+    ar: "رخصة شهرية"
+  },
+  subscriptionPeriod: {
+    en: "Subscription Period",
+    ar: "مدة الاشتراك"
+  },
+  selectSubscriptionPeriod: {
+    en: "Select subscription period",
+    ar: "اختر مدة الاشتراك"
+  },
+  selectCountry: {
+    en: "Select country",
+    ar: "اختر الدولة"
+  },
+  addUserError: {
+    en: "Failed to add user",
+    ar: "فشل في إضافة المستخدم"
+  },
+  signupTitle: {
+    en: "Create Account",
+    ar: "إنشاء حساب"
+  },
+  signupDescription: {
+    en: "Fill in the information to create your account",
+    ar: "املأ المعلومات لإنشاء حسابك"
+  },
+  createAccountBtn: {
+    en: "Create Account",
+    ar: "إنشاء الحساب"
+  },
+  dashboardTitle: {
+    en: "Dashboard",
+    ar: "لوحة التحكم"
+  },
+  dashboardDescription: {
+    en: "Overview of system activity",
+    ar: "نظرة عامة على نشاط النظام"
+  },
+  totalUsers: {
+    en: "Total Users",
+    ar: "إجمالي المستخدمين"
+  },
+  activeUsers: {
+    en: "Active Users",
+    ar: "المستخدمين النشطين"
+  },
+  blockedUsers: {
+    en: "Blocked Users",
+    ar: "المستخدمين المحظورين"
+  },
+  settingsTitle: {
+    en: "Settings",
+    ar: "الإعدادات"
+  },
+  settingsDescription: {
+    en: "Manage your system settings",
+    ar: "إدارة إعدادات النظام"
+  },
+  language: {
+    en: "Language",
+    ar: "اللغة"
+  },
+  english: {
+    en: "English",
+    ar: "الإنجليزية"
+  },
+  arabic: {
+    en: "Arabic",
+    ar: "العربية"
+  },
+  theme: {
+    en: "Theme",
+    ar: "السمة"
+  },
+  light: {
+    en: "Light",
+    ar: "فاتح"
+  },
+  dark: {
+    en: "Dark",
+    ar: "داكن"
+  },
+  system: {
+    en: "System",
+    ar: "النظام"
+  },
+  editProfile: {
+    en: "Edit Profile",
+    ar: "تعديل الملف الشخصي"
+  },
+  profileUpdated: {
+    en: "Profile updated successfully",
+    ar: "تم تحديث الملف الشخصي بنجاح"
+  },
+  errorUpdatingProfile: {
+    en: "Error updating profile",
+    ar: "خطأ في تحديث الملف الشخصي"
+  },
+  errorFetchingProfile: {
+    en: "Error fetching profile data",
+    ar: "خطأ في جلب بيانات الملف الشخصي"
+  },
+  saving: {
+    en: "Saving...",
+    ar: "جاري الحفظ..."
+  },
+  success: {
+    en: "Success",
+    ar: "تم بنجاح"
+  },
+  welcomeBack: {
+    en: "Welcome back!",
+    ar: "مرحباً بعودتك!"
+  },
+  changePassword: {
+    en: "Change Password",
+    ar: "تغيير كلمة المرور"
+  },
+  sendVerificationCode: {
+    en: "Send Verification Code",
+    ar: "إرسال رمز التحقق"
+  },
+  verificationCode: {
+    en: "Verification Code",
+    ar: "رمز التحقق"
+  },
+  verifyCode: {
+    en: "Verify Code",
+    ar: "تحقق من الرمز"
+  },
+  newPassword: {
+    en: "New Password",
+    ar: "كلمة المرور الجديدة"
+  },
+  confirmPassword: {
+    en: "Confirm Password",
+    ar: "تأكيد كلمة المرور"
+  },
+  updatePassword: {
+    en: "Update Password",
+    ar: "تحديث كلمة المرور"
+  },
+  passwordUpdated: {
+    en: "Password Updated",
+    ar: "تم تحديث كلمة المرور"
+  },
+  loginWithNewPassword: {
+    en: "Please login with your new password",
+    ar: "الرجاء تسجيل الدخول باستخدام كلمة المرور الجديدة"
+  },
+  otpSent: {
+    en: "Verification Code Sent",
+    ar: "تم إرسال رمز التحقق"
+  },
+  checkYourEmail: {
+    en: "Please check your email for the verification code",
+    ar: "الرجاء التحقق من بريدك الإلكتروني للحصول على رمز التحقق"
+  },
+  otpVerified: {
+    en: "Code Verified",
+    ar: "تم التحقق من الرمز"
+  },
+  proceedToChangePassword: {
+    en: "You can now set your new password",
+    ar: "يمكنك الآن تعيين كلمة المرور الجديدة"
+  },
+  errorRequestingOtp: {
+    en: "Error requesting verification code",
+    ar: "خطأ في طلب رمز التحقق"
+  },
+  invalidOtp: {
+    en: "Invalid verification code",
+    ar: "رمز التحقق غير صالح"
+  },
+  errorChangingPassword: {
+    en: "Error changing password",
+    ar: "خطأ في تغيير كلمة المرور"
+  },
+  requestVerificationDescription: {
+    en: "We'll send a verification code to your email",
+    ar: "سنرسل رمز التحقق إلى بريدك الإلكتروني"
+  },
+  enterVerificationDescription: {
+    en: "Enter the verification code sent to your email",
+    ar: "أدخل رمز التحقق المرسل إلى بريدك الإلكتروني"
+  },
+  enterNewPasswordDescription: {
+    en: "Create a new password for your account",
+    ar: "إنشاء كلمة مرور جديدة لحسابك"
+  },
+  backToEmailInput: {
+    en: "Back to Email",
+    ar: "العودة إلى البريد الإلكتروني"
+  },
+  sending: {
+    en: "Sending...",
+    ar: "جاري الإرسال..."
+  },
+  verifying: {
+    en: "Verifying...",
+    ar: "جاري التحقق..."
+  },
+  updating: {
+    en: "Updating...",
+    ar: "جاري التحديث..."
+  },
+  jan: {
+    en: "Jan",
+    ar: "يناير"
+  },
+  feb: {
+    en: "Feb",
+    ar: "فبراير"
+  },
+  mar: {
+    en: "Mar",
+    ar: "مارس"
+  },
+  apr: {
+    en: "Apr",
+    ar: "أبريل"
+  },
+  may: {
+    en: "May",
+    ar: "مايو"
+  },
+  jun: {
+    en: "Jun",
+    ar: "يونيو"
+  },
+  jul: {
+    en: "Jul",
+    ar: "يوليو"
+  },
+  aug: {
+    en: "Aug",
+    ar: "أغسطس"
+  },
+  sep: {
+    en: "Sep",
+    ar: "سبتمبر"
+  },
+  oct: {
+    en: "Oct",
+    ar: "أكتوبر"
+  },
+  nov: {
+    en: "Nov",
+    ar: "نوفمبر"
+  },
+  dec: {
+    en: "Dec",
+    ar: "ديسمبر"
+  },
+  serverStorage: {
+    en: "Server Storage",
+    ar: "تخزين الخادم"
+  },
+  manageServerFiles: {
+    en: "Manage and organize server files and folders",
+    ar: "إدارة وتنظيم ملفات ومجلدات الخادم"
+  },
+  uploadFile: {
+    en: "Upload File",
+    ar: "رفع ملف"
+  },
+  newFolder: {
+    en: "New Folder",
+    ar: "مجلد جديد"
+  },
+  enterFolderName: {
+    en: "Enter folder name",
+    ar: "أدخل اسم المجلد"
+  },
+  upOneLevel: {
+    en: "Up one level",
+    ar: "مستوى واحد للأعلى"
+  },
+  totalFiles: {
+    en: "Total Files",
+    ar: "إجمالي الملفات"
+  },
+  fileDownloadedSuccessfully: {
+    en: "File downloaded successfully",
+    ar: "تم تحميل الملف بنجاح"
+  },
+  failedToDownloadFile: {
+    en: "Failed to download file",
+    ar: "فشل في تحميل الملف"
+  },
+  serverApiData: {
+    en: "Server API Data",
+    ar: "بيانات API الخادم"
+  },
+  viewServerData: {
+    en: "View and manage server API data",
+    ar: "عرض وإدارة بيانات API الخادم"
+  },
+  totalRecords: {
+    en: "total records",
+    ar: "إجمالي السجلات"
+  },
+  exportData: {
+    en: "Export Data",
+    ar: "تصدير البيانات"
+  },
+  showingResults: {
+    en: "Showing",
+    ar: "عرض"
+  },
+  of: {
+    en: "of",
+    ar: "من"
+  },
+  phoneSn: {
+    en: "Phone S/N",
+    ar: "الرقم التسلسلي"
+  },
+  changeHwid: {
+    en: "Change HWID",
+    ar: "تغيير HWID"
+  },
+  confirmHwidReset: {
+    en: "Confirm HWID Reset",
+    ar: "تأكيد إعادة تعيين HWID"
+  },
+  hwidResetWarning: {
+    en: "Are you sure you want to reset your HWID? This action cannot be undone.",
+    ar: "هل أنت متأكد من إعادة تعيين HWID؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  hwidReset: {
+    en: "HWID has been reset successfully",
+    ar: "تم إعادة تعيين HWID بنجاح"
+  },
+  errorResettingHwid: {
+    en: "Error resetting HWID",
+    ar: "خطأ في إعادة تعيين HWID"
+  },
+  accountBlocked: {
+    en: "Account Blocked",
+    ar: "الحساب محظور"
+  },
+  accountBlockedDescription: {
+    en: "Your account has been blocked. Please contact admin for assistance.",
+    ar: "تم حظر حسابك. يرجى الاتصال بالمسؤول للحصول على المساعدة."
+  },
+  noCreditsLeft: {
+    en: "No Credits Left",
+    ar: "لا يوجد رصيد"
+  },
+  noCreditsLeftDescription: {
+    en: "You don't have any credits left. Please contact admin to add credits.",
+    ar: "ليس لديك أي رصيد متبقي. يرجى الاتصال بالمسؤول لإضافة رصيد."
+  },
+  checkingSession: {
+    en: "Checking session...",
+    ar: "جاري التحقق من حالة الجلسة..."
+  },
+  sessionExpired: {
+    en: "Session expired",
+    ar: "انتهت صلاحية الجلسة"
+  },
+  pleaseLoginAgain: {
+    en: "Please login again",
+    ar: "يرجى تسجيل الدخول مجددًا"
+  },
+  loginFailed: {
+    en: "Login failed",
+    ar: "فشل تسجيل الدخول"
+  },
+  comeBackSoon: {
+    en: "Come back soon!",
+    ar: "نراك قريبًا!"
+  },
+  logoutFailed: {
+    en: "Logout failed",
+    ar: "فشل تسجيل الخروج"
+  },
+  platformMonthlyActivity: {
+    en: "Platform Monthly Activity",
+    ar: "نشاط المنصة الشهري"
+  },
+  monthlyOperationsChart: {
+    en: "Monthly Operations",
+    ar: "العمليات الشهرية"
+  },
+  operationsByType: {
+    en: "Operations by Type",
+    ar: "العمليات حسب النوع"
+  },
+  platformOperationTypes: {
+    en: "Platform Operation Types",
+    ar: "أنواع عمليات المنصة"
+  },
+  lastSixMonths: {
+    en: "Operations over the last 6 months",
+    ar: "العمليات خلال الستة أشهر الماضية"
+  },
+  operationTypeDistribution: {
+    en: "Distribution of operations by type",
+    ar: "توزيع العمليات حسب النوع"
+  },
+  operationTypeBreakdown: {
+    en: "Breakdown of all operations by type",
+    ar: "تفصيل جميع العمليات حسب النوع"
+  },
+  guest: {
+    en: "Guest",
+    ar: "زائر"
+  }
+};
 
-  useEffect(() => {
-    document.documentElement.setAttribute("lang", language);
-    document.documentElement.setAttribute("dir", isRTL ? "rtl" : "ltr");
-    localStorage.setItem("language", language);
-  }, [language, isRTL]);
+// Create the context with default values
+const LanguageContext = createContext<LanguageContextType>({
+  language: 'en',
+  setLanguage: () => {},
+  t: () => '',
+  translations,
+  isRTL: false,
+});
 
-  const toggleLanguage = () => {
-    setLanguage(prev => (prev === "en" ? "ar" : "en"));
+// Custom hook to use the language context
+export const useLanguage = () => useContext(LanguageContext);
+
+interface LanguageProviderProps {
+  children: ReactNode;
+}
+
+export const LanguageProvider = ({ children }: LanguageProviderProps) => {
+  // Detect browser language, defaulting to English if not Arabic
+  const detectLanguage = (): Language => {
+    const browserLang = navigator.language.split('-')[0];
+    return browserLang === 'ar' ? 'ar' : 'en';
   };
 
+  // Initialize with detected language
+  const [language, setLanguage] = useState<Language>(detectLanguage());
+  const isRTL = language === 'ar';
+
+  // Function to translate text
   const t = (key: string): string => {
-    if (!key) return '';
-    
-    // Check if the translation exists for the current language
-    if (TRANSLATIONS[language] && TRANSLATIONS[language][key]) {
-      return TRANSLATIONS[language][key];
+    if (translations[key]) {
+      return translations[key][language];
     }
-    
-    // Fallback to English if translation doesn't exist in current language
-    if (language !== "en" && TRANSLATIONS["en"] && TRANSLATIONS["en"][key]) {
-      console.log(`Missing translation for key "${key}" in language "${language}", falling back to English`);
-      return TRANSLATIONS["en"][key];
-    }
-    
-    // Return the key itself if no translation is found
+    console.warn(`Translation key not found: ${key}`);
     return key;
   };
+  // Apply RTL/LTR direction to document
+  useEffect(() => {
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language, isRTL]);
 
-  // Translation keys
-  const TRANSLATIONS: Record<string, Record<string, string>> = {
-    en: {
-      dashboard: "Dashboard",
-      editProfile: "Edit Profile",
-      users: "Users",
-      operations: "Operations",
-      serverApiData: "Server API Data",
-      serverStorage: "Server Storage",
-      settings: "Settings",
-      welcome: "Welcome",
-      logout: "Logout",
-      pegasusTool: "Pegasus Tool",
-      allRightsReserved: "All rights reserved",
-      totalUsers: "Total Users",
-      monthlyLicense: "Monthly License",
-      creditsLicense: "Credits License",
-      totalOperations: "Total Operations",
-      refundedOperations: "Refunded Operations",
-      myCredits: "My Credits",
-      expiryTime: "Expiry Time",
-      userDataError: "User Data Error",
-      userDataNotFound: "Please try refreshing the page",
-      adminDataError: "Admin Data Error",
-      adminDataNotFound: "Admin data could not be loaded",
-      dataLoadError: "Error Loading Data",
-      dashboardDataError: "Failed to load dashboard data. Please try refreshing the page.",
-      loadingDashboard: "Loading dashboard...",
-      // Login page translations
-      login: "Login",
-      email: "Email",
-      password: "Password",
-      loggingIn: "Logging in...",
-      searchUsers: "Search users",
-      checkingSession: "Checking session...",
-      passwordResetSuccess: "Password reset successful",
-      pleaseLoginWithNewPassword: "Please login with your new password",
-      accountBlocked: "Account Blocked",
-      accountBlockedDescription: "Your account has been blocked. Please contact support.",
-      noCreditsLeft: "No Credits",
-      noCreditsLeftDescription: "You have no credits left. Please recharge your account.",
-      // New translations for charts
-      monthlyOperationsChart: "Monthly Operations",
-      operationsByType: "Operations by Type",
-      platformMonthlyActivity: "Platform Monthly Activity",
-      platformOperationTypes: "Platform Operation Types",
-      lastSixMonths: "Operations over the last 6 months",
-      operationTypeDistribution: "Distribution of operations by type",
-      operationTypeBreakdown: "Breakdown of all operations by type",
-      directUnlock: "Direct Unlock",
-      frpRemove: "FRP Remove",
-      readInfo: "Read Info",
-      other: "Other",
-      noOperationsFound: "No operations data available",
-      monthData: "Month Data",
-      // User management translations
-      name: "Name",
-      phone: "Phone",
-      country: "Country",
-      userType: "User Type",
-      credit: "Credit",
-      status: "Status",
-      activation: "Activation",
-      startDate: "Start Date",
-      expiryDate: "Expiry Date",
-      userDetails: "User Details",
-      completeUserInfo: "Complete user information",
-      viewDetails: "View Details",
-      edit: "Edit",
-      renew: "Renew",
-      delete: "Delete",
-      renewUser: "Renew User",
-      chooseRenewalMonths: "Choose number of months to renew",
-      numberOfMonths: "Number of Months",
-      selectMonths: "Select number of months",
-      threeMonths: "3 Months",
-      sixMonths: "6 Months",
-      nineMonths: "9 Months",
-      twelveMonths: "12 Months",
-      cancel: "Cancel",
-      expired: "Expired",
-      daysRemaining: "days remaining",
-      notApplicable: "N/A",
-      actions: "Actions",
-      filterByStatus: "Filter by Status",
-      allStatuses: "All Statuses",
-      active: "Active",
-      blocked: "Blocked",
-      filterByLicenseType: "Filter by License Type",
-      allLicenseTypes: "All License Types",
-      loadingUsers: "Loading users...",
-      noUsersFound: "No users found",
-      // Server page translations
-      manageServerFiles: "Manage and organize server files and folders",
-      loadingData: "Loading data...",
-      errorLoadingData: "Error Loading Data",
-      pleaseRefreshPage: "Please try refreshing the page.",
-      viewServerData: "View and manage server API data",
-      totalRecords: "total records",
-      // Settings page translations
-      systemSettings: "System Settings",
-      controlSystemSettings: "Control system settings from here",
-      saveSettings: "Save Settings",
-      underDevelopment: "This page is currently under development.",
-      // Other actions
-      refresh: "Refresh",
-      addCredit: "Add Credit",
-      addUser: "Add User"
-    },
-    ar: {
-      dashboard: "لوحة التحكم",
-      editProfile: "تعديل الملف الشخصي",
-      users: "المستخدمون",
-      operations: "العمليات",
-      serverApiData: "بيانات خادم واجهة البرمجة",
-      serverStorage: "تخزين الخادم",
-      settings: "الإعدادات",
-      welcome: "مرحبًا",
-      logout: "تسجيل الخروج",
-      pegasusTool: "أداة بيغاسوس",
-      allRightsReserved: "جميع الحقوق محفوظة",
-      totalUsers: "إجمالي المستخدمين",
-      monthlyLicense: "ترخيص شهري",
-      creditsLicense: "ترخيص رصيد",
-      totalOperations: "إجمالي العمليات",
-      refundedOperations: "العمليات المستردة",
-      myCredits: "رصيدي",
-      expiryTime: "وقت الانتهاء",
-      userDataError: "خطأ في بيانات المستخدم",
-      userDataNotFound: "يرجى محاولة تحديث الصفحة",
-      adminDataError: "خطأ في بيانات المسؤول",
-      adminDataNotFound: "تعذر تحميل بيانات المسؤول",
-      dataLoadError: "خطأ في تحميل البيانات",
-      dashboardDataError: "فشل في تحميل بيانات لوحة التحكم. يرجى محاولة تحديث الصفحة.",
-      loadingDashboard: "جارٍ تحميل لوحة التحكم...",
-      // Login page translations
-      login: "تسجيل الدخول",
-      email: "البريد الإلكتروني",
-      password: "كلمة المرور",
-      loggingIn: "جاري تسجيل الدخول...",
-      searchUsers: "البحث عن المستخدمين",
-      checkingSession: "جاري التحقق من حالة الجلسة...",
-      passwordResetSuccess: "تم إعادة تعيين كلمة المرور بنجاح",
-      pleaseLoginWithNewPassword: "الرجاء تسجيل الدخول بكلمة المرور الجديدة",
-      accountBlocked: "الحساب محظور",
-      accountBlockedDescription: "تم حظر حسابك. يرجى الاتصال بالدعم.",
-      noCreditsLeft: "لا يوجد رصيد",
-      noCreditsLeftDescription: "ليس لديك رصيد متبقي. يرجى إعادة شحن حسابك.",
-      // New translations for charts
-      monthlyOperationsChart: "العمليات الشهرية",
-      operationsByType: "العمليات حسب النوع",
-      platformMonthlyActivity: "نشاط المنصة الشهري",
-      platformOperationTypes: "أنواع عمليات المنصة",
-      lastSixMonths: "العمليات خلال الستة أشهر الماضية",
-      operationTypeDistribution: "توزيع العمليات حسب النوع",
-      operationTypeBreakdown: "تفصيل جميع العمليات حسب النوع",
-      directUnlock: "فك القفل المباشر",
-      frpRemove: "إزالة FRP",
-      readInfo: "قراءة المعلومات",
-      other: "أخرى",
-      noOperationsFound: "لا توجد بيانات عمليات متاحة",
-      monthData: "بيانات الشهر",
-      // User management translations
-      name: "الاسم",
-      phone: "الهاتف",
-      country: "الدولة",
-      userType: "نوع المستخدم",
-      credit: "الرصيد",
-      status: "الحالة",
-      activation: "التفعيل",
-      startDate: "تاريخ البدء",
-      expiryDate: "تاريخ الانتهاء",
-      userDetails: "تفاصيل المستخدم",
-      completeUserInfo: "معلومات المستخدم الكاملة",
-      viewDetails: "عرض التفاصيل",
-      edit: "تعديل",
-      renew: "تجديد",
-      delete: "حذف",
-      renewUser: "تجديد حساب المستخدم",
-      chooseRenewalMonths: "اختر عدد الأشهر لتجديد الحساب",
-      numberOfMonths: "عدد الأشهر",
-      selectMonths: "اختر عدد الأشهر",
-      threeMonths: "3 أشهر",
-      sixMonths: "6 أشهر",
-      nineMonths: "9 أشهر",
-      twelveMonths: "12 أشهر",
-      cancel: "إلغاء",
-      expired: "منتهي الصلاحية",
-      daysRemaining: "أيام متبقية",
-      notApplicable: "غير متوفر",
-      actions: "الإجراءات",
-      filterByStatus: "تصفية حسب الحالة",
-      allStatuses: "جميع الحالات",
-      active: "نشط",
-      blocked: "محظور",
-      filterByLicenseType: "تصفية حسب نوع الترخيص",
-      allLicenseTypes: "جميع أنواع التراخيص",
-      loadingUsers: "جاري تحميل المستخدمين...",
-      noUsersFound: "لم يتم العثور على مستخدمين",
-      // Server page translations
-      manageServerFiles: "إدارة وتنظيم ملفات ومجلدات الخادم",
-      loadingData: "جاري تحميل البيانات...",
-      errorLoadingData: "خطأ في تحميل البيانات",
-      pleaseRefreshPage: "يرجى محاولة تحديث الصفحة.",
-      viewServerData: "عرض وإدارة بيانات واجهة برمجة الخادم",
-      totalRecords: "إجمالي السجلات",
-      // Settings page translations
-      systemSettings: "إعدادات النظام",
-      controlSystemSettings: "تحكم في إعدادات النظام من هنا",
-      saveSettings: "حفظ الإعدادات",
-      underDevelopment: "هذه الصفحة قيد التطوير حاليًا.",
-      // Other actions
-      refresh: "تحديث",
-      addCredit: "إضافة رصيد",
-      addUser: "إضافة مستخدم"
-    }
-  };
-
-  const contextValue: LanguageContextProps = {
+  const value = {
     language,
     setLanguage,
-    isRTL,
-    toggleLanguage,
     t,
+    translations,
+    isRTL
   };
 
   return (
-    <LanguageContext.Provider value={contextValue}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );
-}
-
-export function useLanguage(): LanguageContextProps {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
-  }
-  return context;
-}
-
-// The duplicate export was removed
+};
