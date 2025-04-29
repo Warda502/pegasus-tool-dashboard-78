@@ -3,9 +3,20 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useFetchUsers } from "./useFetchUsers";
 import { useFetchOperations } from "./useFetchOperations";
 import { useDataActions } from "./useDataActions";
-import { SharedDataContextType } from "./types";
+import { User, Operation } from "./types"; // Import User and Operation types
 import { useAuth } from "../auth/AuthContext";
 import { toast } from "@/components/ui/sonner";
+
+// Define the SharedDataContextType here since it's not exported from types.ts
+interface SharedDataContextType {
+  users: User[];
+  operations: Operation[];
+  isLoading: boolean;
+  isError: boolean;
+  refreshData: () => Promise<void>;
+  addCreditToUser: (userId: string, amount: number) => Promise<void>;
+  refundOperation: (operationId: string) => Promise<void>;
+}
 
 const DataContext = createContext<SharedDataContextType | undefined>(undefined);
 

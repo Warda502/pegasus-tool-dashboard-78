@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from "react";
 
 interface LanguageContextProps {
@@ -137,4 +138,5 @@ export function useLanguage(): LanguageContextProps {
   return context;
 }
 
-export { useLanguage };
+// Remove the duplicate export here
+// export { useLanguage };
