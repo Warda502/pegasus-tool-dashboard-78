@@ -99,7 +99,7 @@ export const translations: Translations = {
     ar: "تم تصدير البيانات بنجاح"
   },
   operationID: {
-    en: "Operation ID",
+    en: "ID",
     ar: "رقم العملية"
   },
   operationType: {
