@@ -26,6 +26,14 @@ export const translations: Translations = {
     en: "Dashboard",
     ar: "الرئيسية"
   },
+  dataLoadError: {
+    en: "Error Loading Data",
+    ar: "فشل عرض البيانات"
+  },
+  dashboardDataError: {
+    en: "Failed To Load Dashboard Data. Please Wait...",
+    ar: "فشل تحميل بيانات لوحة المعلومات. يُرجى الانتظار..."
+  },
   operations: {
     en: "Operations",
     ar: "العمليات"
