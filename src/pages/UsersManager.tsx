@@ -119,10 +119,10 @@ export default function UsersManager() {
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
               <Users className="h-5 w-5" />
-              <span>{t("usersManagement")}</span>
+              <span>{t("users")}</span>
             </CardTitle>
             <CardDescription>
-              {t("manageYourUsersDescription")}
+              {t("usersDescription")}
               {users.length > 0 && (
                 <span className="ml-2 font-medium">
                   ({users.length} {t("totalUsers") || "total users"})
