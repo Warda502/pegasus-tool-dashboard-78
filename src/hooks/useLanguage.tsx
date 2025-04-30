@@ -66,24 +66,12 @@ export const translations: Translations = {
     en: "Failed Operations",
     ar: "العمليات الفاشلة"
   },
-  showAll: {
-    en: "Show All",
-    ar: "إظهار الكل"
-  },
-  basicView: {
-    en: "Basic View",
-    ar: "عرض أساسي"
-  },
-  detailedView: {
-    en: "Detailed View",
-    ar: "عرض مفصل"
-  },
   loading: {
-    en: "Loading data...",
+    en: "Loading Data...",
     ar: "جاري تحميل البيانات..."
   },
   noData: {
-    en: "No operations found",
+    en: "No Operations Found",
     ar: "لا توجد عمليات مسجلة"
   },
   export: {
@@ -99,7 +87,7 @@ export const translations: Translations = {
     ar: "تم التصدير"
   },
   exportSuccess: {
-    en: "Data exported successfully",
+    en: "Data Exported Successfully",
     ar: "تم تصدير البيانات بنجاح"
   },
   operationID: {
@@ -183,7 +171,7 @@ export const translations: Translations = {
     ar: "استرداد"
   },
   operationsManagement: {
-    en: "View and manage system operations",
+    en: "View And Manage System Operations",
     ar: "عرض وإدارة العمليات المسجلة في النظام"
   },
   totalOperations: {
@@ -191,11 +179,11 @@ export const translations: Translations = {
     ar: "إجمالي العمليات"
   },
   refundSuccess: {
-    en: "Refund completed",
+    en: "Refund Completed",
     ar: "تم الاسترداد"
   },
   refundDescription: {
-    en: "Credit has been refunded successfully",
+    en: "Credit Has Been Refunded Successfully",
     ar: "تم استرداد الرصيد بنجاح"
   },
   addUser: {
@@ -227,11 +215,11 @@ export const translations: Translations = {
     ar: "قائمة المستخدمين"
   },
   usersDescription: {
-    en: "Manage all system users from here",
+    en: "Manage All System Users From Here",
     ar: "يمكنك إدارة جميع المستخدمين من هنا"
   },
   searchUsers: {
-    en: "Search for users...",
+    en: "Search For Users...",
     ar: "بحث عن مستخدم..."
   },
   email: {
@@ -303,7 +291,7 @@ export const translations: Translations = {
     ar: "تم الحذف"
   },
   deleteUserSuccess: {
-    en: "User deleted successfully",
+    en: "User Deleted Successfully",
     ar: "تم حذف المستخدم بنجاح"
   },
   addSuccess: {
@@ -327,11 +315,11 @@ export const translations: Translations = {
     ar: "تمت إضافة الرصيد"
   },
   addCreditDescription: {
-    en: "Credit added successfully",
+    en: "Credit Added Successfully",
     ar: "تم إضافة الرصيد بنجاح"
   },
   selectUser: {
-    en: "Select user",
+    en: "Select User",
     ar: "اختر مستخدم"
   },
   creditAmount: {
@@ -395,12 +383,16 @@ export const translations: Translations = {
     ar: "نظام متكامل لإدارة المستخدمين وتتبع أنشطتهم بواجهة سهلة الاستخدام"
   },
   loginSuccess: {
-    en: "Login successful",
+    en: "Login Successful",
     ar: "تم تسجيل الدخول بنجاح"
   },
   loadingData: {
-    en: "Loading data...",
+    en: "Loading Data...",
     ar: "جاري الآن جلب البيانات..."
+  },
+  loadingDashboard: {
+    en: "Loading Dashboard...",
+    ar: "جاري جلب البيانات الى لوحة التحكم..."
   },
   error: {
     en: "Error",
@@ -411,11 +403,11 @@ export const translations: Translations = {
     ar: "حدث خطأ غير متوقع"
   },
   loginError: {
-    en: "Login error",
+    en: "Login Error",
     ar: "حدث خطأ في تسجيل الدخول"
   },
   logoutSuccess: {
-    en: "Successfully logged out",
+    en: "Successfully Logged Out",
     ar: "تم تسجيل الخروج بنجاح"
   },
   userDetails: {
@@ -423,7 +415,7 @@ export const translations: Translations = {
     ar: "تفاصيل المستخدم"
   },
   completeUserInfo: {
-    en: "Complete user information",
+    en: "Complete User Information",
     ar: "معلومات كاملة عن المستخدم"
   },
   name: {
@@ -530,18 +522,6 @@ export const translations: Translations = {
     en: "Failed to add user",
     ar: "فشل في إضافة المستخدم"
   },
-  signupTitle: {
-    en: "Create Account",
-    ar: "إنشاء حساب"
-  },
-  signupDescription: {
-    en: "Fill in the information to create your account",
-    ar: "املأ المعلومات لإنشاء حسابك"
-  },
-  createAccountBtn: {
-    en: "Create Account",
-    ar: "إنشاء الحساب"
-  },
   dashboardTitle: {
     en: "Dashboard",
     ar: "لوحة التحكم"
@@ -623,88 +603,8 @@ export const translations: Translations = {
     ar: "تم بنجاح"
   },
   welcomeBack: {
-    en: "Welcome back!",
+    en: "Welcome Back!",
     ar: "مرحباً بعودتك!"
-  },
-  changePassword: {
-    en: "Change Password",
-    ar: "تغيير كلمة المرور"
-  },
-  sendVerificationCode: {
-    en: "Send Verification Code",
-    ar: "إرسال رمز التحقق"
-  },
-  verificationCode: {
-    en: "Verification Code",
-    ar: "رمز التحقق"
-  },
-  verifyCode: {
-    en: "Verify Code",
-    ar: "تحقق من الرمز"
-  },
-  newPassword: {
-    en: "New Password",
-    ar: "كلمة المرور الجديدة"
-  },
-  confirmPassword: {
-    en: "Confirm Password",
-    ar: "تأكيد كلمة المرور"
-  },
-  updatePassword: {
-    en: "Update Password",
-    ar: "تحديث كلمة المرور"
-  },
-  passwordUpdated: {
-    en: "Password Updated",
-    ar: "تم تحديث كلمة المرور"
-  },
-  loginWithNewPassword: {
-    en: "Please login with your new password",
-    ar: "الرجاء تسجيل الدخول باستخدام كلمة المرور الجديدة"
-  },
-  otpSent: {
-    en: "Verification Code Sent",
-    ar: "تم إرسال رمز التحقق"
-  },
-  checkYourEmail: {
-    en: "Please check your email for the verification code",
-    ar: "الرجاء التحقق من بريدك الإلكتروني للحصول على رمز التحقق"
-  },
-  otpVerified: {
-    en: "Code Verified",
-    ar: "تم التحقق من الرمز"
-  },
-  proceedToChangePassword: {
-    en: "You can now set your new password",
-    ar: "يمكنك الآن تعيين كلمة المرور الجديدة"
-  },
-  errorRequestingOtp: {
-    en: "Error requesting verification code",
-    ar: "خطأ في طلب رمز التحقق"
-  },
-  invalidOtp: {
-    en: "Invalid verification code",
-    ar: "رمز التحقق غير صالح"
-  },
-  errorChangingPassword: {
-    en: "Error changing password",
-    ar: "خطأ في تغيير كلمة المرور"
-  },
-  requestVerificationDescription: {
-    en: "We'll send a verification code to your email",
-    ar: "سنرسل رمز التحقق إلى بريدك الإلكتروني"
-  },
-  enterVerificationDescription: {
-    en: "Enter the verification code sent to your email",
-    ar: "أدخل رمز التحقق المرسل إلى بريدك الإلكتروني"
-  },
-  enterNewPasswordDescription: {
-    en: "Create a new password for your account",
-    ar: "إنشاء كلمة مرور جديدة لحسابك"
-  },
-  backToEmailInput: {
-    en: "Back to Email",
-    ar: "العودة إلى البريد الإلكتروني"
   },
   sending: {
     en: "Sending...",
@@ -771,7 +671,7 @@ export const translations: Translations = {
     ar: "تخزين الخادم"
   },
   manageServerFiles: {
-    en: "Manage and organize server files and folders",
+    en: "Manage And Organize Server Files And Folders",
     ar: "إدارة وتنظيم ملفات ومجلدات الخادم"
   },
   uploadFile: {
@@ -811,7 +711,7 @@ export const translations: Translations = {
     ar: "عرض وإدارة بيانات API الخادم"
   },
   totalRecords: {
-    en: "total records",
+    en: "Total Records",
     ar: "إجمالي السجلات"
   },
   exportData: {
@@ -858,36 +758,32 @@ export const translations: Translations = {
     en: "Your account has been blocked. Please contact admin for assistance.",
     ar: "تم حظر حسابك. يرجى الاتصال بالمسؤول للحصول على المساعدة."
   },
-  noCreditsLeft: {
-    en: "No Credits Left",
-    ar: "لا يوجد رصيد"
-  },
   noCreditsLeftDescription: {
     en: "You don't have any credits left. Please contact admin to add credits.",
     ar: "ليس لديك أي رصيد متبقي. يرجى الاتصال بالمسؤول لإضافة رصيد."
   },
   checkingSession: {
-    en: "Checking session...",
+    en: "Checking Session...",
     ar: "جاري التحقق من حالة الجلسة..."
   },
   sessionExpired: {
-    en: "Session expired",
+    en: "Session Expired",
     ar: "انتهت صلاحية الجلسة"
   },
   pleaseLoginAgain: {
-    en: "Please login again",
+    en: "Please Login Again",
     ar: "يرجى تسجيل الدخول مجددًا"
   },
   loginFailed: {
-    en: "Login failed",
+    en: "Login Failed",
     ar: "فشل تسجيل الدخول"
   },
   comeBackSoon: {
-    en: "Come back soon!",
+    en: "Come Back Soon!",
     ar: "نراك قريبًا!"
   },
   logoutFailed: {
-    en: "Logout failed",
+    en: "Logout Failed",
     ar: "فشل تسجيل الخروج"
   },
   platformMonthlyActivity: {
