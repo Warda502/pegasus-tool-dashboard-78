@@ -154,6 +154,10 @@ export const translations: Translations = {
     en: "Carrier",
     ar: "المشغل"
   },
+  notes: {
+    en: "Notes",
+    ar: "ملاحضة"
+  },
   securityPatch: {
     en: "Security Patch",
     ar: "تحديث الأمان"
