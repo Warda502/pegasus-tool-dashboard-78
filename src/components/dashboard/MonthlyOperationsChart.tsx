@@ -17,7 +17,7 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
   const monthlyData = useMemo(() => {
     if (!operations || operations.length === 0) return [];
     
-    // Get the last 12 months
+    // Get the last 6 months
     const monthsToShow = 6;
     const today = new Date();
     const months = Array.from({ length: monthsToShow }, (_, i) => {
@@ -30,22 +30,48 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
       };
     }).reverse();
     
+    console.log("Processing operations for chart:", operations.length);
+    
+    // Custom date parser for format: yyyy/MM/dd hh:mm -tt
+    const extractMonthYearKey = (timeStr: string): string | null => {
+      if (!timeStr) return null;
+      
+      try {
+        // Handle format like "2023/04/25 09:30 -AM" or similar variations
+        const regex = /(\d{4})\/(\d{2})\/\d{2}/;
+        const match = timeStr.match(regex);
+        
+        if (match && match.length >= 3) {
+          const year = match[1];
+          const month = match[2];
+          return `${year}-${month}`;
+        }
+        
+        return null;
+      } catch (error) {
+        console.error("Failed to parse date:", timeStr, error);
+        return null;
+      }
+    };
+    
     // Count operations per month
     operations.forEach(op => {
       if (!op.Time) return;
       
-      try {
-        const opDate = parseISO(op.Time);
-        const monthKey = format(opDate, "yyyy-MM");
-        
-        const monthData = months.find(m => m.monthKey === monthKey);
-        if (monthData) {
-          monthData.count += 1;
-        }
-      } catch (error) {
-        console.error("Failed to parse operation date", op.Time);
+      const monthKey = extractMonthYearKey(op.Time);
+      if (!monthKey) return;
+      
+      const monthData = months.find(m => m.monthKey === monthKey);
+      if (monthData) {
+        monthData.count += 1;
       }
     });
+    
+    console.log("Monthly data:", months.map(m => ({
+      key: m.monthKey, 
+      name: m.displayName, 
+      count: m.count
+    })));
     
     return months.map(m => ({
       name: m.displayName,
