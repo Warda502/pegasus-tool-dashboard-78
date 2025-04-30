@@ -715,7 +715,19 @@ export const translations: Translations = {
     ar: "بيانات API الخادم"
   },
   viewServerData: {
-    en: "View and manage server API data",
+    en: "View And Manage Server API Data",
+    ar: "عرض وإدارة بيانات API الخادم"
+  },
+  totalMyCertFiles: {
+    en: "Total My CertFiles",
+    ar: "اجمالي ملفات الشهادات الخاصة بي"
+  },
+  myCertFiles: {
+    en: "My CertFiles",
+    ar: "ملفات الشهادات الخاصة بي"
+  },
+  viewCertFiles: {
+    en: "View And Manage Your Cert Fles",
     ar: "عرض وإدارة بيانات API الخادم"
   },
   totalRecords: {
@@ -731,7 +743,7 @@ export const translations: Translations = {
     ar: "عرض"
   },
   of: {
-    en: "of",
+    en: "Of",
     ar: "من"
   },
   phoneSn: {
