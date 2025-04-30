@@ -17,7 +17,7 @@ export type Database = {
           ImeiSign: string | null
           Model: string | null
           Notes: string | null
-          Phone_sn: string | null
+          Phone_sn: string
           PubKey: string | null
           PubKeySign: string | null
           uid: string
@@ -29,7 +29,7 @@ export type Database = {
           ImeiSign?: string | null
           Model?: string | null
           Notes?: string | null
-          Phone_sn?: string | null
+          Phone_sn: string
           PubKey?: string | null
           PubKeySign?: string | null
           uid?: string
@@ -41,7 +41,7 @@ export type Database = {
           ImeiSign?: string | null
           Model?: string | null
           Notes?: string | null
-          Phone_sn?: string | null
+          Phone_sn?: string
           PubKey?: string | null
           PubKeySign?: string | null
           uid?: string

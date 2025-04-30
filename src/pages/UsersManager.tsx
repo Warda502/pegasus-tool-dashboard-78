@@ -18,7 +18,6 @@ import { UserFilters } from "@/components/users/UserFilters";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
 import { useUserOperations } from "@/hooks/useUserOperations";
 import { UsersTable } from "@/components/users/UsersTable";
-import { Loading } from "@/components/ui/loading";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -111,29 +110,25 @@ export default function UsersManager() {
   console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role);
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="flex min-h-screen bg-gray-100">
-      <Card className="flex flex-col w-full h-full max-w-full shadow m-0">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white border-b">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <CardTitle className="text-2xl font-extrabold text-gray-900">{t("users")}</CardTitle>
-              <CardDescription>
-                {t("usersDescription")} 
-                {role === "admin" ? ` (${users.length} total)` : ""}
-              </CardDescription>
-            </div>
+    <div dir={isRTL ? "rtl" : "ltr"} className="flex flex-col space-y-4">
+      <Card className="border shadow-sm">
+        <CardHeader className="px-6 py-4 bg-card border-b">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="text-xl md:text-2xl font-bold tracking-tight">
+              {t("usersManagement")}
+            </CardTitle>
+            <UserHeaderActions
+              isAdmin={role === "admin"}
+              onRefresh={handleRefresh}
+              onAddCredits={openAddCreditsDialog}
+              onAddUser={openAddDialog}
+            />
           </div>
-          <UserHeaderActions
-            isAdmin={role === "admin"}
-            onRefresh={handleRefresh}
-            onAddCredits={openAddCreditsDialog}
-            onAddUser={openAddDialog}
-          />
+          <CardDescription className="text-sm text-muted-foreground">
+            {t("manageYourUsersDescription")}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow overflow-auto p-4">
+        <CardContent className="p-6">
           <UserFilters
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
