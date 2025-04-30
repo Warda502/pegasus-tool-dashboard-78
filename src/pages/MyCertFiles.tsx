@@ -19,10 +19,12 @@ export default function MyCertFiles() {
     return (
       <ErrorAlert
         title={t("errorLoadingData") || "Error Loading Data"}
-        description={t("pleaseRefreshPage") || "Please try refreshing the page."}
+        description={(error as Error).message || t("pleaseRefreshPage") || "Please try refreshing the page."}
       />
     );
   }
+
+  console.log("MyCertFiles page data:", data);
 
   return (
     <div className="space-y-6">
