@@ -3,17 +3,19 @@ import { useMemo } from "react";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
-import { CreditCard, Clock, RefreshCcw, FileBarChart } from "lucide-react";
+import { CreditCard, Clock, FileCheck, FileBarChart } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
 import { ChartCard } from "./ChartCard";
 import { MonthlyOperationsChart } from "./MonthlyOperationsChart";
 import { OperationTypeChart } from "./OperationTypeChart";
+import { useUserCertFiles } from "@/hooks/useUserCertFiles";
 
 export function UserDashboard() {
   const { operations, users } = useSharedData();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { data: certFiles = [] } = useUserCertFiles();
   
   const stats = useMemo(() => {
     if (!user) {
@@ -40,19 +42,14 @@ export function UserDashboard() {
       op.UID === currentUser.id || op.UID === currentUser.uid || op.UID === currentUser.UID
     );
     
-    // Count refunded operations
-    const refundedOperations = userOperations.filter(
-      op => op.Status?.toLowerCase() === 'refunded'
-    ).length;
-    
     return {
       credits: userCredit,
       expiryTime,
-      refundedOperations,
+      totalCertFiles: certFiles.length,
       totalOperations: userOperations.length,
       userOperations
     };
-  }, [operations, users, user]);
+  }, [operations, users, user, certFiles]);
 
   if (!stats) {
     return (
@@ -79,9 +76,9 @@ export function UserDashboard() {
           variant="warning"
         />
         <StatCard
-          title={t("refundedOperations") || "Refunded Operations"}
-          value={stats.refundedOperations}
-          icon={<RefreshCcw className="h-4 w-4 text-muted-foreground" />}
+          title={t("totalMyCertFiles") || "Total My CertFiles"}
+          value={stats.totalCertFiles}
+          icon={<FileCheck className="h-4 w-4 text-muted-foreground" />}
           variant="success"
         />
         <StatCard
@@ -103,7 +100,7 @@ export function UserDashboard() {
         
         <ChartCard 
           title={t("operationsByType") || "Operations by Type"}
-          icon={<RefreshCcw className="h-4 w-4 text-muted-foreground" />}
+          icon={<FileCheck className="h-4 w-4 text-muted-foreground" />}
           description={t("operationTypeDistribution") || "Distribution of operations by type"}
         >
           <OperationTypeChart operations={stats.userOperations} />

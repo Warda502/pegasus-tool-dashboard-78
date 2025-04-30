@@ -12,7 +12,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileQuestion } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -43,6 +43,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("editProfile"),
       path: "/edit-profile",
       icon: User,
+      show: !isAdmin
+    },
+    {
+      title: t("myCertFiles"),
+      path: "/my-cert-files",
+      icon: FileCheck,
       show: !isAdmin
     },
     {

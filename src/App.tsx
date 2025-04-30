@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import { AuthProvider } from "./hooks/auth/AuthContext";
 import { DataProvider } from "./hooks/data/DataContext";
 import ServerApiData from "./pages/ServerApiData";
 import ServerStorage from "./pages/ServerStorage";
+import MyCertFiles from "./pages/MyCertFiles";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -72,6 +74,11 @@ const App = () => (
                 <Route path="/server-storage" element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <AppLayout><ServerStorage /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/my-cert-files" element={
+                  <ProtectedRoute>
+                    <AppLayout><MyCertFiles /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
