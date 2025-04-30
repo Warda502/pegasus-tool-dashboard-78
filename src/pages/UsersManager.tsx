@@ -5,7 +5,7 @@ import { useSharedData, useLanguage } from "@/hooks/useSharedData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ArrowLeft } from "lucide-react";
+import { Users, Search, RefreshCw, PlusCircle, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ViewUserDialog } from "@/components/users/ViewUserDialog";
@@ -13,11 +13,11 @@ import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
-import { UserHeaderActions } from "@/components/users/UserHeaderActions";
 import { UserFilters } from "@/components/users/UserFilters";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
 import { useUserOperations } from "@/hooks/useUserOperations";
 import { UsersTable } from "@/components/users/UsersTable";
+import { Input } from "@/components/ui/input";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -59,6 +59,9 @@ export default function UsersManager() {
   const handleRefresh = () => {
     console.log("Manual refresh triggered");
     refreshData();
+    toast(t("refreshingData") || "Refreshing data...", {
+      description: t("fetchingAllUsers") || "Fetching all users, this might take a moment"
+    });
   };
 
   const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
@@ -110,34 +113,63 @@ export default function UsersManager() {
   console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role);
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="flex flex-col space-y-4">
-      <Card className="border shadow-sm">
-        <CardHeader className="px-6 py-4 bg-card border-b">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <CardTitle className="text-xl md:text-2xl font-bold tracking-tight">
-              {t("usersManagement")}
+    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span>{t("usersManagement")}</span>
             </CardTitle>
-            <UserHeaderActions
+            <CardDescription>
+              {t("manageYourUsersDescription")}
+              {users.length > 0 && (
+                <span className="ml-2 font-medium">
+                  ({users.length} {t("totalUsers") || "total users"})
+                </span>
+              )}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t("refresh")}
+            </Button>
+            {role === "admin" && (
+              <>
+                <Button variant="outline" size="sm" onClick={openAddCreditsDialog}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  {t("addCredit")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={openAddDialog}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {t("addUser")}
+                </Button>
+              </>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={t("search")}
+                className="w-full pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <UserFilters
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              licenseTypeFilter={licenseTypeFilter}
+              onLicenseTypeFilterChange={setLicenseTypeFilter}
               isAdmin={role === "admin"}
-              onRefresh={handleRefresh}
-              onAddCredits={openAddCreditsDialog}
-              onAddUser={openAddDialog}
             />
           </div>
-          <CardDescription className="text-sm text-muted-foreground">
-            {t("manageYourUsersDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <UserFilters
-            searchValue={searchQuery}
-            onSearchChange={setSearchQuery}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            licenseTypeFilter={licenseTypeFilter}
-            onLicenseTypeFilterChange={setLicenseTypeFilter}
-            isAdmin={role === "admin"}
-          />
           
           <UsersTable
             users={filteredUsers}

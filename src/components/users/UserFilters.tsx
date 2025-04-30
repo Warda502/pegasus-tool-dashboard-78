@@ -1,12 +1,8 @@
 
-import { useState } from "react";
-import { UserSearch } from "./UserSearch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/hooks/useLanguage";
 
-export interface UserFiltersProps {
-  searchValue: string;
-  onSearchChange: (value: string) => void;
+interface UserFiltersProps {
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
   licenseTypeFilter: string;
@@ -15,8 +11,6 @@ export interface UserFiltersProps {
 }
 
 export function UserFilters({
-  searchValue,
-  onSearchChange,
   statusFilter,
   onStatusFilterChange,
   licenseTypeFilter,
@@ -26,41 +20,28 @@ export function UserFilters({
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-wrap gap-3 justify-between items-center mb-4">
-      <div className="flex-grow max-w-sm">
-        <UserSearch value={searchValue} onChange={onSearchChange} />
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+        <SelectTrigger className="w-[150px]">
+          <SelectValue placeholder={t("filterByStatus")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t("allStatuses")}</SelectItem>
+          <SelectItem value="Not Blocked">{t("active")}</SelectItem>
+          <SelectItem value="Blocked">{t("blocked")}</SelectItem>
+        </SelectContent>
+      </Select>
       
-      <div className="flex flex-wrap gap-2">
-        {isAdmin && (
-          <>
-            <div className="w-40">
-              <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("filterByStatus") || "Status"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("allStatuses") || "All Statuses"}</SelectItem>
-                  <SelectItem value="Not Blocked">{t("active") || "Active"}</SelectItem>
-                  <SelectItem value="Blocked">{t("blocked") || "Blocked"}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-40">
-              <Select value={licenseTypeFilter} onValueChange={onLicenseTypeFilterChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("filterByLicenseType") || "License Type"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("allLicenseTypes") || "All License Types"}</SelectItem>
-                  <SelectItem value="Monthly License">{t("monthlyLicense") || "Monthly License"}</SelectItem>
-                  <SelectItem value="Credits License">{t("creditsLicense") || "Credits License"}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </>
-        )}
-      </div>
+      <Select value={licenseTypeFilter} onValueChange={onLicenseTypeFilterChange}>
+        <SelectTrigger className="w-[150px]">
+          <SelectValue placeholder={t("filterByLicense")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t("allLicenses")}</SelectItem>
+          <SelectItem value="Monthly License">{t("monthlyLicense")}</SelectItem>
+          <SelectItem value="Lifetime License">{t("lifetimeLicense")}</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
