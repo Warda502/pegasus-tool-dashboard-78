@@ -60,7 +60,7 @@ export function ApiDataTable({ data }: ApiDataTableProps) {
 
   const handleExportRow = (row: ApiData) => {
     // Format data according to the requested format
-    const exportData = `[${row.notes || ''}]\nIMEI=${row.Imei || ''}\nImeiSign=${row.ImeiSign || ''}\nPubKey=${row.PubKey || ''}\nPubKeySign=${row.PubKeySign || ''}`;
+    const exportData = `[${row.Notes || ''}]\nIMEI=${row.Imei || ''}\nImeiSign=${row.ImeiSign || ''}\nPubKey=${row.PubKey || ''}\nPubKeySign=${row.PubKeySign || ''}`;
     
     // Create file name using the format: {Model}_{IMEI}_{PhoneSN}.Cert
     const model = row.Model || 'Unknown';
