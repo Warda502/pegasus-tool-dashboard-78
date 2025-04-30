@@ -140,7 +140,7 @@ const EditMyProfile = () => {
             <CardTitle>{t("editProfile")}</CardTitle>
           </div>
           <CardDescription>
-            {t("manageServerFiles")}
+            {t("editProfile")}
           </CardDescription>
         </CardHeader>
         <CardContent>
