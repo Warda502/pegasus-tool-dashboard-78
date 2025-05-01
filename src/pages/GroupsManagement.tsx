@@ -7,7 +7,7 @@ import { ErrorAlert } from "@/components/common/ErrorAlert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Settings, FileDown, RefreshCw } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { AddGroupDialog } from "@/components/groups/AddGroupDialog";
 import { GroupsTable } from "@/components/groups/GroupsTable";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,51 +26,6 @@ export default function GroupsManagement() {
 
   const handleDeleteSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['groups'] });
-  };
-  
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['groups'] });
-    toast(t("refreshingData") || "Refreshing data...");
-  };
-
-  const exportToCSV = () => {
-    if (!groups || groups.length === 0) {
-      toast(t("noDataToExport") || "No data to export");
-      return;
-    }
-    
-    // Create CSV content
-    const headers = [
-      t("key") || "Key",
-      t("value") || "Value",
-      t("insertedAt") || "Inserted At"
-    ];
-
-    const csvRows = [
-      headers.join(','),
-      ...groups.map(group => [
-        group.key,
-        group.value || "",
-        group.inserted_at || ""
-      ].join(','))
-    ];
-
-    const csvContent = csvRows.join('\n');
-
-    // Create blob and download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `groups_${new Date().toISOString()}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast(t("exported") || "Exported", {
-      description: t("exportSuccess") || "Data exported successfully"
-    });
   };
 
   // Filter groups based on search query
@@ -115,32 +70,29 @@ export default function GroupsManagement() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t("refresh") || "Refresh"}
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <FileDown className="h-4 w-4 mr-2" />
-              {t("export") || "Export"}
+            <Button onClick={() => setIsAddDialogOpen(true)} className="whitespace-nowrap">
+              <Plus className="mr-2 h-4 w-4" />
+              {t("addNewValue") || "Add New Value"}
             </Button>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-            <div className="relative flex-1">
+          <div className="relative flex-1 w-full sm:max-w-xs">
+            <div className="relative">
               <Input
                 placeholder={t("searchGroups") || "Search groups..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:max-w-xs"
+                className="pl-10"
               />
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path>
+                </svg>
+              </div>
             </div>
-            
-            <Button onClick={() => setIsAddDialogOpen(true)} className="whitespace-nowrap">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("addNewValue") || "Add New Value"}
-            </Button>
           </div>
           
           <GroupsTable data={filteredGroups} onDeleteSuccess={handleDeleteSuccess} />
