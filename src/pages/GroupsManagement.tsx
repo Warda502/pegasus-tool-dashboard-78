@@ -69,17 +69,15 @@ export default function GroupsManagement() {
               )}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setIsAddDialogOpen(true)} className="whitespace-nowrap">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("addNewValue") || "Add New Value"}
-            </Button>
-          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t("addNewValue") || "Add New Value"}
+          </Button>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          <div className="relative flex-1 w-full sm:max-w-xs">
-            <div className="relative">
+        <CardContent className="space-y-4 px-0">
+          <div className="px-6">
+            <div className="relative w-full">
               <Input
                 placeholder={t("searchGroups") || "Search groups..."}
                 value={searchQuery}
