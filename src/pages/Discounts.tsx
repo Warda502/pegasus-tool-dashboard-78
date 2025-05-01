@@ -8,14 +8,15 @@ import { ErrorAlert } from "@/components/common/ErrorAlert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Tags } from "lucide-react";
+import { Plus, Tags, FileDown, RefreshCw } from "lucide-react";
 import { AddDiscountDialog } from "@/components/discounts/AddDiscountDialog";
 import { DiscountsTable } from "@/components/discounts/DiscountsTable";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/components/ui/sonner";
 
 export default function Discounts() {
   const { t, isRTL } = useLanguage();
-  const { data: discounts, isLoading, error, refetch } = useDiscounts();
+  const { data: discounts, isLoading, error } = useDiscounts();
   const { users } = useSharedData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,6 +28,53 @@ export default function Discounts() {
 
   const handleDeleteSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['discounts'] });
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['discounts'] });
+    toast(t("refreshingData") || "Refreshing data...");
+  };
+
+  const exportToCSV = () => {
+    if (!discounts || discounts.length === 0) {
+      toast(t("noDataToExport") || "No data to export");
+      return;
+    }
+    
+    // Create CSV content
+    const headers = [
+      t("email") || "Email",
+      t("model") || "Model",
+      t("refundAmount") || "Refund Amount",
+      t("remainingDiscounts") || "Remaining Discounts"
+    ];
+
+    const csvRows = [
+      headers.join(','),
+      ...discounts.map(discount => [
+        discount.email,
+        discount.model,
+        discount.count_refund,
+        discount.number_discounts
+      ].join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+
+    // Create blob and download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `discounts_${new Date().toISOString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast(t("exported") || "Exported", {
+      description: t("exportSuccess") || "Data exported successfully"
+    });
   };
 
   // Filter discounts based on search query
@@ -53,9 +101,9 @@ export default function Discounts() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
               <Tags className="h-5 w-5" />
@@ -70,16 +118,26 @@ export default function Discounts() {
               )}
             </CardDescription>
           </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t("refresh") || "Refresh"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <FileDown className="h-4 w-4 mr-2" />
+              {t("export") || "Export"}
+            </Button>
+          </div>
         </CardHeader>
         
-        <CardContent className="px-2 sm:px-6">
+        <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-            <div className="w-full sm:max-w-xs">
+            <div className="relative flex-1">
               <Input
                 placeholder={t("searchDiscounts") || "Search discounts..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
+                className="w-full sm:max-w-xs"
               />
             </div>
             
