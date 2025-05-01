@@ -72,7 +72,7 @@ export default function Discounts() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => setIsAddDialogOpen(true)} className="whitespace-nowrap">
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(true)} className="whitespace-nowrap">
               <Plus className="mr-2 h-4 w-4" />
               {t("addNewDiscount") || "Add New Discount"}
             </Button>
