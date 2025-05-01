@@ -12,7 +12,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -62,6 +62,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       path: "/operations",
       icon: LineChart,
       show: true
+    },
+    {
+      title: t("discounts"),
+      path: "/discounts",
+      icon: Tags,
+      show: role === "admin"
+    },
+    {
+      title: t("groupsManagement"),
+      path: "/groups-management",
+      icon: Group,
+      show: role === "admin"
     },
     {
       title: t("serverApiData"),

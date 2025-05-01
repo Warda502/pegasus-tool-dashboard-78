@@ -48,6 +48,51 @@ export type Database = {
         }
         Relationships: []
       }
+      discounts: {
+        Row: {
+          count_refund: number | null
+          email: string
+          id: string
+          model: string | null
+          number_discounts: number | null
+          uid: string
+        }
+        Insert: {
+          count_refund?: number | null
+          email: string
+          id?: string
+          model?: string | null
+          number_discounts?: number | null
+          uid: string
+        }
+        Update: {
+          count_refund?: number | null
+          email?: string
+          id?: string
+          model?: string | null
+          number_discounts?: number | null
+          uid?: string
+        }
+        Relationships: []
+      }
+      groups: {
+        Row: {
+          inserted_at: string | null
+          key: string
+          value: string | null
+        }
+        Insert: {
+          inserted_at?: string | null
+          key: string
+          value?: string | null
+        }
+        Update: {
+          inserted_at?: string | null
+          key?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       operations: {
         Row: {
           android: string | null
@@ -102,6 +147,39 @@ export type Database = {
           time?: string | null
           uid?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      transactions_log: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          final_credits: string | null
+          id: string
+          model: string | null
+          original_deduction: string | null
+          refund_applied: string | null
+          uid: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          final_credits?: string | null
+          id?: string
+          model?: string | null
+          original_deduction?: string | null
+          refund_applied?: string | null
+          uid?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          final_credits?: string | null
+          id?: string
+          model?: string | null
+          original_deduction?: string | null
+          refund_applied?: string | null
+          uid?: string
         }
         Relationships: []
       }
@@ -164,6 +242,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deduct_credits_with_discount: {
+        Args: { pxu: string; pxc: string; pxm: string; pxe: string }
+        Returns: string
+      }
       deduct_user_credit: {
         Args: { pxu: string; pxc: string }
         Returns: string

@@ -19,6 +19,8 @@ import { DataProvider } from "./hooks/data/DataContext";
 import ServerApiData from "./pages/ServerApiData";
 import ServerStorage from "./pages/ServerStorage";
 import MyCertFiles from "./pages/MyCertFiles";
+import Discounts from "./pages/Discounts";
+import GroupsManagement from "./pages/GroupsManagement";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -79,6 +81,16 @@ const App = () => (
                 <Route path="/my-cert-files" element={
                   <ProtectedRoute>
                     <AppLayout><MyCertFiles /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/discounts" element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AppLayout><Discounts /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/groups-management" element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AppLayout><GroupsManagement /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
