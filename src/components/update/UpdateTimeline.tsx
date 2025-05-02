@@ -4,7 +4,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Bug, CheckSquare } from "lucide-react";
+import { Check, TrendingUp, Bug, Pin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UpdateRecord {
@@ -130,7 +130,7 @@ export function UpdateTimeline() {
                     .filter(item => item.type === "add")
                     .map((item, i) => (
                       <div key={`add-${i}`} className="flex items-start gap-2">
-                        <CheckSquare className="h-4 w-4 mt-0.5 text-green-500" />
+                        <Check className="h-4 w-4 mt-0.5 text-green-500" />
                         <span>{item.content}</span>
                       </div>
                     ))}
@@ -147,7 +147,7 @@ export function UpdateTimeline() {
                     .filter(item => item.type === "improvement")
                     .map((item, i) => (
                       <div key={`imp-${i}`} className="flex items-start gap-2">
-                        <Wrench className="h-4 w-4 mt-0.5 text-blue-500" />
+                        <TrendingUp className="h-4 w-4 mt-0.5 text-blue-500" />
                         <span>{item.content}</span>
                       </div>
                     ))}
@@ -181,7 +181,10 @@ export function UpdateTimeline() {
                     .filter(item => item.type === "other")
                     .map((item, i) => (
                       <div key={`other-${i}`} className="flex items-start gap-2">
-                        <span>{item.content}</span>
+                        <span className="inline-flex items-center">
+                          <span className="mr-2">📌</span>
+                          {item.content}
+                        </span>
                       </div>
                     ))}
                 </>
