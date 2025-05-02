@@ -21,6 +21,7 @@ import ServerStorage from "./pages/ServerStorage";
 import MyCertFiles from "./pages/MyCertFiles";
 import Discounts from "./pages/Discounts";
 import GroupsManagement from "./pages/GroupsManagement";
+import ToolUpdate from "./pages/ToolUpdate";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -91,6 +92,11 @@ const App = () => (
                 <Route path="/groups-management" element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <AppLayout><GroupsManagement /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/tool-update" element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AppLayout><ToolUpdate /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
