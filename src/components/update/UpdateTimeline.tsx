@@ -127,7 +127,7 @@ export function UpdateTimeline() {
                     • {t("add")} :-
                   </div>
                   {parseChangelog(update.changelog)
-                    .filter(item => item.type === "add")
+                    .filter(item => item.type === "Add")
                     .map((item, i) => (
                       <div key={`add-${i}`} className="flex items-start gap-2">
                         <Check className="h-4 w-4 mt-0.5 text-green-500" />
@@ -144,7 +144,7 @@ export function UpdateTimeline() {
                     • {t("improvements")}
                   </div>
                   {parseChangelog(update.changelog)
-                    .filter(item => item.type === "improvement")
+                    .filter(item => item.type === "Improvement")
                     .map((item, i) => (
                       <div key={`imp-${i}`} className="flex items-start gap-2">
                         <TrendingUp className="h-4 w-4 mt-0.5 text-blue-500" />
@@ -161,7 +161,7 @@ export function UpdateTimeline() {
                     • {t("fixBugs")}
                   </div>
                   {parseChangelog(update.changelog)
-                    .filter(item => item.type === "fix")
+                    .filter(item => item.type === "Fix")
                     .map((item, i) => (
                       <div key={`fix-${i}`} className="flex items-start gap-2">
                         <Bug className="h-4 w-4 mt-0.5 text-orange-500" />
@@ -178,7 +178,7 @@ export function UpdateTimeline() {
                     • {t("other")}
                   </div>
                   {parseChangelog(update.changelog)
-                    .filter(item => item.type === "other")
+                    .filter(item => item.type === "Other")
                     .map((item, i) => (
                       <div key={`other-${i}`} className="flex items-start gap-2">
                         <span className="inline-flex items-center">
