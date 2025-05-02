@@ -58,8 +58,8 @@ export function UpdateTimeline() {
     lines.forEach(line => {
       const trimmedLine = line.trim();
       
-      if (trimmedLine.startsWith("[Add]") || 
-          trimmedLine.startsWith("[add]") || 
+      if (trimmedLine.startsWith("Add") || 
+          trimmedLine.startsWith("add") || 
           trimmedLine.toLowerCase().includes("add:") || 
           trimmedLine.toLowerCase().includes("added:")) {
         parsedContent.push({ 
@@ -76,7 +76,7 @@ export function UpdateTimeline() {
                 trimmedLine.startsWith("[Update]") ||
                 trimmedLine.startsWith("[update]")) {
         parsedContent.push({ 
-          type: "improvement", 
+          type: "Improvement", 
           content: trimmedLine
             .replace(/^\[Update\]/i, "")
             .replace(/^\[Improve\]/i, "")
@@ -87,7 +87,7 @@ export function UpdateTimeline() {
                 trimmedLine.startsWith("[Fix]") ||
                 trimmedLine.startsWith("[fix]")) {
         parsedContent.push({ 
-          type: "fix", 
+          type: "Fix", 
           content: trimmedLine
             .replace(/^\[Fix\]/i, "")
             .replace(/^\[Bug\]/i, "")
@@ -95,7 +95,7 @@ export function UpdateTimeline() {
         });
       } else {
         // Default category if no specific type is detected
-        parsedContent.push({ type: "other", content: trimmedLine });
+        parsedContent.push({ type: "Other", content: trimmedLine });
       }
     });
 
