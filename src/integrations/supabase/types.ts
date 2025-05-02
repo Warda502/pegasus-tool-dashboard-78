@@ -32,7 +32,7 @@ export type Database = {
           Phone_sn: string
           PubKey?: string | null
           PubKeySign?: string | null
-          uid?: string
+          uid: string
         }
         Update: {
           Email?: string | null
@@ -150,6 +150,24 @@ export type Database = {
         }
         Relationships: []
       }
+      settings: {
+        Row: {
+          key_value: string | null
+          object_name: string
+          value: string | null
+        }
+        Insert: {
+          key_value?: string | null
+          object_name: string
+          value?: string | null
+        }
+        Update: {
+          key_value?: string | null
+          object_name?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       transactions_log: {
         Row: {
           created_at: string | null
@@ -180,6 +198,33 @@ export type Database = {
           original_deduction?: string | null
           refund_applied?: string | null
           uid?: string
+        }
+        Relationships: []
+      }
+      update: {
+        Row: {
+          changelog: string | null
+          direct_download: boolean | null
+          link: string | null
+          name: string | null
+          release_at: string | null
+          varizon: string
+        }
+        Insert: {
+          changelog?: string | null
+          direct_download?: boolean | null
+          link?: string | null
+          name?: string | null
+          release_at?: string | null
+          varizon: string
+        }
+        Update: {
+          changelog?: string | null
+          direct_download?: boolean | null
+          link?: string | null
+          name?: string | null
+          release_at?: string | null
+          varizon?: string
         }
         Relationships: []
       }

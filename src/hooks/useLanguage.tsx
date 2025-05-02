@@ -11,15 +11,6 @@ export interface Translations {
   };
 }
 
-// Context interface
-interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
-  translations: Translations;
-  isRTL: boolean;
-}
-
 // Create translations
 export const translations: Translations = {
   dashboard: {
@@ -837,6 +828,90 @@ export const translations: Translations = {
   guest: {
     en: "Guest",
     ar: "زائر"
+  },
+  discounts: {
+    en: "Discounts",
+    ar: "الخصومات"
+  },
+  manageDiscounts: {
+    en: "Manage user discounts",
+    ar: "إدارة خصومات المستخدمين"
+  },
+  addNewDiscount: {
+    en: "Add New Discount",
+    ar: "إضافة خصم جديد"
+  },
+  searchDiscounts: {
+    en: "Search discounts...",
+    ar: "بحث عن خصومات..."
+  },
+  discountAddedSuccess: {
+    en: "Discount added successfully",
+    ar: "تم إضافة الخصم بنجاح"
+  },
+  errorAddingDiscount: {
+    en: "Error adding discount",
+    ar: "خطأ في إضافة الخصم"
+  },
+  fillAllFields: {
+    en: "Please fill all fields",
+    ar: "يرجى ملء جميع الحقول"
+  },
+  countRefund: {
+    en: "Refund Amount",
+    ar: "مبلغ الاسترداد"
+  },
+  numberDiscounts: {
+    en: "Number of Discounts",
+    ar: "عدد الخصومات"
+  },
+  refundAmountExplanation: {
+    en: "Amount to refund for each operation",
+    ar: "المبلغ المسترد لكل عملية"
+  },
+  discountTimesExplanation: {
+    en: "How many times the discount can be applied",
+    ar: "كم مرة يمكن تطبيق الخصم"
+  },
+  groupsManagement: {
+    en: "Groups Management",
+    ar: "إدارة المجموعات"
+  },
+  manageGroupValues: {
+    en: "Manage group values",
+    ar: "إدارة قيم المجموعات"
+  },
+  addNewValue: {
+    en: "Add New Value",
+    ar: "إضافة قيمة جديدة"
+  },
+  searchGroups: {
+    en: "Search groups...",
+    ar: "بحث عن مجموعات..."
+  },
+  key: {
+    en: "Key",
+    ar: "المفتاح"
+  },
+  value: {
+    en: "Value",
+    ar: "القيمة"
+  },
+  valueOptional: {
+    en: "Value is optional",
+    ar: "القيمة اختيارية"
+  },
+  keyRequired: {
+    en: "Key is required",
+    ar: "المفتاح مطلوب"
+  },
+  groupValueAddedSuccess: {
+    en: "Group value added successfully",
+    ar: "تم إضافة قيمة المجموعة بنجاح"
+  },
+  errorAddingGroupValue: {
+    en: "Error adding group value",
+    ar: "خطأ في إضافة قيمة المجموعة"
   }
 };
 
