@@ -10,7 +10,14 @@ export interface Translations {
     ar: string;
   };
 }
-
+// Context interface
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+  translations: Translations;
+  isRTL: boolean;
+}
 // Create translations
 export const translations: Translations = {
   dashboard: {
