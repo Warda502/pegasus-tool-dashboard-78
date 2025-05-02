@@ -89,7 +89,7 @@ export default function ToolUpdate() {
       console.error("Error saving update:", error);
       toast(t("error"), {
         description: t("unexpectedError"),
-        variant: "destructive",
+        // Remove the 'variant: "destructive"' property as it's not supported
       });
     }
   };
