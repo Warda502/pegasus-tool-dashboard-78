@@ -63,7 +63,7 @@ export function UpdateTimeline() {
           trimmedLine.toLowerCase().includes("add:") || 
           trimmedLine.toLowerCase().includes("added:")) {
         parsedContent.push({ 
-          type: "add", 
+          type: "Add", 
           content: trimmedLine
             .replace(/^\[Add\]/i, "")
             .replace(/^add:/i, "")
@@ -121,7 +121,7 @@ export function UpdateTimeline() {
 
             <div className="mt-2 ml-7 space-y-3">
               {/* Display additions if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "add") && (
+              {parseChangelog(update.changelog).some(item => item.type === "Add") && (
                 <>
                   <div className="text-sm text-muted-foreground">
                     • {t("add")} :-
@@ -138,7 +138,7 @@ export function UpdateTimeline() {
               )}
 
               {/* Display improvements if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "improvement") && (
+              {parseChangelog(update.changelog).some(item => item.type === "Improvement") && (
                 <>
                   <div className="text-sm text-muted-foreground mt-4">
                     • {t("improvements")}
@@ -155,7 +155,7 @@ export function UpdateTimeline() {
               )}
 
               {/* Display fixes if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "fix") && (
+              {parseChangelog(update.changelog).some(item => item.type === "Fix") && (
                 <>
                   <div className="text-sm text-muted-foreground mt-4">
                     • {t("fixBugs")}
@@ -172,7 +172,7 @@ export function UpdateTimeline() {
               )}
 
               {/* Display other items if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "other") && (
+              {parseChangelog(update.changelog).some(item => item.type === "Other") && (
                 <>
                   <div className="text-sm text-muted-foreground mt-4">
                     • {t("other")}
