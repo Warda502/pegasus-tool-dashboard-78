@@ -48,58 +48,72 @@ export function UpdateTimeline() {
     return <div className="py-4 text-center text-muted-foreground">{t("noData")}</div>;
   }
 
-  // Helper function to parse changelog content with improved parsing
+  // Helper function to identify line and section types with improved parsing
   const parseChangelog = (changelog: string) => {
     if (!changelog) return [];
 
-    const lines = changelog.split("\n").filter(line => line.trim());
-    const parsedContent: Array<{type: string, content: string}> = [];
-
-    lines.forEach(line => {
-      const trimmedLine = line.trim();
+    // Split by double newlines to separate sections better
+    const sections = changelog.split(/\n\n+/);
+    const parsedContent: Array<{type: string, content: string, isModelList: boolean}> = [];
+    
+    let currentType = "";
+    
+    // Process each section
+    sections.forEach(section => {
+      // Clean section and check if empty
+      const trimmedSection = section.trim();
+      if (!trimmedSection) return;
       
-      if (trimmedLine.startsWith("Add") || 
-          trimmedLine.startsWith("add") || 
-          trimmedLine.toLowerCase().includes("add:") || 
-          trimmedLine.toLowerCase().includes("added:")) {
-        parsedContent.push({ 
-          type: "Add", 
-          content: trimmedLine
-            .replace(/^\[Add\]/i, "")
-            .replace(/^add:/i, "")
-            .replace(/^added:/i, "")
-            .trim() 
-        });
-      } else if (trimmedLine.toLowerCase().includes("improve") || 
-                trimmedLine.toLowerCase().includes("enhancement") || 
-                trimmedLine.toLowerCase().includes("update") ||
-                trimmedLine.startsWith("[Update]") ||
-                trimmedLine.startsWith("[update]")) {
-        parsedContent.push({ 
-          type: "Improvement", 
-          content: trimmedLine
-            .replace(/^\[Update\]/i, "")
-            .replace(/^\[Improve\]/i, "")
-            .trim() 
-        });
-      } else if (trimmedLine.toLowerCase().includes("fix") || 
-                trimmedLine.toLowerCase().includes("bug") ||
-                trimmedLine.startsWith("[Fix]") ||
-                trimmedLine.startsWith("[fix]")) {
-        parsedContent.push({ 
-          type: "Fix", 
-          content: trimmedLine
-            .replace(/^\[Fix\]/i, "")
-            .replace(/^\[Bug\]/i, "")
-            .trim() 
-        });
-      } else {
-        // Default category if no specific type is detected
-        parsedContent.push({ type: "Other", content: trimmedLine });
+      // Identify section type from the first line
+      const firstLine = trimmedSection.split('\n')[0].trim().toLowerCase();
+      
+      // Determine section type
+      if (firstLine.includes("add to") || 
+          firstLine.startsWith("add") || 
+          firstLine.includes("add:") || 
+          firstLine.includes("added:")) {
+        currentType = "Add";
+      } else if (firstLine.includes("improve") || 
+                firstLine.includes("enhancement") || 
+                firstLine.includes("update") ||
+                firstLine === "improvements") {
+        currentType = "Improvement";
+      } else if (firstLine.includes("fix") || 
+                firstLine.includes("bug") ||
+                firstLine === "fix bugs") {
+        currentType = "Fix";
+      } else if (currentType === "") {
+        // If we haven't determined a type yet, default to Other
+        currentType = "Other";
       }
+      
+      // Check if this is a model list (contains model numbers like SM-XXXX)
+      const isModelList = /SM-[A-Z0-9]+/.test(trimmedSection) || 
+                          (trimmedSection.includes("Carrier[") && trimmedSection.includes("BIT["));
+      
+      // Add the section with its determined type
+      parsedContent.push({
+        type: currentType,
+        content: trimmedSection,
+        isModelList: isModelList
+      });
     });
-
+    
     return parsedContent;
+  };
+
+  // Helper function to preserve formatting for model lists
+  const renderContent = (content: string, isModelList: boolean) => {
+    if (!isModelList) {
+      return <span>{content}</span>;
+    }
+
+    // For model lists, preserve newlines and spacing
+    return (
+      <pre className="whitespace-pre-wrap font-sans text-sm mt-2 bg-muted p-3 rounded-md overflow-x-auto">
+        {content}
+      </pre>
+    );
   };
 
   return (
@@ -120,75 +134,28 @@ export function UpdateTimeline() {
             </div>
 
             <div className="mt-2 ml-7 space-y-3">
-              {/* Display additions if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "Add") && (
-                <>
-                  <div className="text-sm text-muted-foreground">
-                    • {t("add")} :-
+              {/* Parse and display the changelog by sections */}
+              {parseChangelog(update.changelog).map((section, i) => (
+                <div key={`section-${i}`} className="mb-4">
+                  <div className="flex items-start">
+                    {section.type === "Add" && (
+                      <Check className="h-4 w-4 mt-1 mr-2 flex-shrink-0 text-green-500" />
+                    )}
+                    {section.type === "Improvement" && (
+                      <TrendingUp className="h-4 w-4 mt-1 mr-2 flex-shrink-0 text-blue-500" />
+                    )}
+                    {section.type === "Fix" && (
+                      <Bug className="h-4 w-4 mt-1 mr-2 flex-shrink-0 text-orange-500" />
+                    )}
+                    {section.type === "Other" && (
+                      <Pin className="h-4 w-4 mt-1 mr-2 flex-shrink-0 text-gray-500" />
+                    )}
+                    <div className="flex-1">
+                      {renderContent(section.content, section.isModelList)}
+                    </div>
                   </div>
-                  {parseChangelog(update.changelog)
-                    .filter(item => item.type === "Add")
-                    .map((item, i) => (
-                      <div key={`add-${i}`} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 mt-0.5 text-green-500" />
-                        <span>{item.content}</span>
-                      </div>
-                    ))}
-                </>
-              )}
-
-              {/* Display improvements if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "Improvement") && (
-                <>
-                  <div className="text-sm text-muted-foreground mt-4">
-                    • {t("improvements")}
-                  </div>
-                  {parseChangelog(update.changelog)
-                    .filter(item => item.type === "Improvement")
-                    .map((item, i) => (
-                      <div key={`imp-${i}`} className="flex items-start gap-2">
-                        <TrendingUp className="h-4 w-4 mt-0.5 text-blue-500" />
-                        <span>{item.content}</span>
-                      </div>
-                    ))}
-                </>
-              )}
-
-              {/* Display fixes if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "Fix") && (
-                <>
-                  <div className="text-sm text-muted-foreground mt-4">
-                    • {t("fixBugs")}
-                  </div>
-                  {parseChangelog(update.changelog)
-                    .filter(item => item.type === "Fix")
-                    .map((item, i) => (
-                      <div key={`fix-${i}`} className="flex items-start gap-2">
-                        <Bug className="h-4 w-4 mt-0.5 text-orange-500" />
-                        <span>{item.content}</span>
-                      </div>
-                    ))}
-                </>
-              )}
-
-              {/* Display other items if any exist */}
-              {parseChangelog(update.changelog).some(item => item.type === "Other") && (
-                <>
-                  <div className="text-sm text-muted-foreground mt-4">
-                    • {t("other")}
-                  </div>
-                  {parseChangelog(update.changelog)
-                    .filter(item => item.type === "Other")
-                    .map((item, i) => (
-                      <div key={`other-${i}`} className="flex items-start gap-2">
-                        <span className="inline-flex items-center">
-                          <span className="mr-2">📌</span>
-                          {item.content}
-                        </span>
-                      </div>
-                    ))}
-                </>
-              )}
+                </div>
+              ))}
             </div>
           </div>
         ))}
