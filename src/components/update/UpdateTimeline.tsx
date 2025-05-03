@@ -3,7 +3,6 @@ import React from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
 import { Check, TrendingUp, Bug, Pin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -48,7 +47,7 @@ export function UpdateTimeline() {
     return <div className="py-4 text-center text-muted-foreground">{t("noData")}</div>;
   }
 
-  // Helper function to identify line and section types with improved parsing
+  // Improved function to parse changelog text with better section detection
   const parseChangelog = (changelog: string) => {
     if (!changelog) return [];
 
@@ -67,7 +66,7 @@ export function UpdateTimeline() {
       let sectionTitle: string;
       let sectionContent: string;
       
-      // Check for "Add To" patterns which have specific titles
+      // Check for "Add To" patterns which typically have more detailed content
       if (trimmedSection.startsWith("Add To")) {
         const lines = trimmedSection.split('\n');
         sectionTitle = lines[0]; // First line is the title
@@ -103,13 +102,13 @@ export function UpdateTimeline() {
         sectionContent = trimmedSection;
       }
       
-      // Check if this contains model listings
+      // Detect model lists including Dialn and Unisoc patterns
       const isModelList = 
         /SM-[A-Z0-9]+/.test(sectionContent) || 
         /Carrier\[.*?\]/.test(sectionContent) || 
         /BIT\[.*?\]/.test(sectionContent) ||
-        /Dialn .*/.test(sectionContent) ||
-        /Unisoc.*/.test(sectionContent);
+        /Dialn\s+\w+/.test(sectionContent) ||
+        /Unisoc\s+\w+/.test(sectionContent);
       
       sections.push({
         type: sectionType,
@@ -160,17 +159,19 @@ export function UpdateTimeline() {
                         <div className="font-medium mb-1">{section.title}</div>
                       )}
                       
-                      {/* For model lists, preserve formatting */}
-                      {section.content && /SM-[A-Z0-9]+/.test(section.content) || 
-                       /Carrier\[.*?\]/.test(section.content) || 
-                       /BIT\[.*?\]/.test(section.content) ||
-                       /Dialn .*/.test(section.content) ||
-                       /Unisoc.*/.test(section.content) ? (
-                        <pre className="whitespace-pre-wrap font-sans text-sm mt-2 bg-muted p-3 rounded-md overflow-x-auto">
-                          {section.content}
-                        </pre>
-                      ) : (
-                        <span>{section.content}</span>
+                      {/* Enhanced model list detection for better formatting */}
+                      {section.content && (
+                        /SM-[A-Z0-9]+/.test(section.content) || 
+                        /Carrier\[.*?\]/.test(section.content) || 
+                        /BIT\[.*?\]/.test(section.content) ||
+                        /Dialn\s+\w+/.test(section.content) ||
+                        /Unisoc\s+\w+/.test(section.content) ? (
+                          <pre className="whitespace-pre-wrap font-sans text-sm mt-2 bg-muted p-3 rounded-md overflow-x-auto">
+                            {section.content}
+                          </pre>
+                        ) : (
+                          <span>{section.content}</span>
+                        )
                       )}
                     </div>
                   </div>

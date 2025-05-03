@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loading } from "@/components/ui/loading";
 import { UpdateTimeline } from "@/components/update/UpdateTimeline";
 
@@ -22,6 +22,7 @@ interface UpdateData {
 
 export default function ToolUpdate() {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<UpdateData>({
     name: "",
     varizon: "",
@@ -84,12 +85,15 @@ export default function ToolUpdate() {
         description: t("updateSaved"),
       });
 
+      // Invalidate both queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["updateData"] });
+      queryClient.invalidateQueries({ queryKey: ["updates-history"] });
+      
       refetch();
     } catch (error) {
       console.error("Error saving update:", error);
       toast(t("error"), {
         description: t("unexpectedError"),
-        // Remove the 'variant: "destructive"' property as it's not supported
       });
     }
   };
