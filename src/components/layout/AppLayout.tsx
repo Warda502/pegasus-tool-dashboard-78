@@ -12,7 +12,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -79,6 +79,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("toolUpdate"),
       path: "/tool-update",
       icon: Download,
+      show: role === "admin"
+    },
+    {
+      title: t("toolSettings"),
+      path: "/tool-settings",
+      icon: Sliders,
       show: role === "admin"
     },
     {
