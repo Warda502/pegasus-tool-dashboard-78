@@ -52,68 +52,73 @@ export function UpdateTimeline() {
   const parseChangelog = (changelog: string) => {
     if (!changelog) return [];
 
-    // Split by double newlines to separate sections better
-    const sections = changelog.split(/\n\n+/);
-    const parsedContent: Array<{type: string, content: string, isModelList: boolean}> = [];
+    const sections: Array<{type: string, title: string, content: string}> = [];
     
-    let currentType = "";
+    // Split by double newlines to separate main sections
+    const mainSections = changelog.split(/\n\n+/);
     
-    // Process each section
-    sections.forEach(section => {
+    mainSections.forEach(section => {
       // Clean section and check if empty
       const trimmedSection = section.trim();
       if (!trimmedSection) return;
       
-      // Identify section type from the first line
-      const firstLine = trimmedSection.split('\n')[0].trim().toLowerCase();
+      // Look for specific patterns
+      let sectionType: string;
+      let sectionTitle: string;
+      let sectionContent: string;
       
-      // Determine section type
-      if (firstLine.includes("add to") || 
-          firstLine.startsWith("add") || 
-          firstLine.includes("add:") || 
-          firstLine.includes("added:")) {
-        currentType = "Add";
-      } else if (firstLine.includes("improve") || 
-                firstLine.includes("enhancement") || 
-                firstLine.includes("update") ||
-                firstLine === "improvements") {
-        currentType = "Improvement";
-      } else if (firstLine.includes("fix") || 
-                firstLine.includes("bug") ||
-                firstLine === "fix bugs") {
-        currentType = "Fix";
-      } else if (currentType === "") {
-        // If we haven't determined a type yet, default to Other
-        currentType = "Other";
+      // Check for "Add To" patterns which have specific titles
+      if (trimmedSection.startsWith("Add To")) {
+        const lines = trimmedSection.split('\n');
+        sectionTitle = lines[0]; // First line is the title
+        sectionContent = lines.slice(1).join('\n'); // Rest is content
+        sectionType = "Add";
+      } 
+      // Check for standalone "Add" section
+      else if (trimmedSection.startsWith("Add ")) {
+        sectionType = "Add";
+        sectionTitle = trimmedSection;
+        sectionContent = "";
+      }
+      // Check for Improvements section
+      else if (trimmedSection.includes("Improve") || 
+               trimmedSection === "Improvements" || 
+               trimmedSection.includes("Enhancement")) {
+        sectionType = "Improvement";
+        sectionTitle = trimmedSection;
+        sectionContent = "";
+      } 
+      // Check for Fix section
+      else if (trimmedSection.includes("Fix") || 
+               trimmedSection === "Fix Bugs" || 
+               trimmedSection.includes("Bug")) {
+        sectionType = "Fix";
+        sectionTitle = trimmedSection;
+        sectionContent = "";
+      } 
+      // Default to Other for anything else
+      else {
+        sectionType = "Other";
+        sectionTitle = "";
+        sectionContent = trimmedSection;
       }
       
-      // Check if this is a model list (contains model numbers like SM-XXXX)
-      const isModelList = /SM-[A-Z0-9]+/.test(trimmedSection) || 
-                          (trimmedSection.includes("Carrier[") && trimmedSection.includes("BIT["));
+      // Check if this contains model listings
+      const isModelList = 
+        /SM-[A-Z0-9]+/.test(sectionContent) || 
+        /Carrier\[.*?\]/.test(sectionContent) || 
+        /BIT\[.*?\]/.test(sectionContent) ||
+        /Dialn .*/.test(sectionContent) ||
+        /Unisoc.*/.test(sectionContent);
       
-      // Add the section with its determined type
-      parsedContent.push({
-        type: currentType,
-        content: trimmedSection,
-        isModelList: isModelList
+      sections.push({
+        type: sectionType,
+        title: sectionTitle,
+        content: isModelList ? sectionContent : sectionTitle + (sectionContent ? '\n' + sectionContent : '')
       });
     });
     
-    return parsedContent;
-  };
-
-  // Helper function to preserve formatting for model lists
-  const renderContent = (content: string, isModelList: boolean) => {
-    if (!isModelList) {
-      return <span>{content}</span>;
-    }
-
-    // For model lists, preserve newlines and spacing
-    return (
-      <pre className="whitespace-pre-wrap font-sans text-sm mt-2 bg-muted p-3 rounded-md overflow-x-auto">
-        {content}
-      </pre>
-    );
+    return sections;
   };
 
   return (
@@ -134,7 +139,6 @@ export function UpdateTimeline() {
             </div>
 
             <div className="mt-2 ml-7 space-y-3">
-              {/* Parse and display the changelog by sections */}
               {parseChangelog(update.changelog).map((section, i) => (
                 <div key={`section-${i}`} className="mb-4">
                   <div className="flex items-start">
@@ -150,8 +154,24 @@ export function UpdateTimeline() {
                     {section.type === "Other" && (
                       <Pin className="h-4 w-4 mt-1 mr-2 flex-shrink-0 text-gray-500" />
                     )}
+                    
                     <div className="flex-1">
-                      {renderContent(section.content, section.isModelList)}
+                      {section.title && section.title !== section.content && (
+                        <div className="font-medium mb-1">{section.title}</div>
+                      )}
+                      
+                      {/* For model lists, preserve formatting */}
+                      {section.content && /SM-[A-Z0-9]+/.test(section.content) || 
+                       /Carrier\[.*?\]/.test(section.content) || 
+                       /BIT\[.*?\]/.test(section.content) ||
+                       /Dialn .*/.test(section.content) ||
+                       /Unisoc.*/.test(section.content) ? (
+                        <pre className="whitespace-pre-wrap font-sans text-sm mt-2 bg-muted p-3 rounded-md overflow-x-auto">
+                          {section.content}
+                        </pre>
+                      ) : (
+                        <span>{section.content}</span>
+                      )}
                     </div>
                   </div>
                 </div>
