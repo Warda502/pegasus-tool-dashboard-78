@@ -22,6 +22,7 @@ import MyCertFiles from "./pages/MyCertFiles";
 import Discounts from "./pages/Discounts";
 import GroupsManagement from "./pages/GroupsManagement";
 import ToolUpdate from "./pages/ToolUpdate";
+import ToolSettings from "./pages/ToolSettings";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -97,6 +98,11 @@ const App = () => (
                 <Route path="/tool-update" element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <AppLayout><ToolUpdate /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/tool-settings" element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AppLayout><ToolSettings /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />

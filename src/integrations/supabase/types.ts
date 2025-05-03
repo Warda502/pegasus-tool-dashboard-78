@@ -152,19 +152,22 @@ export type Database = {
       }
       settings: {
         Row: {
-          key_value: string | null
+          key: string
           object_name: string
-          value: string | null
+          title: string | null
+          value: boolean | null
         }
         Insert: {
-          key_value?: string | null
+          key: string
           object_name: string
-          value?: string | null
+          title?: string | null
+          value?: boolean | null
         }
         Update: {
-          key_value?: string | null
+          key?: string
           object_name?: string
-          value?: string | null
+          title?: string | null
+          value?: boolean | null
         }
         Relationships: []
       }
