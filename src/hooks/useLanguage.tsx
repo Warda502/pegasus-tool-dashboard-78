@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define supported languages
@@ -18,6 +19,7 @@ interface LanguageContextType {
   translations: Translations;
   isRTL: boolean;
 }
+
 // Create translations
 export const translations: Translations = {
   dashboard: {
