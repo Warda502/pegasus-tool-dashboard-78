@@ -116,7 +116,7 @@ export const AddDiscountDialog = ({
               id="model"
               value={model}
               onChange={e => setModel(e.target.value)}
-              placeholder="iPhone 13 Pro Max"
+              placeholder="SM-N950U"
             />
           </div>
 
@@ -125,10 +125,10 @@ export const AddDiscountDialog = ({
             <Input
               id="count-refund"
               type="number"
-              step="0.1"
+              step="1"
               value={countRefund}
               onChange={e => setCountRefund(e.target.value)}
-              placeholder="10.0"
+              placeholder="1.0"
               min="0"
             />
             <p className="text-xs text-muted-foreground">
