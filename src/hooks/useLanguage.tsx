@@ -763,6 +763,68 @@ const translations = {
   fixBugs: {
     en: "Fix Bugs",
     ar: "إصلاح الأخطاء"
+  },
+  
+  // Add missing chat translations
+  chatSupport: {
+    en: "Chat Support",
+    ar: "الدعم عبر المحادثة"
+  },
+  chatWithUser: {
+    en: "Chat with User",
+    ar: "محادثة مع المستخدم"
+  },
+  chatWithSupport: {
+    en: "Chat with Support",
+    ar: "محادثة مع الدعم"
+  },
+  typeMessage: {
+    en: "Type a message...",
+    ar: "اكتب رسالة..."
+  },
+  loginRequired: {
+    en: "Please log in to use chat support",
+    ar: "يرجى تسجيل الدخول لاستخدام الدعم عبر المحادثة"
+  },
+  noMessagesYet: {
+    en: "No messages yet with this user",
+    ar: "لا توجد رسائل بعد مع هذا المستخدم"
+  },
+  startConversation: {
+    en: "Start a conversation with our support team",
+    ar: "ابدأ محادثة مع فريق الدعم لدينا"
+  },
+  conversations: {
+    en: "Conversations",
+    ar: "المحادثات"
+  },
+  noSearchResults: {
+    en: "No users match your search",
+    ar: "لا يوجد مستخدمين مطابقين لبحثك"
+  },
+  noConversations: {
+    en: "No conversations yet",
+    ar: "لا توجد محادثات بعد"
+  },
+  selectConversation: {
+    en: "Select a Conversation",
+    ar: "اختر محادثة"
+  },
+  selectUserDescription: {
+    en: "Choose a user from the list to view and respond to their messages.",
+    ar: "اختر مستخدمًا من القائمة لعرض والرد على رسائله."
+  },
+  messageSent: {
+    en: "Message sent",
+    ar: "تم إرسال الرسالة"
+  },
+  errorSendingMessage: {
+    en: "Error sending message",
+    ar: "خطأ في إرسال ال��سالة"
+  },
+  loading: {
+    en: "Loading...",
+    ar: "جاري التحميل..."
   }
 };
 
