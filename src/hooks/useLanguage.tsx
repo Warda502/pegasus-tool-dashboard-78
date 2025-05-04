@@ -921,8 +921,8 @@ export const translations: Translations = {
   errorAddingGroupValue: {
     en: "Error adding group value",
     ar: "خطأ في إضافة قيمة المجموعة"
-  }
-   updateTool: {
+  },
+  updateTool: {
     en: "Update Tool",
     ar: "تحديث الأداة"
   },
