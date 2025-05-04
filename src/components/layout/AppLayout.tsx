@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -12,12 +11,15 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, MessageSquare } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, MessageSquare, BellRing } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { ChatSupportButton } from "@/components/chat/ChatSupportButton";
+import { useEffect, useState } from "react";
+import { useChatSupport } from "@/hooks/useChatSupport";
+import { cn } from "@/lib/utils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -26,8 +28,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, isRTL } = useLanguage();
   const { role, logout, user, isAdmin } = useAuth();
   const { users } = useSharedData();
+  const { getUnreadCount } = useChatSupport();
+  const [animate, setAnimate] = useState(false);
 
   const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
+
+  const unreadCount = getUnreadCount();
+  const isChatPage = location.pathname === "/chat-support";
+
+  // Effect to trigger notification animation every 2 seconds when there are unread messages
+  useEffect(() => {
+    if (unreadCount > 0 && !isChatPage) {
+      const interval = setInterval(() => {
+        setAnimate(prev => !prev);
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setAnimate(false);
+    }
+  }, [unreadCount, isChatPage]);
 
   const handleLogout = async () => {
     await logout();
@@ -80,7 +100,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("chatSupport"),
       path: "/chat-support",
       icon: MessageSquare,
-      show: role === "admin"
+      show: role === "admin",
+      notificationIcon: unreadCount > 0 ? (
+        <div className={cn(
+          "absolute -left-1 -top-1",
+          animate ? "animate-fade-in" : "opacity-0"
+        )}>
+          <BellRing className="h-3 w-3 text-amber-500" />
+        </div>
+      ) : null,
+      badge: unreadCount > 0 ? unreadCount : null,
+      animateBadge: animate
     },
     {
       title: t("toolUpdate"),
@@ -148,10 +178,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   >
                     <button 
                       onClick={() => navigate(item.path)}
-                      className="w-full text-xs sm:text-sm"
+                      className="w-full text-xs sm:text-sm relative"
                     >
-                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      {item.notificationIcon}
+                      <item.icon className={cn(
+                        "h-4 w-4 sm:h-5 sm:w-5",
+                        animate && item.badge ? "text-primary" : ""
+                      )} />
                       <span>{item.title}</span>
+                      {item.badge && (
+                        <span className={cn(
+                          "absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground",
+                          item.animateBadge ? "animate-pulse" : ""
+                        )}>
+                          {item.badge}
+                        </span>
+                      )}
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
