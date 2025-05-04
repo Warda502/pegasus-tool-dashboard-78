@@ -1009,7 +1009,100 @@ export const translations: Translations = {
   errorSendingMessage: {
     en: "Error sending message",
     ar: "خطأ في إرسال الرسالة"
+  },
+  // For Settings tool
+  toolUpdate: {
+    en: "Tool Update",
+    ar: "تحديث الاداة"
+  },
+  toolSettings: {
+    en: "Tool Settings",
+    ar: "اعدادات الاداة"
+  },
+  buttons: {
+    en: "Buttons",
+    ar: "الازرار"
+  },
+  settingsSwitch: {
+    en: "Settings Switch",
+    ar: "اعدادات التبديل"
+  },
+  addNewObject: {
+    en: "Add New Object",
+    ar: "اضافة كأن جديد"
+  },
+  addNewSetting: {
+    en: "Add New Object",
+    ar: "اضافة كأن جديد"
+  },
+  objectType: {
+    en: "Object Type",
+    ar: "نوع الكأن"
+  },
+  title: {
+    en: "Title",
+    ar: "الاسم"
+  },
+  enterKey: {
+    en: "Enter Key",
+    ar: "ادخل المفتاح"
+  },
+  enterTitle: {
+    en: "Enter Title",
+    ar: "ادخل الاسم"
   }
+  save: {
+    en: "Save",
+    ar: "حفظ"
+  },
+  allFieldsRequired: {
+    en: "All fields are required",
+    ar: "جميع الحقول مطلوبة"
+  },
+  noSettingsFound: {
+    en: "No settings found",
+    ar: "لم يتم العثور على الإعدادات"
+  },
+  settingAddedSuccessfully: {
+    en: "Setting added successfully",
+    ar: "تمت إضافة الإعداد بنجاح"
+  },
+  settingsUpdatedSuccessfully: {
+    en: "Settings updated successfully",
+    ar: "تم تحديث الإعدادات بنجاح"
+  },
+  pleaseRefreshPage: {
+    en: "Please try refreshing the page.",
+    ar: "من فضلك حاول تحديث الصفحة."
+  },
+  manageToolSettings: {
+    en: "Manage tool settings and configurations",
+    ar: "إدارة إعدادات الأداة وتكويناتها"
+  },
+  insertedAt: {
+    en: "Inserted At",
+    ar: "تم إدراجه في"
+  },
+  refundAmount: {
+    en: "Refund Amount",
+    ar: "مبلغ الاسترداد"
+  },
+  remainingDiscounts: {
+    en: "Remaining Discounts",
+    ar: "الخصومات المتبقية"
+  },
+  confirmDelete: {
+    en: "Confirm Delete",
+    ar: "تأكيد الحذف"
+  },
+  deleteDiscountConfirmation: {
+    en: "Are you sure you want to delete this discount? This action cannot be undone.",
+    ar: "هل أنت متأكد من رغبتك في حذف هذا الخصم؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  deleting: {
+    en: "Deleting...",
+    ar: "جاري الحذف..."
+  },
 };
 
 // Create the context with default values
