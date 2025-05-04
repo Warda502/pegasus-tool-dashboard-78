@@ -48,6 +48,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          id: string
+          is_from_admin: boolean
+          is_read: boolean
+          message: string
+          user_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          is_read?: boolean
+          message: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          is_read?: boolean
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       discounts: {
         Row: {
           count_refund: number | null
@@ -292,10 +322,6 @@ export type Database = {
     Functions: {
       deduct_credits_with_discount: {
         Args: { pxu: string; pxc: string; pxm: string; pxe: string }
-        Returns: string
-      }
-      deduct_user_credit: {
-        Args: { pxu: string; pxc: string }
         Returns: string
       }
       is_admin: {

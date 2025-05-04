@@ -12,11 +12,12 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, MessageSquare } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useSharedData } from "@/hooks/data/DataContext";
+import { ChatSupportButton } from "@/components/chat/ChatSupportButton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -73,6 +74,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       title: t("groupsManagement"),
       path: "/groups-management",
       icon: Group,
+      show: role === "admin"
+    },
+    {
+      title: t("chatSupport"),
+      path: "/chat-support",
+      icon: MessageSquare,
       show: role === "admin"
     },
     {
@@ -153,6 +160,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           
           <SidebarFooter className="p-2 sm:p-4 text-xs text-center text-muted-foreground">
+            {!isAdmin && (
+              <div className="mb-2">
+                <ChatSupportButton />
+              </div>
+            )}
             {t("allRightsReserved")}
           </SidebarFooter>
         </Sidebar>

@@ -60,3 +60,44 @@ export async function createUserRecord(userId: string, userData: {
 
   return userId;
 }
+
+/**
+ * Fetches user information by user ID
+ * @param userId The ID of the user
+ * @returns User data or null if not found
+ */
+export async function getUserInfo(userId: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching user info:', error);
+    return null;
+  }
+  
+  return data;
+}
+
+/**
+ * Gets the unread message count for a specific user
+ * @param userId The ID of the user
+ * @returns Number of unread messages
+ */
+export async function getUnreadMessageCount(userId: string) {
+  const { count, error } = await supabase
+    .from('chat_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_from_admin', true)
+    .eq('is_read', false);
+  
+  if (error) {
+    console.error('Error fetching unread message count:', error);
+    return 0;
+  }
+  
+  return count || 0;
+}

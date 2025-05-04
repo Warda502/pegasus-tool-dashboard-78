@@ -23,6 +23,7 @@ import Discounts from "./pages/Discounts";
 import GroupsManagement from "./pages/GroupsManagement";
 import ToolUpdate from "./pages/ToolUpdate";
 import ToolSettings from "./pages/ToolSettings";
+import ChatSupport from "./pages/ChatSupport";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -93,6 +94,11 @@ const App = () => (
                 <Route path="/groups-management" element={
                   <ProtectedRoute allowedRoles={["admin"]}>
                     <AppLayout><GroupsManagement /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/chat-support" element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AppLayout><ChatSupport /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/tool-update" element={
