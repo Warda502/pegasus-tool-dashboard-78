@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Eye, EyeOff } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { supabase } from "@/integrations/supabase/client";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,6 +22,12 @@ export default function Login() {
   const { isAuthenticated, sessionChecked, loading, login } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaError, setCaptchaError] = useState(false);
+  
+  // Use your production site key here - this is an example placeholder
+  const TURNSTILE_SITE_KEY = "0x4AAAAAAAL3Lb3xHI3aHJb0"; // Replace with your production site key
+  const turnstileRef = useRef(null);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -54,6 +61,16 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Validate CAPTCHA
+    if (!captchaToken) {
+      toast(t("captchaRequired"), {
+        description: t("pleaseCompleteCaptcha")
+      });
+      setCaptchaError(true);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       // First, check if email exists and if the user is blocked or has no credits
@@ -101,6 +118,20 @@ export default function Login() {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleCaptchaSolved = (token: string) => {
+    setCaptchaToken(token);
+    setCaptchaError(false);
+  };
+
+  const handleCaptchaError = () => {
+    setCaptchaError(true);
+    setCaptchaToken("");
+  };
+
+  const handleCaptchaExpired = () => {
+    setCaptchaToken("");
   };
 
   if (!sessionChecked || loading) {
@@ -156,10 +187,23 @@ export default function Login() {
                 </button>
               </div>
             </div>
+            <div className={`flex justify-center ${captchaError ? 'border border-red-500 rounded-md p-2' : ''}`}>
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={handleCaptchaSolved}
+                onError={handleCaptchaError}
+                onExpire={handleCaptchaExpired}
+                options={{
+                  theme: 'light',
+                  language: isRTL ? 'ar' : 'en',
+                }}
+              />
+            </div>
           </div>
           <Button
             type="submit"
-            disabled={isSubmitting || loading}
+            disabled={isSubmitting || loading || !captchaToken}
             className="w-full"
           >
             {isSubmitting ? t("loggingIn") : t("login")}
