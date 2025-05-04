@@ -16,6 +16,15 @@ interface ChatInterfaceProps {
   className?: string;
 }
 
+// Helper function to format date - moved outside component scope
+const formatDateTime = (timestamp: string) => {
+  try {
+    return format(new Date(timestamp), 'MMM d, h:mm a');
+  } catch (e) {
+    return timestamp;
+  }
+};
+
 export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   const { t, isRTL } = useLanguage();
   const { user, isAdmin } = useAuth();
@@ -54,14 +63,6 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-    }
-  };
-  
-  const formatDate = (timestamp: string) => {
-    try {
-      return format(new Date(timestamp), 'MMM d, h:mm a');
-    } catch (e) {
-      return timestamp;
     }
   };
   
@@ -164,7 +165,7 @@ function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
           "flex items-center gap-1 mt-1 text-xs opacity-80",
           isMine ? "justify-end" : "justify-start"
         )}>
-          <span>{formatDate(message.created_at)}</span>
+          <span>{formatDateTime(message.created_at)}</span>
           {isMine && !message.is_from_admin && (
             message.is_read ? 
               <CheckCheck className="h-3 w-3" /> : 
