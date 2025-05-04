@@ -70,6 +70,11 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     return <div>{t("loginRequired") || "Please log in to use chat support"}</div>;
   }
   
+  // Sort messages by creation date in ascending order (oldest to newest)
+  const sortedMessages = [...messages].sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+  
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Chat header */}
@@ -103,7 +108,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => (
+            {sortedMessages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}

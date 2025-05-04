@@ -56,7 +56,7 @@ export const useChatSupport = (userId?: string) => {
       let query = supabase
         .from('chat_messages')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true }); // Changed to ascending (oldest to newest)
       
       // If not admin and userId provided, filter by user ID
       if (!isAdmin && userId) {
