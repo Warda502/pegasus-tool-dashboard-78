@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, PlusCircle, UserPlus } from "lucide-react";
+import { PlusCircle, UserPlus } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserHeaderActionsProps {
   isAdmin: boolean;
@@ -17,25 +18,30 @@ export function UserHeaderActions({
   onAddUser,
 }: UserHeaderActionsProps) {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
+
+  if (!isAdmin) return null;
 
   return (
     <div className="flex items-center gap-2">
-      <Button onClick={onRefresh} className="flex items-center" variant="outline">
-        <RefreshCw className="h-5 w-5 mr-2" />
-        {t("refresh")}
+      <Button 
+        onClick={onAddCredits} 
+        className="flex items-center" 
+        variant="outline"
+        size={isMobile ? "sm" : "default"}
+      >
+        <PlusCircle className="h-4 w-4 mr-1" />
+        {t("addCredit")}
       </Button>
-      {isAdmin && (
-        <>
-          <Button onClick={onAddCredits} className="flex items-center" variant="outline">
-            <PlusCircle className="h-5 w-5 mr-2" />
-            {t("addCredit")}
-          </Button>
-          <Button onClick={onAddUser} className="flex items-center" variant="outline">
-            <UserPlus className="h-5 w-5 mr-2" />
-            {t("addUser")}
-          </Button>
-        </>
-      )}
+      <Button 
+        onClick={onAddUser} 
+        className="flex items-center" 
+        variant="outline"
+        size={isMobile ? "sm" : "default"}
+      >
+        <UserPlus className="h-4 w-4 mr-1" />
+        {t("addUser")}
+      </Button>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LineChart, Search, FileDown, RefreshCw, FileText } from "lucide-react";
+import { LineChart, Search, FileDown, FileText, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,7 @@ import { toast } from "@/components/ui/sonner";
 import { useSharedData, formatTimeString, useLanguage, Operation, refundOperation } from "@/hooks/useSharedData";
 import { OperationDetailsDialog } from "@/components/operations/OperationDetailsDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Operations() {
   const { operations, isLoading, refreshData } = useSharedData();
@@ -32,6 +33,7 @@ export default function Operations() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Filter operations based on search term
   const filteredOperations = operations.filter((op) => {
@@ -343,20 +345,10 @@ export default function Operations() {
               )}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t("refresh")}
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <FileDown className="h-4 w-4 mr-2" />
-              {t("export")}
-            </Button>
-          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -366,29 +358,196 @@ export default function Operations() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  {t("filter")}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSearchTerm("Succeeded")}>
-                  {t("successfulOperations")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSearchTerm("Failed")}>
-                  {t("failedOperations")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSearchTerm("")}>
-                  {t("showAll")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size={isMobile ? "sm" : "default"} onClick={exportToCSV}>
+                <FileDown className="h-4 w-4 mr-2" />
+                {t("export")}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size={isMobile ? "sm" : "default"}>
+                    {t("filter")}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setSearchTerm("Succeeded")}>
+                    {t("successfulOperations")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSearchTerm("Failed")}>
+                    {t("failedOperations")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSearchTerm("")}>
+                    {t("showAll")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          {renderTable(currentItems)}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">{t("operationID")}</TableHead>
+                  <TableHead>{t("operationType")}</TableHead>
+                  <TableHead>{t("brand")}</TableHead>
+                  <TableHead>{t("model")}</TableHead>
+                  <TableHead>{t("imei")}</TableHead>
+                  <TableHead>{t("user")}</TableHead>
+                  <TableHead>{t("credit")}</TableHead>
+                  <TableHead>{t("time")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead>{t("actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentItems.length > 0 ? (
+                  currentItems.map((op) => (
+                    <TableRow key={op.OprationID}>
+                      <TableCell className="font-medium">{op.OprationID}</TableCell>
+                      <TableCell>{op.OprationTypes}</TableCell>
+                      <TableCell>{op.Brand}</TableCell>
+                      <TableCell>{op.Model}</TableCell>
+                      <TableCell>{op.Imei}</TableCell>
+                      <TableCell>{op.UserName}</TableCell>
+                      <TableCell>{op.Credit}</TableCell>
+                      <TableCell dir="ltr" className="text-right">{formatTimeString(op.Time)}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          op.Status?.toLowerCase() === "success" || op.Status?.toLowerCase() === "succeeded"
+                            ? "bg-green-100 text-green-800"
+                            : op.Status?.toLowerCase() === "failed" || op.Status?.toLowerCase() === "failure"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {op.Status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(op)}>
+                            <FileText className="h-4 w-4 mr-1" />
+                            {t("details")}
+                          </Button>
+                          {isAdmin && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleRefund(op)}
+                              disabled={!op.Credit || op.Credit === "0.0"}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              {t("refund")}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-4">
+                      {isLoading ? t("loading") : t("noData")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-          {renderPagination()}
+          {filteredOperations.length > itemsPerPage && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                {t("showingResults") || "Showing"} {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredOperations.length)} {t("of") || "of"} {filteredOperations.length}
+              </div>
+              <Pagination className="mt-0">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => paginate(currentPage - 1)}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+
+                  {totalPages <= 7 ? (
+                    // If fewer than 7 pages, show all
+                    [...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          onClick={() => paginate(i + 1)}
+                          isActive={currentPage === i + 1}
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))
+                  ) : (
+                    // If more than 7 pages, show smart pagination
+                    <>
+                      {/* Always show first page */}
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => paginate(1)}
+                          isActive={currentPage === 1}
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+
+                      {/* Show ellipsis if current page is more than 3 */}
+                      {currentPage > 3 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      {/* Show current page and surrounding pages */}
+                      {[...Array(5)].map((_, i) => {
+                        const pageNum = currentPage - 2 + i;
+                        if (pageNum > 1 && pageNum < totalPages) {
+                          return (
+                            <PaginationItem key={i}>
+                              <PaginationLink
+                                onClick={() => paginate(pageNum)}
+                                isActive={currentPage === pageNum}
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      {/* Show ellipsis if current page is less than totalPages - 2 */}
+                      {currentPage < totalPages - 2 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      {/* Always show last page */}
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => paginate(totalPages)}
+                          isActive={currentPage === totalPages}
+                        >
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => paginate(currentPage + 1)}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

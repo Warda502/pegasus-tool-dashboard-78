@@ -1,47 +1,33 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useState } from "react";
 
 interface UserFiltersProps {
-  statusFilter: string;
-  onStatusFilterChange: (value: string) => void;
-  licenseTypeFilter: string;
-  onLicenseTypeFilterChange: (value: string) => void;
-  isAdmin: boolean;
+  onSearch: (query: string) => void;
 }
 
-export function UserFilters({
-  statusFilter,
-  onStatusFilterChange,
-  licenseTypeFilter,
-  onLicenseTypeFilterChange,
-  isAdmin
-}: UserFiltersProps) {
+export function UserFilters({ onSearch }: UserFiltersProps) {
   const { t } = useLanguage();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    onSearch(value);
+  };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-        <SelectTrigger className="w-[150px]">
-          <SelectValue placeholder={t("filterByStatus")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("allStatuses")}</SelectItem>
-          <SelectItem value="Not Blocked">{t("active")}</SelectItem>
-          <SelectItem value="Blocked">{t("blocked")}</SelectItem>
-        </SelectContent>
-      </Select>
-      
-      <Select value={licenseTypeFilter} onValueChange={onLicenseTypeFilterChange}>
-        <SelectTrigger className="w-[150px]">
-          <SelectValue placeholder={t("filterByLicense")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("allLicenses")}</SelectItem>
-          <SelectItem value="Monthly License">{t("monthlyLicense")}</SelectItem>
-          <SelectItem value="Lifetime License">{t("lifetimeLicense")}</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="relative flex-1 w-full">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="search"
+        placeholder={t("search")}
+        className="w-full pl-8"
+        value={searchQuery}
+        onChange={handleSearchChange}
+      />
     </div>
   );
 }

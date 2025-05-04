@@ -11,7 +11,7 @@ import { Plus, Settings, Search } from "lucide-react";
 import { AddGroupDialog } from "@/components/groups/AddGroupDialog";
 import { GroupsTable } from "@/components/groups/GroupsTable";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@/components/ui/sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function GroupsManagement() {
   const { t, isRTL } = useLanguage();
@@ -19,6 +19,7 @@ export default function GroupsManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const handleAddSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['groups'] });
@@ -69,17 +70,11 @@ export default function GroupsManagement() {
               )}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)} className="whitespace-nowrap">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("addNewValue") || "Add New Value"}
-            </Button>
-          </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <div className="relative w-full">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t("searchGroups") || "Search groups..."}
@@ -88,6 +83,15 @@ export default function GroupsManagement() {
                 className="w-full pl-8"
               />
             </div>
+            <Button 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"} 
+              onClick={() => setIsAddDialogOpen(true)} 
+              className="whitespace-nowrap"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t("addNewValue") || "Add New Value"}
+            </Button>
           </div>
           
           <GroupsTable data={filteredGroups} onDeleteSuccess={handleDeleteSuccess} />

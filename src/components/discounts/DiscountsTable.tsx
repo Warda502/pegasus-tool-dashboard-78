@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -32,6 +32,8 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { EditDiscountDialog } from "./EditDiscountDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Discount {
   id: string;
@@ -49,9 +51,11 @@ interface DiscountsTableProps {
 
 export const DiscountsTable: React.FC<DiscountsTableProps> = ({ data, onDeleteSuccess }) => {
   const { t, isRTL } = useLanguage();
+  const isMobile = useIsMobile();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,6 +76,11 @@ export const DiscountsTable: React.FC<DiscountsTableProps> = ({ data, onDeleteSu
   const handleDeleteClick = (discount: Discount) => {
     setSelectedDiscount(discount);
     setDeleteConfirmOpen(true);
+  };
+  
+  const handleEditClick = (discount: Discount) => {
+    setSelectedDiscount(discount);
+    setIsEditDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -221,15 +230,26 @@ export const DiscountsTable: React.FC<DiscountsTableProps> = ({ data, onDeleteSu
                 <TableCell>{discount.count_refund}</TableCell>
                 <TableCell className="text-center">{discount.number_discounts}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteClick(discount)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                    <span className="sr-only">{t("delete") || "Delete"}</span>
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size={isMobile ? "icon" : "sm"}
+                      onClick={() => handleEditClick(discount)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4 text-blue-500" />
+                      <span className="sr-only">{t("edit") || "Edit"}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size={isMobile ? "icon" : "sm"}
+                      onClick={() => handleDeleteClick(discount)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <span className="sr-only">{t("delete") || "Delete"}</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -268,6 +288,15 @@ export const DiscountsTable: React.FC<DiscountsTableProps> = ({ data, onDeleteSu
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {selectedDiscount && (
+        <EditDiscountDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          onSuccess={onDeleteSuccess} // Use the same callback to refresh data
+          discount={selectedDiscount}
+        />
+      )}
     </>
   );
 };

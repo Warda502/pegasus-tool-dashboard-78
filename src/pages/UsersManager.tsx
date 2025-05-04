@@ -3,9 +3,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage } from "@/hooks/useSharedData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { Users, Search, RefreshCw, PlusCircle, UserPlus } from "lucide-react";
+import { Users } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ViewUserDialog } from "@/components/users/ViewUserDialog";
@@ -14,10 +13,10 @@ import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
 import { UserFilters } from "@/components/users/UserFilters";
+import { UserHeaderActions } from "@/components/users/UserHeaderActions";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
 import { useUserOperations } from "@/hooks/useUserOperations";
 import { UsersTable } from "@/components/users/UsersTable";
-import { Input } from "@/components/ui/input";
 
 export default function UsersManager() {
   const navigate = useNavigate();
@@ -47,8 +46,7 @@ export default function UsersManager() {
   const { updateUser, addUser, renewUser, deleteUser } = useUserOperations();
   
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [licenseTypeFilter, setLicenseTypeFilter] = useState("all");
+  const [filteredUsers, setFilteredUsers] = useState(users);
 
   useEffect(() => {
     // Initial data refresh when component mounts
@@ -56,12 +54,22 @@ export default function UsersManager() {
     refreshData();
   }, [refreshData]);
   
-  const handleRefresh = () => {
-    console.log("Manual refresh triggered");
-    refreshData();
-    toast(t("refreshingData") || "Refreshing data...", {
-      description: t("fetchingAllUsers") || "Fetching all users, this might take a moment"
+  // Function to handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    // Filter users based on search query - but admin sees all users
+    const filtered = users.filter(user => {
+      const matchesSearch = query.trim() === "" || 
+        (user.Email?.toLowerCase().includes(query.toLowerCase())) ||
+        (user.Name?.toLowerCase().includes(query.toLowerCase())) ||
+        (user.Phone?.toLowerCase().includes(query.toLowerCase())) ||
+        (user.Country?.toLowerCase().includes(query.toLowerCase()));
+      
+      return matchesSearch;
     });
+    
+    setFilteredUsers(filtered);
   };
 
   const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
@@ -82,35 +90,10 @@ export default function UsersManager() {
     }
   };
 
-  // Filter users based on search query, status and license type - but admin sees all users
-  const filteredUsers = users.filter(user => {
-    // Admin can see everything, just apply search filter
-    if (role === "admin") {
-      return searchQuery.trim() === "" || 
-        (user.Email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (user.Name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (user.Phone?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (user.Country?.toLowerCase().includes(searchQuery.toLowerCase()));
-    }
-    
-    // For non-admin users, apply all filters
-    // Apply search filter if there's a search query
-    const matchesSearch = searchQuery.trim() === "" || 
-      (user.Email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (user.Name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (user.Phone?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (user.Country?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Apply status filter if not set to "all"
-    const matchesStatus = statusFilter === "all" || user.Block === statusFilter;
-    
-    // Apply license type filter if not set to "all"
-    const matchesLicenseType = licenseTypeFilter === "all" || user.User_Type === licenseTypeFilter;
-    
-    return matchesSearch && matchesStatus && matchesLicenseType;
-  });
-  
-  console.log("Total users:", users.length, "Filtered users:", filteredUsers.length, "Role:", role);
+  // Initialize filtered users when users change
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [users, searchQuery]);
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
@@ -130,44 +113,16 @@ export default function UsersManager() {
               )}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t("refresh")}
-            </Button>
-            {role === "admin" && (
-              <>
-                <Button variant="outline" size="sm" onClick={openAddCreditsDialog}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  {t("addCredit")}
-                </Button>
-                <Button variant="outline" size="sm" onClick={openAddDialog}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {t("addUser")}
-                </Button>
-              </>
-            )}
-          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={t("search")}
-                className="w-full pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            <UserFilters onSearch={handleSearch} />
             
-            <UserFilters
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              licenseTypeFilter={licenseTypeFilter}
-              onLicenseTypeFilterChange={setLicenseTypeFilter}
+            <UserHeaderActions
               isAdmin={role === "admin"}
+              onRefresh={refreshData}
+              onAddCredits={openAddCreditsDialog}
+              onAddUser={openAddDialog}
             />
           </div>
           
