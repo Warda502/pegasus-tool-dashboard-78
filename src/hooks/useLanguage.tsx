@@ -1050,7 +1050,7 @@ export const translations: Translations = {
   enterTitle: {
     en: "Enter Title",
     ar: "ادخل الاسم"
-  }
+  },
   save: {
     en: "Save",
     ar: "حفظ"
@@ -1102,7 +1102,7 @@ export const translations: Translations = {
   deleting: {
     en: "Deleting...",
     ar: "جاري الحذف..."
-  },
+  }
 };
 
 // Create the context with default values
