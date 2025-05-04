@@ -389,14 +389,6 @@ export default function Operations() {
           {renderTable(currentItems)}
 
           {renderPagination()}
-
-          <div className="text-sm text-muted-foreground">
-            {t("totalOperations")
-              .replace("{0}", filteredOperations.length.toString())
-              .replace("{1}", (indexOfFirstItem + 1).toString())
-              .replace("{2}", Math.min(indexOfLastItem, filteredOperations.length).toString())
-            }
-          </div>
         </CardContent>
       </Card>
 
