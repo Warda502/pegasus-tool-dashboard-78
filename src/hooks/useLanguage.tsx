@@ -1,7 +1,9 @@
+
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { useTranslation } from "react-i18next";
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { createContext, useContext, ReactNode } from "react";
 
 // Translations
 const translations = {
@@ -149,6 +151,7 @@ const translations = {
   },
 };
 
+// Initialize i18n instance
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -160,9 +163,45 @@ i18n
     },
   });
 
+// Create context for language provider
+type LanguageContextType = {
+  language: string;
+  changeLanguage: (lang: string) => void;
+};
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+// Create language provider component
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const { i18n } = useTranslation();
+  
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+  };
+  
+  return (
+    <LanguageContext.Provider value={{ 
+      language: i18n.language,
+      changeLanguage
+    }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+// Hook to use language functionality
 export const useLanguage = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
-
-  return { t, i18n, isRTL };
+  
+  // Get context values
+  const context = useContext(LanguageContext);
+  
+  return { 
+    t, 
+    i18n, 
+    isRTL,
+    language: i18n.language,
+    changeLanguage: (lang: string) => i18n.changeLanguage(lang)
+  };
 };
