@@ -140,7 +140,7 @@ export const useChatMessages = (userId?: string) => {
     fetchMessages();
     
     // Set up channel for real-time updates
-    let channelFilter = {
+    const channelFilter: { event: string; schema: string; table: string; filter?: string } = {
       event: '*',
       schema: 'public',
       table: 'chat_messages'
@@ -148,10 +148,7 @@ export const useChatMessages = (userId?: string) => {
     
     // Add user filter if we're looking at a specific user's messages
     if (userId) {
-      channelFilter = {
-        ...channelFilter,
-        filter: `user_id=eq.${userId}`
-      };
+      channelFilter.filter = `user_id=eq.${userId}`;
     }
     
     // Subscribe to changes

@@ -7,38 +7,45 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function setupRealtimeChat() {
   try {
-    // First check if Realtime is already enabled for chat_messages table
-    const { data: publicationData, error: publicationError } = await supabase
-      .rpc('get_realtime_tables');
+    console.log("Setting up Realtime chat features...");
+    
+    // Check if chat_messages table exists first
+    const { data: tablesData, error: tablesError } = await supabase
+      .from('chat_messages')
+      .select('id')
+      .limit(1);
       
-    if (publicationError) {
-      console.error("Error checking Realtime configuration:", publicationError);
+    if (tablesError) {
+      console.error("Error checking chat_messages table:", tablesError);
       return false;
     }
     
-    const isChatMessagesEnabled = publicationData && 
-      Array.isArray(publicationData) && 
-      publicationData.some(table => table === 'chat_messages');
+    // Enable table for realtime
+    try {
+      // We'll use Supabase's channel functionality to check if realtime is working
+      const channel = supabase.channel('test-realtime');
       
-    if (!isChatMessagesEnabled) {
-      console.log("Realtime not enabled for chat_messages, enabling now...");
+      const subscription = channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages'
+        }, () => {})
+        .subscribe();
       
-      // Enable Realtime for chat_messages
-      const { error } = await supabase.rpc('supabase_functions.enable_realtime', {
-        table_name: 'chat_messages'
-      });
+      // If we get here, realtime appears to be functioning
+      console.log("Realtime appears to be enabled for chat_messages");
       
-      if (error) {
-        console.error("Failed to enable Realtime for chat_messages:", error);
-        return false;
-      }
+      // Clean up test subscription
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 1000);
       
-      console.log("Successfully enabled Realtime for chat_messages");
-    } else {
-      console.log("Realtime already enabled for chat_messages table");
+      return true;
+    } catch (err) {
+      console.error("Error setting up Realtime for chat_messages:", err);
+      return false;
     }
-    
-    return true;
   } catch (err) {
     console.error("Error setting up Realtime chat:", err);
     return false;

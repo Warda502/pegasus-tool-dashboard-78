@@ -51,7 +51,7 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
     fetchUnreadCount();
     
     // Listen for new messages
-    let channelFilter = {
+    const channelFilter: { event: string; schema: string; table: string; filter?: string } = {
       event: 'INSERT',
       schema: 'public',
       table: 'chat_messages'
@@ -59,10 +59,7 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
     
     // Add filter for the current user
     if (!isAdmin) {
-      channelFilter = {
-        ...channelFilter,
-        filter: `user_id=eq.${user.id}`
-      };
+      channelFilter.filter = `user_id=eq.${user.id}`;
     }
     
     const channel = supabase

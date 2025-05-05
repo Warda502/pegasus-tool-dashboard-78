@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import type { RealtimePresenceState } from '@supabase/supabase-js';
 
 // Types for presence data
 export interface UserPresence {
@@ -90,9 +91,11 @@ export const useObservePresence = (observedUserId?: string) => {
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         // Check if the joined user is the one we're observing
-        const relevantPresence = newPresences.find((p: UserPresence) => p.user_id === observedUserId);
+        const relevantPresence = newPresences.find((p: any) => 
+          p.user_id === observedUserId
+        );
         if (relevantPresence) {
-          setPresenceState(relevantPresence);
+          setPresenceState(relevantPresence as UserPresence);
         }
       })
       .on('presence', { event: 'leave' }, () => {
@@ -103,13 +106,13 @@ export const useObservePresence = (observedUserId?: string) => {
       .subscribe();
     
     // Helper function to update presence state from the channel state
-    function updatePresenceFromState(state: any) {
+    function updatePresenceFromState(state: RealtimePresenceState<any>) {
       // Find presence entries for the observed user
-      const allPresences = Object.values(state).flat() as UserPresence[];
-      const userPresence = allPresences.find((p: UserPresence) => p.user_id === observedUserId);
+      const allPresences: any[] = Object.values(state).flat();
+      const userPresence = allPresences.find((p: any) => p.user_id === observedUserId);
       
       if (userPresence) {
-        setPresenceState(userPresence);
+        setPresenceState(userPresence as UserPresence);
       } else {
         // If no presence found, assume offline
         setPresenceState({
