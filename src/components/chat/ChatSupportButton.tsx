@@ -35,8 +35,8 @@ export function ChatSupportButton() {
       const latestMessage = messages[messages.length - 1];
       
       if (!isOpen && latestMessage && !latestMessage.is_from_admin) {
-        // Fix: Remove the second argument as playNotificationSound expects only one optional argument
-        playNotificationSound();
+        // Fixed: Only use a single optional argument for volume
+        playNotificationSound(0.5);
         setShowNotification(true);
         
         // Auto-hide notification after 5 seconds
