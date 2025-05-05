@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { useChatSupport } from "@/hooks/useChatSupport";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MessageSquare } from "lucide-react";
+import { Search, MessageSquare, Check, CheckCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -26,11 +25,24 @@ export function UserChatList({ onSelectUser, selectedUserId, className }: UserCh
   );
   
   const formatDate = (timestamp: string) => {
-    try {
-      return format(new Date(timestamp), 'MMM d');
-    } catch (e) {
-      return "";
+    const today = new Date();
+    const messageDate = new Date(timestamp);
+    
+    // If message is from today, show time
+    if (messageDate.toDateString() === today.toDateString()) {
+      return format(messageDate, 'h:mm a');
     }
+    
+    // If message is from this week, show day name
+    const diffTime = Math.abs(today.getTime() - messageDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 7) {
+      return format(messageDate, 'EEEE');
+    }
+    
+    // Otherwise show date
+    return format(messageDate, 'MMM d');
   };
   
   const truncateMessage = (message: string, maxLength = 30) => {
@@ -76,25 +88,48 @@ export function UserChatList({ onSelectUser, selectedUserId, className }: UserCh
                 key={user.userId}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start px-4 py-3 h-auto rounded-none",
-                  selectedUserId === user.userId ? "bg-accent" : "hover:bg-accent/50"
+                  "w-full justify-start px-4 py-3 h-auto rounded-none transition-colors",
+                  selectedUserId === user.userId ? "bg-accent" : "hover:bg-accent/50",
+                  user.unreadCount > 0 ? "bg-muted/40" : ""
                 )}
                 onClick={() => onSelectUser(user.userId)}
               >
                 <div className="flex flex-col items-start w-full">
                   <div className="flex justify-between w-full">
-                    <span className="font-medium text-sm truncate max-w-[150px]">{user.userEmail}</span>
+                    <span className={cn(
+                      "font-medium text-sm truncate max-w-[150px]",
+                      user.unreadCount > 0 ? "font-semibold" : ""
+                    )}>
+                      {user.userEmail}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {formatDate(user.lastMessage.created_at)}
                     </span>
                   </div>
                   <div className="flex justify-between w-full mt-1">
-                    <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-                      {user.lastMessage.is_from_admin ? "You: " : ""}
+                    <span className={cn(
+                      "text-xs truncate max-w-[150px]",
+                      user.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
+                    )}>
+                      {user.lastMessage.is_from_admin && (
+                        <span className="flex items-center gap-1">
+                          {t("you") || "You"}:
+                          {user.lastMessage.is_read ? 
+                            <CheckCheck className="h-3 w-3 text-primary" /> : 
+                            <Check className="h-3 w-3 text-muted-foreground" />
+                          }
+                        </span>
+                      )}
                       {truncateMessage(user.lastMessage.message)}
                     </span>
                     {user.unreadCount > 0 && (
-                      <Badge variant="default" className="text-[10px] h-5">
+                      <Badge 
+                        variant="default" 
+                        className={cn(
+                          "text-[10px] h-5",
+                          user.unreadCount > 0 ? "animate-pulse" : ""
+                        )}
+                      >
                         {user.unreadCount}
                       </Badge>
                     )}

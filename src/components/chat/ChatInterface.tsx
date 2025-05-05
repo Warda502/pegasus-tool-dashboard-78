@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { SendHorizontal, Check, CheckCheck } from "lucide-react";
+import { SendHorizontal, Check, CheckCheck, ArrowDown, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { shouldAutoScroll } from "@/utils/notificationUtils";
 
 interface ChatInterfaceProps {
   userId?: string; // For admin to chat with specific user
@@ -31,19 +32,47 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   const { messages, loading, sendMessage, markAsRead } = useChatSupport(userId);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Improved scroll to bottom function
+  // Function to scroll to bottom
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      setShowScrollButton(false);
+      setIsAutoScrollEnabled(true);
     }
   };
   
-  // Auto scroll to bottom on new messages
+  // Auto scroll to bottom on new messages if user is already at bottom
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (isAutoScrollEnabled && scrollElement) {
+      scrollToBottom();
+    } else if (messages.length > 0) {
+      setShowScrollButton(true);
+    }
+  }, [messages, isAutoScrollEnabled]);
+  
+  // Detect scroll position to show/hide scroll button
+  useEffect(() => {
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollElement) return;
+    
+    const handleScroll = () => {
+      const shouldScroll = shouldAutoScroll(scrollElement as HTMLElement);
+      setShowScrollButton(!shouldScroll);
+      setIsAutoScrollEnabled(shouldScroll);
+    };
+    
+    scrollElement.addEventListener('scroll', handleScroll);
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
   
   // Mark messages as read when viewed by admin
   useEffect(() => {
@@ -55,15 +84,34 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     }
   }, [isAdmin, messages, markAsRead]);
   
+  // Handle sending message
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     
     const success = await sendMessage(newMessage, userId);
     if (success) {
       setNewMessage("");
-      // Force scroll to bottom after sending a message
+      // Always scroll to bottom after sending a message
       setTimeout(scrollToBottom, 100);
     }
+  };
+  
+  // Handle typing indication
+  const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value);
+    
+    // Set typing indicator (for future real-time implementation)
+    setIsTyping(true);
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set new timeout to stop showing typing indicator after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -73,6 +121,15 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     }
   };
   
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+  
   if (!user) {
     return <div>{t("loginRequired") || "Please log in to use chat support"}</div>;
   }
@@ -81,6 +138,16 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   const sortedMessages = [...messages].sort((a, b) => 
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
+  
+  // Group messages by date for better readability
+  const groupedMessages: { [key: string]: ChatMessage[] } = {};
+  sortedMessages.forEach(message => {
+    const messageDate = format(new Date(message.created_at), 'yyyy-MM-dd');
+    if (!groupedMessages[messageDate]) {
+      groupedMessages[messageDate] = [];
+    }
+    groupedMessages[messageDate].push(message);
+  });
   
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -97,7 +164,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
       {/* Chat messages */}
       <ScrollArea 
         ref={scrollAreaRef}
-        className="flex-1 p-4"
+        className="flex-1 p-4 relative"
         type="always"
       >
         {loading && messages.length === 0 ? (
@@ -114,15 +181,46 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {sortedMessages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isMine={(isAdmin && message.is_from_admin) || (!isAdmin && !message.is_from_admin)}
-                isRTL={isRTL}
-              />
+          <div className="space-y-6">
+            {Object.keys(groupedMessages).map(date => (
+              <div key={date} className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="text-xs bg-muted px-2 py-1 rounded-md text-muted-foreground">
+                    {format(new Date(date), 'MMM d, yyyy')}
+                  </div>
+                </div>
+                
+                {groupedMessages[date].map((message) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isMine={(isAdmin && message.is_from_admin) || (!isAdmin && !message.is_from_admin)}
+                    isRTL={isRTL}
+                  />
+                ))}
+              </div>
             ))}
+            
+            {/* Typing indicator */}
+            {isAdmin && !isTyping && (
+              <div className="flex mx-2 mb-1 text-xs text-muted-foreground opacity-0">
+                <Pencil className="h-3 w-3 mr-1" />
+                <span>User is typing...</span>
+              </div>
+            )}
+            
+            {/* Scroll to bottom button */}
+            {showScrollButton && (
+              <Button 
+                className="absolute bottom-4 right-4 h-8 w-8 rounded-full shadow-lg opacity-90 hover:opacity-100"
+                size="icon"
+                onClick={scrollToBottom}
+                variant="secondary"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+            )}
+            
             {/* This invisible div helps us scroll to the bottom */}
             <div ref={messagesEndRef} />
           </div>
@@ -135,7 +233,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
           <Textarea
             placeholder={t("typeMessage") || "Type a message..."}
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleTyping}
             onKeyDown={handleKeyDown}
             className="min-h-[60px] resize-none"
           />
@@ -161,6 +259,23 @@ interface MessageBubbleProps {
 }
 
 function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  
+  // Highlight new messages
+  useEffect(() => {
+    // Check if this is a new message (less than 1 second old)
+    const messageTime = new Date(message.created_at).getTime();
+    const isNewMessage = Date.now() - messageTime < 1000;
+    
+    if (isNewMessage && !isMine) {
+      setIsHighlighted(true);
+      const timer = setTimeout(() => {
+        setIsHighlighted(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [message.created_at, isMine]);
+
   return (
     <div className={cn(
       "flex", 
@@ -169,10 +284,11 @@ function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
       isMine ? (isRTL ? "mr-auto" : "ml-auto") : (isRTL ? "ml-auto" : "mr-auto")
     )}>
       <div className={cn(
-        "rounded-lg p-3 text-sm",
+        "rounded-lg p-3 text-sm transition-all duration-300",
         isMine ? 
           "bg-primary text-primary-foreground" : 
-          "bg-muted text-muted-foreground"
+          "bg-muted text-muted-foreground",
+        isHighlighted && !isMine ? "animate-pulse shadow-md" : ""
       )}>
         <p className="whitespace-pre-wrap break-words">{message.message}</p>
         <div className={cn(
@@ -182,8 +298,8 @@ function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
           <span>{formatDateTime(message.created_at)}</span>
           {isMine && !message.is_from_admin && (
             message.is_read ? 
-              <CheckCheck className="h-3 w-3" /> : 
-              <Check className="h-3 w-3" />
+              <CheckCheck className="h-3 w-3 transition-opacity" /> : 
+              <Check className="h-3 w-3 opacity-70 transition-opacity" />
           )}
         </div>
       </div>
