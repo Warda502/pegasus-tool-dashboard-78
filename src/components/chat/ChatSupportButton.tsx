@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, BellRing } from "lucide-react";
+import { MessageSquare, X, BellRing, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ChatInterface } from "./ChatInterface";
@@ -17,6 +18,7 @@ export function ChatSupportButton() {
   const [animate, setAnimate] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const prevMessagesLengthRef = useRef(0);
+  const [pulseEffect, setPulseEffect] = useState(false);
   
   const unreadCount = getUnreadCount();
   
@@ -30,13 +32,17 @@ export function ChatSupportButton() {
   // Play sound and show enhanced notification when new messages arrive
   useEffect(() => {
     if (messages.length > prevMessagesLengthRef.current) {
-      // Check if the new message is not from the current user (i.e., it's incoming)
+      // Check if the new message is from admin (not from the current user)
       const latestMessage = messages[messages.length - 1];
       
-      if (!isOpen && latestMessage && !latestMessage.is_from_admin) {
-        // Fixed: Call with only one argument - the volume level
+      if (!isOpen && latestMessage && latestMessage.is_from_admin) {
+        // Исправлено: вызов только с одним аргументом - уровнем громкости
         playNotificationSound(0.5);
         setShowNotification(true);
+        
+        // Trigger pulse effect
+        setPulseEffect(true);
+        setTimeout(() => setPulseEffect(false), 2000);
         
         // Auto-hide notification after 5 seconds
         const timer = setTimeout(() => {
@@ -65,51 +71,61 @@ export function ChatSupportButton() {
   
   return (
     <div className="relative">
-      {/* Enhanced notification popup */}
+      {/* Enhanced notification popup with better styling */}
       {showNotification && unreadCount > 0 && !isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 w-60 transform transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
+        <div className="absolute bottom-full right-0 mb-2 w-64 transform transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 z-50">
           <Card className="p-3 bg-card shadow-lg border-l-4 border-l-primary">
             <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center">
-                <MessageSquare className="h-4 w-4 mr-1 text-primary" />
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
                 <span className="font-semibold text-sm">{t("newMessage") || "New Message"}</span>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-6 w-6 p-0" 
+                className="h-6 w-6 p-0 hover:bg-muted/80" 
                 onClick={() => setShowNotification(false)}
               >
                 <X className="h-3 w-3" />
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("clickToViewMessage") || "Click to view the message"}
+            </p>
           </Card>
         </div>
       )}
       
-      {/* Chat sheet */}
+      {/* Chat sheet with improved styling */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button 
             size="sm" 
-            variant="outline" 
+            variant={pulseEffect ? "default" : "outline"}
             className={cn(
-              "relative transition-all",
+              "relative transition-all duration-300",
               unreadCount > 0 ? "animate-pulse" : "",
               animate && unreadCount > 0 ? "bg-muted/80" : "",
-              showNotification ? "ring-2 ring-primary ring-offset-2" : ""
+              showNotification ? "ring-2 ring-primary ring-offset-2" : "",
+              pulseEffect ? "shadow-md shadow-primary/30" : ""
             )}
           >
             <div className={cn(
-              "absolute -left-1 -top-1",
-              animate && unreadCount > 0 ? "animate-fade-in" : "opacity-0"
+              "absolute -left-1 -top-1 transition-opacity",
+              (animate && unreadCount > 0) || pulseEffect ? "opacity-100" : "opacity-0"
             )}>
-              <BellRing className="h-3 w-3 text-amber-500" />
+              <BellRing className={cn(
+                "h-3 w-3", 
+                pulseEffect ? "text-primary animate-bounce" : "text-amber-500"
+              )} />
             </div>
             
             <MessageSquare className={cn(
-              "h-4 w-4 mr-1",
-              animate && unreadCount > 0 ? "text-primary" : ""
+              "h-4 w-4 mr-1 transition-colors duration-300",
+              (animate && unreadCount > 0) || pulseEffect ? "text-primary" : ""
             )} />
             {t("chatSupport") || "Chat Support"}
             
@@ -117,8 +133,9 @@ export function ChatSupportButton() {
               <Badge 
                 variant="destructive" 
                 className={cn(
-                  "absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px]",
-                  animate ? "animate-pulse" : ""
+                  "absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]",
+                  animate || pulseEffect ? "animate-bounce" : "",
+                  pulseEffect ? "shadow-md shadow-destructive/30" : ""
                 )}
               >
                 {unreadCount}

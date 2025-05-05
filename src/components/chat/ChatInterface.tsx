@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { SendHorizontal, Check, CheckCheck, ArrowDown, Pencil } from "lucide-react";
+import { SendHorizontal, Check, CheckCheck, ArrowDown, Loader, CircleDot, CircleOff } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { shouldAutoScroll } from "@/utils/notificationUtils";
@@ -37,6 +37,19 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [userStatus, setUserStatus] = useState<'online' | 'offline'>('offline');
+  
+  // Simulate online status for demo purposes
+  useEffect(() => {
+    // In a real app, this would be based on presence data from Supabase
+    const randomDelay = Math.random() * 10000 + 5000; // Between 5-15 seconds
+    const timer = setTimeout(() => {
+      setUserStatus('online');
+    }, randomDelay);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Function to scroll to bottom
   const scrollToBottom = () => {
@@ -121,6 +134,25 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     }
   };
   
+  // Simulate typing for demo purposes (in real implementation, this would come from realtime subscription)
+  useEffect(() => {
+    if (!isAdmin && !loading) {
+      const typingInterval = setInterval(() => {
+        // 20% chance to show typing indicator
+        const shouldShowTyping = Math.random() < 0.2;
+        setIsTyping(shouldShowTyping);
+        
+        if (shouldShowTyping) {
+          // Stop typing after 1-3 seconds
+          const typingDuration = Math.random() * 2000 + 1000;
+          setTimeout(() => setIsTyping(false), typingDuration);
+        }
+      }, 8000); // Check every 8 seconds
+      
+      return () => clearInterval(typingInterval);
+    }
+  }, [isAdmin, loading]);
+  
   // Cleanup typing timeout on unmount
   useEffect(() => {
     return () => {
@@ -129,6 +161,19 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
       }
     };
   }, []);
+  
+  // Highlight new messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+      if (latestMessage && ((isAdmin && !latestMessage.is_from_admin) || (!isAdmin && latestMessage.is_from_admin))) {
+        setHighlightedMessageId(latestMessage.id);
+        setTimeout(() => {
+          setHighlightedMessageId(null);
+        }, 3000);
+      }
+    }
+  }, [messages, isAdmin]);
   
   if (!user) {
     return <div>{t("loginRequired") || "Please log in to use chat support"}</div>;
@@ -151,14 +196,42 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Chat header */}
+      {/* Chat header with user status */}
       <div className="border-b p-3 bg-card">
-        <h3 className="text-sm font-semibold">
-          {isAdmin && userId ? 
-            t("chatWithUser") || "Chat with User" : 
-            t("chatWithSupport") || "Chat with Support"
-          }
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">
+            {isAdmin && userId ? 
+              t("chatWithUser") || "Chat with User" : 
+              t("chatWithSupport") || "Chat with Support"
+            }
+          </h3>
+          <div className="flex items-center gap-2">
+            {isAdmin ? (
+              <div className="flex items-center text-xs text-muted-foreground">
+                <span>{t("userStatus") || "User"}: </span>
+                {userStatus === 'online' ? (
+                  <div className="flex items-center ml-1 text-green-500">
+                    <CircleDot className="h-3 w-3 mr-1" />
+                    <span>{t("online") || "Online"}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center ml-1 text-gray-400">
+                    <CircleOff className="h-3 w-3 mr-1" />
+                    <span>{t("offline") || "Offline"}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center text-xs">
+                <span className="text-muted-foreground">{t("supportStatus") || "Support"}: </span>
+                <div className="flex items-center ml-1 text-green-500">
+                  <CircleDot className="h-3 w-3 mr-1" />
+                  <span>{t("online") || "Online"}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
       {/* Chat messages */}
@@ -196,28 +269,39 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
                     message={message}
                     isMine={(isAdmin && message.is_from_admin) || (!isAdmin && !message.is_from_admin)}
                     isRTL={isRTL}
+                    isHighlighted={message.id === highlightedMessageId}
                   />
                 ))}
               </div>
             ))}
             
             {/* Typing indicator */}
-            {isAdmin && !isTyping && (
-              <div className="flex mx-2 mb-1 text-xs text-muted-foreground opacity-0">
-                <Pencil className="h-3 w-3 mr-1" />
-                <span>User is typing...</span>
+            {isTyping && (
+              <div className={`flex mx-2 mb-1 text-xs text-muted-foreground ${isAdmin ? "justify-start" : "justify-end"}`}>
+                <div className={cn(
+                  "flex items-center gap-1 px-3 py-2 rounded-full bg-muted/50",
+                  "animate-pulse transition-opacity duration-700"
+                )}>
+                  <Loader className="h-3 w-3 animate-spin" />
+                  <span>
+                    {isAdmin ? 
+                      (t("userIsTyping") || "User is typing...") : 
+                      (t("supportIsTyping") || "Support is typing...")
+                    }
+                  </span>
+                </div>
               </div>
             )}
             
-            {/* Scroll to bottom button */}
+            {/* Scroll to bottom button with improved styling */}
             {showScrollButton && (
               <Button 
-                className="absolute bottom-4 right-4 h-8 w-8 rounded-full shadow-lg opacity-90 hover:opacity-100"
+                className="absolute bottom-4 right-4 h-10 w-10 rounded-full shadow-lg opacity-90 hover:opacity-100 bg-primary text-primary-foreground animate-bounce"
                 size="icon"
                 onClick={scrollToBottom}
-                variant="secondary"
+                variant="default"
               >
-                <ArrowDown className="h-4 w-4" />
+                <ArrowDown className="h-5 w-5" />
               </Button>
             )}
             
@@ -243,6 +327,10 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
             variant="default"
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
+            className={cn(
+              "transition-all duration-300",
+              newMessage.trim() ? "bg-primary hover:bg-primary/90" : "bg-muted text-muted-foreground"
+            )}
           >
             <SendHorizontal className="h-4 w-4" />
           </Button>
@@ -256,25 +344,18 @@ interface MessageBubbleProps {
   message: ChatMessage;
   isMine: boolean;
   isRTL: boolean;
+  isHighlighted: boolean;
 }
 
-function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
-  const [isHighlighted, setIsHighlighted] = useState(false);
+function MessageBubble({ message, isMine, isRTL, isHighlighted }: MessageBubbleProps) {
+  const [isRead, setIsRead] = useState(message.is_read);
   
-  // Highlight new messages
+  // Animate read status change
   useEffect(() => {
-    // Check if this is a new message (less than 1 second old)
-    const messageTime = new Date(message.created_at).getTime();
-    const isNewMessage = Date.now() - messageTime < 1000;
-    
-    if (isNewMessage && !isMine) {
-      setIsHighlighted(true);
-      const timer = setTimeout(() => {
-        setIsHighlighted(false);
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (!isRead && message.is_read) {
+      setIsRead(true);
     }
-  }, [message.created_at, isMine]);
+  }, [message.is_read, isRead]);
 
   return (
     <div className={cn(
@@ -284,11 +365,14 @@ function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
       isMine ? (isRTL ? "mr-auto" : "ml-auto") : (isRTL ? "ml-auto" : "mr-auto")
     )}>
       <div className={cn(
-        "rounded-lg p-3 text-sm transition-all duration-300",
+        "rounded-lg p-3 text-sm transition-all duration-500",
         isMine ? 
           "bg-primary text-primary-foreground" : 
           "bg-muted text-muted-foreground",
-        isHighlighted && !isMine ? "animate-pulse shadow-md" : ""
+        isHighlighted ? 
+          "animate-bounce-in shadow-md ring-2 ring-primary ring-offset-1" : "",
+        message.is_read && !isRead ? 
+          "shadow-md ring-1 ring-green-400" : ""
       )}>
         <p className="whitespace-pre-wrap break-words">{message.message}</p>
         <div className={cn(
@@ -298,7 +382,10 @@ function MessageBubble({ message, isMine, isRTL }: MessageBubbleProps) {
           <span>{formatDateTime(message.created_at)}</span>
           {isMine && !message.is_from_admin && (
             message.is_read ? 
-              <CheckCheck className="h-3 w-3 transition-opacity" /> : 
+              <CheckCheck className={cn(
+                "h-3 w-3 transition-all",
+                isRead !== message.is_read ? "scale-150 text-green-400" : ""
+              )} /> : 
               <Check className="h-3 w-3 opacity-70 transition-opacity" />
           )}
         </div>
