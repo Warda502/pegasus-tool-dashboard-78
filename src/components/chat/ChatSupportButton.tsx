@@ -35,7 +35,7 @@ export function ChatSupportButton() {
       const latestMessage = messages[messages.length - 1];
       
       if (!isOpen && latestMessage && !latestMessage.is_from_admin) {
-        playNotificationSound(0.3);
+        playNotificationSound();
         setShowNotification(true);
         
         // Auto-hide notification after 5 seconds
