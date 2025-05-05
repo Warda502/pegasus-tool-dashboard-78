@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -9,6 +9,7 @@ import { useChatSupport } from "@/hooks/useChatSupport";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { playNotificationSound } from "@/utils/notificationUtils";
+import { Card } from "@/components/ui/card";
 
 export function ChatSupportButton() {
   const { t } = useLanguage();
