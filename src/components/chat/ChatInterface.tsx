@@ -30,14 +30,19 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   const { user, isAdmin } = useAuth();
   const { messages, loading, sendMessage, markAsRead } = useChatSupport(userId);
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Improved scroll to bottom function
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   
   // Auto scroll to bottom on new messages
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current;
-      scrollElement.scrollTop = scrollElement.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
   
   // Mark messages as read when viewed by admin
@@ -56,6 +61,8 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     const success = await sendMessage(newMessage, userId);
     if (success) {
       setNewMessage("");
+      // Force scroll to bottom after sending a message
+      setTimeout(scrollToBottom, 100);
     }
   };
   
@@ -116,6 +123,8 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
                 isRTL={isRTL}
               />
             ))}
+            {/* This invisible div helps us scroll to the bottom */}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </ScrollArea>

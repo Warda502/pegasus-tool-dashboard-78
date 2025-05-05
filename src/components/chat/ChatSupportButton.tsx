@@ -12,10 +12,17 @@ import { cn } from "@/lib/utils";
 export function ChatSupportButton() {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const { getUnreadCount } = useChatSupport();
+  const { getUnreadCount, markAllAsRead } = useChatSupport();
   const [animate, setAnimate] = useState(false);
   
   const unreadCount = getUnreadCount();
+  
+  // Mark messages as read when chat is opened
+  useEffect(() => {
+    if (isOpen && unreadCount > 0) {
+      markAllAsRead();
+    }
+  }, [isOpen, unreadCount, markAllAsRead]);
   
   // Effect to trigger notification animation every 2 seconds when there are unread messages
   useEffect(() => {
@@ -38,6 +45,7 @@ export function ChatSupportButton() {
           variant="outline" 
           className={cn(
             "relative transition-all",
+            unreadCount > 0 ? "animate-pulse" : "",
             animate && unreadCount > 0 ? "bg-muted/80" : ""
           )}
         >

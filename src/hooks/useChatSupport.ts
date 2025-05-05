@@ -132,6 +132,37 @@ export const useChatSupport = (userId?: string) => {
       return false;
     }
   };
+  
+  // Mark all messages as read for a user
+  const markAllAsRead = async () => {
+    if (!isAdmin) return false;
+    
+    try {
+      // Get all unread messages from non-admins
+      const unreadMessages = messages.filter(msg => !msg.is_read && !msg.is_from_admin);
+      
+      if (unreadMessages.length === 0) return true;
+      
+      // Mark all as read in DB
+      const messageIds = unreadMessages.map(msg => msg.id);
+      const { error } = await supabase
+        .from('chat_messages')
+        .update({ is_read: true })
+        .in('id', messageIds);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setMessages(prev => 
+        prev.map(msg => messageIds.includes(msg.id) ? { ...msg, is_read: true } : msg)
+      );
+      
+      return true;
+    } catch (err) {
+      console.error("Error marking all messages as read:", err);
+      return false;
+    }
+  };
 
   // Set up real-time updates
   useEffect(() => {
@@ -214,6 +245,7 @@ export const useChatSupport = (userId?: string) => {
     error,
     sendMessage,
     markAsRead,
+    markAllAsRead,
     fetchMessages,
     getUnreadCount,
     getUsersWithMessages
