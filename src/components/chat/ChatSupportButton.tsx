@@ -18,6 +18,7 @@ export function ChatSupportButton() {
   const [animate, setAnimate] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const prevMessagesLengthRef = useRef(0);
+  const prevMessagesRef = useRef<typeof messages>([]);
   const [pulseEffect, setPulseEffect] = useState(false);
   
   const unreadCount = getUnreadCount();
@@ -26,17 +27,27 @@ export function ChatSupportButton() {
   useEffect(() => {
     if (isOpen && unreadCount > 0) {
       markAllAsRead();
+      // Also reset animations and notifications when chat is opened
+      setAnimate(false);
+      setShowNotification(false);
+      setPulseEffect(false);
     }
   }, [isOpen, unreadCount, markAllAsRead]);
   
   // Play sound and show enhanced notification when new messages arrive
   useEffect(() => {
+    // Only proceed if we have more messages than before
     if (messages.length > prevMessagesLengthRef.current) {
-      // Check if the new message is from admin (not from the current user)
-      const latestMessage = messages[messages.length - 1];
+      // Find new messages (ones that weren't in the previous messages array)
+      const newMessages = messages.filter(
+        current => !prevMessagesRef.current.some(prev => prev.id === current.id)
+      );
       
-      if (!isOpen && latestMessage && latestMessage.is_from_admin) {
-        // Исправлено: вызов только с одним аргументом - уровнем громкости
+      // Check if any of the new messages are from admin
+      const newAdminMessages = newMessages.filter(msg => msg.is_from_admin);
+      
+      // Only notify if there's a new message from admin and the chat isn't open
+      if (!isOpen && newAdminMessages.length > 0) {
         playNotificationSound(0.5);
         setShowNotification(true);
         
@@ -53,7 +64,9 @@ export function ChatSupportButton() {
       }
     }
     
+    // Update references for next comparison
     prevMessagesLengthRef.current = messages.length;
+    prevMessagesRef.current = [...messages];
   }, [messages, isOpen]);
   
   // Effect to trigger notification animation every 2 seconds when there are unread messages
@@ -112,6 +125,13 @@ export function ChatSupportButton() {
               showNotification ? "ring-2 ring-primary ring-offset-2" : "",
               pulseEffect ? "shadow-md shadow-primary/30" : ""
             )}
+            onClick={() => {
+              if (unreadCount > 0) {
+                // This will help immediately stop animations when clicking
+                setAnimate(false);
+                setPulseEffect(false);
+              }
+            }}
           >
             <div className={cn(
               "absolute -left-1 -top-1 transition-opacity",

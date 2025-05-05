@@ -112,8 +112,6 @@ export const useChatSupport = (userId?: string) => {
 
   // Mark message as read
   const markAsRead = async (messageId: string) => {
-    if (!isAdmin) return false;
-    
     try {
       const { error } = await supabase
         .from('chat_messages')
@@ -134,13 +132,19 @@ export const useChatSupport = (userId?: string) => {
     }
   };
   
-  // Mark all messages as read for a user
+  // Mark all messages as read for the current user
   const markAllAsRead = async () => {
-    if (!isAdmin) return false;
-    
     try {
-      // Get all unread messages from non-admins
-      const unreadMessages = messages.filter(msg => !msg.is_read && !msg.is_from_admin);
+      // Get all unread messages based on user role
+      let unreadMessages;
+      
+      if (isAdmin) {
+        // For admin: mark messages FROM users (not from admin) as read
+        unreadMessages = messages.filter(msg => !msg.is_read && !msg.is_from_admin);
+      } else {
+        // For regular users: mark messages FROM admin as read
+        unreadMessages = messages.filter(msg => !msg.is_read && msg.is_from_admin);
+      }
       
       if (unreadMessages.length === 0) return true;
       
@@ -164,8 +168,6 @@ export const useChatSupport = (userId?: string) => {
       return false;
     }
   };
-
-  // Removed the duplicate notification sound effect as it's now handled in ChatSupportButton.tsx
 
   // Set up real-time updates
   useEffect(() => {
@@ -195,10 +197,16 @@ export const useChatSupport = (userId?: string) => {
     };
   }, [user, fetchMessages]);
 
-  // Get unread message count for admins
+  // Get unread message count based on user role
   const getUnreadCount = useCallback(() => {
-    return messages.filter(msg => !msg.is_read && !msg.is_from_admin).length;
-  }, [messages]);
+    if (isAdmin) {
+      // For admin: count messages FROM users (not from admin) that are unread
+      return messages.filter(msg => !msg.is_read && !msg.is_from_admin).length;
+    } else {
+      // For regular users: count messages FROM admin that are unread
+      return messages.filter(msg => !msg.is_read && msg.is_from_admin).length;
+    }
+  }, [messages, isAdmin]);
 
   // Group messages by user
   const getUsersWithMessages = useCallback(() => {

@@ -39,6 +39,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<'online' | 'offline'>('offline');
+  const processedMessagesRef = useRef<Set<string>>(new Set());
   
   // Simulate online status for demo purposes
   useEffect(() => {
@@ -87,14 +88,33 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     };
   }, []);
   
-  // Mark messages as read when viewed by admin
+  // Mark messages as read when viewed by the appropriate user
   useEffect(() => {
-    if (isAdmin && messages.length > 0) {
-      const unreadMessages = messages.filter(msg => !msg.is_read && !msg.is_from_admin);
-      unreadMessages.forEach(msg => {
-        markAsRead(msg.id);
-      });
-    }
+    if (!messages.length) return;
+    
+    // Process new messages that need to be marked as read
+    const unprocessedMessages = messages.filter(msg => {
+      // Only mark messages as unread if:
+      // 1. For admin - messages FROM users (not from admin) that are unread
+      // 2. For users - messages FROM admin that are unread
+      const shouldMarkAsRead = 
+        (isAdmin && !msg.is_from_admin && !msg.is_read) || 
+        (!isAdmin && msg.is_from_admin && !msg.is_read);
+        
+      // Check if we've already processed this message
+      const alreadyProcessed = processedMessagesRef.current.has(msg.id);
+      
+      // If it should be marked as read and hasn't been processed yet
+      return shouldMarkAsRead && !alreadyProcessed;
+    });
+    
+    // Mark each unprocessed message as read
+    unprocessedMessages.forEach(msg => {
+      markAsRead(msg.id);
+      // Add to processed set
+      processedMessagesRef.current.add(msg.id);
+    });
+    
   }, [isAdmin, messages, markAsRead]);
   
   // Handle sending message
