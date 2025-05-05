@@ -8,6 +8,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useChatSupport } from "@/hooks/useChatSupport";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { playNotificationSound } from "@/utils/notificationUtils";
 import { Card } from "@/components/ui/card";
 
 export function ChatSupportButton() {
@@ -27,14 +28,15 @@ export function ChatSupportButton() {
     }
   }, [isOpen, unreadCount, markAllAsRead]);
   
-  // Show enhanced notification when new messages arrive (without sound)
+  // Play sound and show enhanced notification when new messages arrive
   useEffect(() => {
     if (messages.length > prevMessagesLengthRef.current) {
       // Check if the new message is not from the current user (i.e., it's incoming)
       const latestMessage = messages[messages.length - 1];
       
       if (!isOpen && latestMessage && !latestMessage.is_from_admin) {
-        // Removed sound notification call
+        // Fixed: Call with only one argument - the volume level
+        playNotificationSound(0.5);
         setShowNotification(true);
         
         // Auto-hide notification after 5 seconds

@@ -2,7 +2,6 @@
 // Sound notification utilities
 const notificationSound = new Audio('/notification.mp3');
 
-// This function is kept for backward compatibility but won't be used
 export const playNotificationSound = (volume = 0.5) => {
   try {
     notificationSound.volume = volume;
