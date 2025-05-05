@@ -28,6 +28,10 @@ export default function Login() {
   // Updated with the actual production site key
   const TURNSTILE_SITE_KEY = "0x4AAAAAABaWWRRhV8b4zFQC"; 
   const turnstileRef = useRef(null);
+  
+  // Check if the current domain is the production domain
+  const isProdDomain = window.location.origin === "https://panel.pegasus-tools.com";
+  // If not on prod domain, we'll skip captcha validation
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -62,8 +66,8 @@ export default function Login() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Validate CAPTCHA
-    if (!captchaToken) {
+    // Skip captcha validation if not on production domain
+    if (isProdDomain && !captchaToken) {
       toast(t("captchaRequired"), {
         description: t("pleaseCompleteCaptcha")
       });
@@ -187,23 +191,26 @@ export default function Login() {
                 </button>
               </div>
             </div>
-            <div className={`flex justify-center ${captchaError ? 'border border-red-500 rounded-md p-2' : ''}`}>
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={handleCaptchaSolved}
-                onError={handleCaptchaError}
-                onExpire={handleCaptchaExpired}
-                options={{
-                  theme: 'light',
-                  language: isRTL ? 'ar' : 'en',
-                }}
-              />
-            </div>
+            {/* Only show captcha on production domain */}
+            {isProdDomain && (
+              <div className={`flex justify-center ${captchaError ? 'border border-red-500 rounded-md p-2' : ''}`}>
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={handleCaptchaSolved}
+                  onError={handleCaptchaError}
+                  onExpire={handleCaptchaExpired}
+                  options={{
+                    theme: 'light',
+                    language: isRTL ? 'ar' : 'en',
+                  }}
+                />
+              </div>
+            )}
           </div>
           <Button
             type="submit"
-            disabled={isSubmitting || loading || !captchaToken}
+            disabled={isSubmitting || loading || (isProdDomain && !captchaToken)}
             className="w-full"
           >
             {isSubmitting ? t("loggingIn") : t("login")}
