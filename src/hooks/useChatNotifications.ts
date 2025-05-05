@@ -51,7 +51,12 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
     fetchUnreadCount();
     
     // Listen for new messages
-    const channelFilter: { event: string; schema: string; table: string; filter?: string } = {
+    const channelOptions: {
+      event: 'INSERT';
+      schema: string;
+      table: string;
+      filter?: string;
+    } = {
       event: 'INSERT',
       schema: 'public',
       table: 'chat_messages'
@@ -59,12 +64,12 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
     
     // Add filter for the current user
     if (!isAdmin) {
-      channelFilter.filter = `user_id=eq.${user.id}`;
+      channelOptions.filter = `user_id=eq.${user.id}`;
     }
     
     const channel = supabase
       .channel('chat-notifications')
-      .on('postgres_changes', channelFilter, async (payload) => {
+      .on('postgres_changes', channelOptions, async (payload) => {
         const newMessage = payload.new as ChatMessage;
         
         // For admin: only notify for messages from users

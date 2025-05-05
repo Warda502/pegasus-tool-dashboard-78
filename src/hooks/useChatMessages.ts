@@ -140,7 +140,12 @@ export const useChatMessages = (userId?: string) => {
     fetchMessages();
     
     // Set up channel for real-time updates
-    const channelFilter: { event: string; schema: string; table: string; filter?: string } = {
+    const channelOptions: {
+      event: 'INSERT' | 'UPDATE' | 'DELETE'; 
+      schema: string; 
+      table: string; 
+      filter?: string;
+    } = {
       event: '*',
       schema: 'public',
       table: 'chat_messages'
@@ -148,13 +153,13 @@ export const useChatMessages = (userId?: string) => {
     
     // Add user filter if we're looking at a specific user's messages
     if (userId) {
-      channelFilter.filter = `user_id=eq.${userId}`;
+      channelOptions.filter = `user_id=eq.${userId}`;
     }
     
     // Subscribe to changes
     const channel = supabase
       .channel('chat-messages-changes')
-      .on('postgres_changes', channelFilter, async (payload) => {
+      .on('postgres_changes', channelOptions, async (payload) => {
         console.log('Chat message change detected:', payload.eventType);
         
         if (payload.eventType === 'INSERT') {

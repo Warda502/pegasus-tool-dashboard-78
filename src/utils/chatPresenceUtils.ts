@@ -109,10 +109,26 @@ export const useObservePresence = (observedUserId?: string) => {
     function updatePresenceFromState(state: RealtimePresenceState<any>) {
       // Find presence entries for the observed user
       const allPresences: any[] = Object.values(state).flat();
-      const userPresence = allPresences.find((p: any) => p.user_id === observedUserId);
       
-      if (userPresence) {
-        setPresenceState(userPresence as UserPresence);
+      // Use type casting with explicit check to ensure the presence object matches our expected structure
+      const userPresenceObj = allPresences.find((p: any) => p.user_id === observedUserId);
+      
+      if (userPresenceObj && typeof userPresenceObj === 'object') {
+        // Check if the found presence has the required properties
+        if ('user_id' in userPresenceObj && 
+            'status' in userPresenceObj && 
+            'last_seen_at' in userPresenceObj && 
+            'is_typing' in userPresenceObj) {
+          
+          const typedPresence: UserPresence = {
+            user_id: userPresenceObj.user_id,
+            status: userPresenceObj.status,
+            last_seen_at: userPresenceObj.last_seen_at,
+            is_typing: userPresenceObj.is_typing
+          };
+          
+          setPresenceState(typedPresence);
+        }
       } else {
         // If no presence found, assume offline
         setPresenceState({
