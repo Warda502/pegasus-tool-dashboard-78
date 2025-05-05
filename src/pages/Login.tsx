@@ -25,8 +25,8 @@ export default function Login() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaError, setCaptchaError] = useState(false);
   
-  // Use your production site key here - this is an example placeholder
-  const TURNSTILE_SITE_KEY = "0x4AAAAAAAL3Lb3xHI3aHJb0"; // Replace with your production site key
+  // Updated with the actual production site key
+  const TURNSTILE_SITE_KEY = "0x4AAAAAABaWWRRhV8b4zFQC"; 
   const turnstileRef = useRef(null);
 
   useEffect(() => {
