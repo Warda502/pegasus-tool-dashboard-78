@@ -132,7 +132,7 @@ export const useChatMessages = (userId?: string) => {
 
   // Set up real-time updates with proper filtering
   useEffect(() => {
-    if (!userId) return;
+    if (!userId && !supabase.auth.getUser()) return;
     
     console.log(`Setting up real-time chat for ${userId ? 'specific user' : 'all users'}`);
     
@@ -140,42 +140,51 @@ export const useChatMessages = (userId?: string) => {
     fetchMessages();
     
     // Set up channel for real-time updates
-    const channelOptions = {
-      event: 'INSERT' as const,
-      schema: 'public',
-      table: 'chat_messages',
-      ...(userId ? { filter: `user_id=eq.${userId}` } : {})
-    };
+    const channel = supabase.channel('chat-messages-changes');
     
-    // Subscribe to changes using the correct method signature for Supabase channels
-    const channel = supabase
-      .channel('chat-messages-changes')
-      .on(
-        'postgres_changes',
-        channelOptions,
-        (payload) => {
-          console.log('Chat message change detected:', payload.eventType);
-          
-          if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new as ChatMessage;
-            console.log('New message:', newMessage);
-            
-            // Only add to state if it matches our filter
-            if (!userId || newMessage.user_id === userId) {
-              setMessages(prev => [...prev, newMessage]);
-            }
-          } 
-          else if (payload.eventType === 'UPDATE') {
-            const updatedMessage = payload.new as ChatMessage;
-            console.log('Updated message:', updatedMessage);
-            
-            setMessages(prev => 
-              prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
-            );
-          }
+    // Listen for INSERT events
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        ...(userId ? { filter: `user_id=eq.${userId}` } : {})
+      },
+      (payload) => {
+        console.log('Chat message inserted:', payload.eventType);
+        
+        const newMessage = payload.new as ChatMessage;
+        
+        // Only add to state if it matches our filter
+        if (!userId || newMessage.user_id === userId) {
+          setMessages(prev => [...prev, newMessage]);
         }
-      )
-      .subscribe();
+      }
+    );
+    
+    // Listen for UPDATE events
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'chat_messages',
+        ...(userId ? { filter: `user_id=eq.${userId}` } : {})
+      },
+      (payload) => {
+        console.log('Chat message updated:', payload.eventType);
+        
+        const updatedMessage = payload.new as ChatMessage;
+        
+        setMessages(prev => 
+          prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+        );
+      }
+    );
+    
+    // Subscribe to the channel
+    channel.subscribe();
     
     return () => {
       supabase.removeChannel(channel);

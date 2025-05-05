@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import type { RealtimePresenceState } from '@supabase/supabase-js';
 
 // Types for presence data
 export interface UserPresence {
@@ -126,7 +125,7 @@ export const useObservePresence = (observedUserId?: string) => {
     }
     
     // Helper function to update presence state from the channel state
-    function updatePresenceFromState(state: RealtimePresenceState<any>) {
+    function updatePresenceFromState(state: Record<string, any[]>) {
       // Find presence entries for the observed user
       const allPresences: any[] = Object.values(state).flat();
       

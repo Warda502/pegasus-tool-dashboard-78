@@ -13,7 +13,7 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
   
   // Get unread count
   const fetchUnreadCount = useCallback(async () => {
-    if (!user) return;
+    if (!user) return 0;
     
     try {
       let query = supabase
@@ -35,13 +35,17 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
       
       if (error) throw error;
       
-      setUnreadCount(count || 0);
+      // Update state only if the count has changed to avoid unnecessary renders
+      if (count !== unreadCount) {
+        setUnreadCount(count || 0);
+      }
+      
       return count || 0;
     } catch (err) {
       console.error("Error fetching unread count:", err);
       return 0;
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, unreadCount]);
 
   // Monitor for new messages in real-time
   useEffect(() => {
@@ -50,46 +54,66 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
     // Initial count
     fetchUnreadCount();
     
-    // Listen for new messages
-    const channelOptions = {
-      event: 'INSERT' as const,
-      schema: 'public',
-      table: 'chat_messages',
-      ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` })
-    };
+    // Set up channel for real-time updates
+    const channel = supabase.channel('chat-notifications');
     
-    const channel = supabase
-      .channel('chat-notifications')
-      .on(
-        'postgres_changes',
-        channelOptions,
-        (payload) => {
-          const newMessage = payload.new as ChatMessage;
+    // Listen for INSERT events
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` })
+      },
+      (payload) => {
+        const newMessage = payload.new as ChatMessage;
+        
+        // For admin: only notify for messages from users
+        // For users: only notify for messages from admin
+        const shouldNotify = isAdmin 
+          ? !newMessage.is_from_admin 
+          : (newMessage.is_from_admin && newMessage.user_id === user.id);
           
-          // For admin: only notify for messages from users
-          // For users: only notify for messages from admin
-          const shouldNotify = isAdmin 
-            ? !newMessage.is_from_admin 
-            : (newMessage.is_from_admin && newMessage.user_id === user.id);
+        if (shouldNotify) {
+          // Don't notify if the chat is already open
+          if (!chatOpen) {
+            playNotificationSound(0.5);
+            setNewMessageReceived(true);
             
-          if (shouldNotify) {
-            // Don't notify if the chat is already open
-            if (!chatOpen) {
-              playNotificationSound(0.5);
-              setNewMessageReceived(true);
-              
-              // Auto-hide notification after 5 seconds
-              setTimeout(() => {
-                setNewMessageReceived(false);
-              }, 5000);
-            }
-            
-            // Update unread count
-            fetchUnreadCount();
+            // Auto-hide notification after 5 seconds
+            setTimeout(() => {
+              setNewMessageReceived(false);
+            }, 5000);
           }
+          
+          // Update unread count
+          fetchUnreadCount();
         }
-      )
-      .subscribe();
+      }
+    );
+    
+    // Listen for UPDATE events (when messages are marked as read)
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'chat_messages',
+        ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` })
+      },
+      (payload) => {
+        const updatedMessage = payload.new as ChatMessage;
+        
+        // If a message was marked as read, update the unread count
+        if (updatedMessage.is_read) {
+          fetchUnreadCount();
+        }
+      }
+    );
+    
+    // Subscribe to the channel
+    channel.subscribe();
       
     return () => {
       supabase.removeChannel(channel);
@@ -98,10 +122,13 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
 
   // Reset notification when chat is opened
   useEffect(() => {
-    if (chatOpen) {
+    if (chatOpen && user) {
       setNewMessageReceived(false);
+      
+      // Re-fetch unread count when chat is opened
+      fetchUnreadCount();
     }
-  }, [chatOpen]);
+  }, [chatOpen, fetchUnreadCount, user]);
 
   return {
     unreadCount,

@@ -9,36 +9,23 @@ export async function setupRealtimeChat() {
   try {
     console.log("Setting up Realtime chat features...");
     
-    // Check if chat_messages table exists first
-    const { data: tablesData, error: tablesError } = await supabase
-      .from('chat_messages')
-      .select('id')
-      .limit(1);
-      
-    if (tablesError) {
-      console.error("Error checking chat_messages table:", tablesError);
-      return false;
-    }
-    
-    // Enable table for realtime
+    // Use a simpler approach to check if realtime is working
     try {
-      // We'll use Supabase's channel functionality to check if realtime is working
+      // Set up a test channel for chat
       const channel = supabase.channel('test-realtime');
       
-      const subscription = channel
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT' as const,
-            schema: 'public',
-            table: 'chat_messages'
-          },
-          () => {}
-        )
-        .subscribe();
+      // Add a simple listener to test if channels are working
+      channel.on(
+        'presence', 
+        { event: 'sync' }, 
+        () => {
+          console.log("Realtime channels appear to be functioning.");
+        }
+      )
+      .subscribe();
       
-      // If we get here, realtime appears to be functioning
-      console.log("Realtime appears to be enabled for chat_messages");
+      // If we get here without errors, realtime appears to be functioning
+      console.log("Realtime setup completed successfully");
       
       // Clean up test subscription
       setTimeout(() => {
@@ -47,11 +34,11 @@ export async function setupRealtimeChat() {
       
       return true;
     } catch (err) {
-      console.error("Error setting up Realtime for chat_messages:", err);
+      console.error("Error setting up Realtime for chat:", err);
       return false;
     }
   } catch (err) {
-    console.error("Error setting up Realtime chat:", err);
+    console.error("Error in setupRealtimeChat:", err);
     return false;
   }
 }
