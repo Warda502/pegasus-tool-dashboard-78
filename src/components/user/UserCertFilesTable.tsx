@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Table,
@@ -23,6 +22,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+// استخدام الواجهة القديمة CertFile
 interface CertFile {
   Email: string | null;
   Hwid: string | null;
@@ -40,6 +40,7 @@ interface UserCertFilesTableProps {
   data: CertFile[];
 }
 
+// إعادة تسمية ApiDataTable إلى UserCertFilesTable
 export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,17 +63,14 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
     // Format data according to the requested format
     const exportData = `[${row.Notes || ''}]\nIMEI=${row.Imei || ''}\nImeiSign=${row.ImeiSign || ''}\nPubKey=${row.PubKey || ''}\nPubKeySign=${row.PubKeySign || ''}`;
     
-    // Create file name using the format: {Model}_{IMEI}_{PhoneSN}.Cert
     const model = row.Model || 'Unknown';
     const imei = row.Imei || 'Unknown';
     const phoneSn = row.Phone_sn || 'Unknown';
     const fileName = `${model}_${imei}_${phoneSn}.Cert`;
     
-    // Create a blob with the data
     const blob = new Blob([exportData], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     
-    // Create a link and trigger download
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
@@ -136,7 +134,7 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
                           className="hover:bg-accent h-7 px-2 text-xs"
                         >
                           <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          {t("export")}
+                          {t("export") || "Export"}
                         </Button>
                       </TableCell>
                     </TableRow>
