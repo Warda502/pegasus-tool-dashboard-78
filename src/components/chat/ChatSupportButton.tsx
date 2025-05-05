@@ -35,7 +35,7 @@ export function ChatSupportButton() {
       const latestMessage = messages[messages.length - 1];
       
       if (!isOpen && latestMessage && !latestMessage.is_from_admin) {
-        // Fixed: Only use a single optional argument for volume
+        // Call with a single argument - the volume level
         playNotificationSound(0.5);
         setShowNotification(true);
         
