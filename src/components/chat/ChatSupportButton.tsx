@@ -83,11 +83,6 @@ export function ChatSupportButton() {
                 <X className="h-3 w-3" />
               </Button>
             </div>
-            <p className="text-xs truncate">
-              {unreadCount > 1 
-                ? t("youHaveUnreadMessages", { count: unreadCount }) || `You have ${unreadCount} unread messages` 
-                : t("youHaveNewMessage") || "You have a new message"}
-            </p>
           </Card>
         </div>
       )}
