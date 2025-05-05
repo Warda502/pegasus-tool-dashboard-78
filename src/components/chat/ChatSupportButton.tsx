@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ export function ChatSupportButton() {
       const latestMessage = messages[messages.length - 1];
       
       if (!isOpen && latestMessage && !latestMessage.is_from_admin) {
+        // Fix: Remove the second argument as playNotificationSound expects only one optional argument
         playNotificationSound();
         setShowNotification(true);
         
