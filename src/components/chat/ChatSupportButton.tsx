@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
