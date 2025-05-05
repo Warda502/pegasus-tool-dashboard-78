@@ -95,7 +95,7 @@ export const useObservePresence = (observedUserId?: string) => {
           p.user_id === observedUserId
         );
         if (relevantPresence) {
-          setPresenceState(relevantPresence as UserPresence);
+          extractAndSetUserPresence(relevantPresence);
         }
       })
       .on('presence', { event: 'leave' }, () => {
@@ -105,6 +105,26 @@ export const useObservePresence = (observedUserId?: string) => {
       })
       .subscribe();
     
+    // Helper function to extract and validate presence data
+    function extractAndSetUserPresence(presenceData: any) {
+      if (presenceData && 
+          typeof presenceData === 'object' &&
+          'user_id' in presenceData &&
+          'status' in presenceData &&
+          'last_seen_at' in presenceData &&
+          'is_typing' in presenceData) {
+        
+        const typedPresence: UserPresence = {
+          user_id: presenceData.user_id,
+          status: presenceData.status,
+          last_seen_at: presenceData.last_seen_at,
+          is_typing: presenceData.is_typing
+        };
+        
+        setPresenceState(typedPresence);
+      }
+    }
+    
     // Helper function to update presence state from the channel state
     function updatePresenceFromState(state: RealtimePresenceState<any>) {
       // Find presence entries for the observed user
@@ -113,22 +133,8 @@ export const useObservePresence = (observedUserId?: string) => {
       // Use type casting with explicit check to ensure the presence object matches our expected structure
       const userPresenceObj = allPresences.find((p: any) => p.user_id === observedUserId);
       
-      if (userPresenceObj && typeof userPresenceObj === 'object') {
-        // Check if the found presence has the required properties
-        if ('user_id' in userPresenceObj && 
-            'status' in userPresenceObj && 
-            'last_seen_at' in userPresenceObj && 
-            'is_typing' in userPresenceObj) {
-          
-          const typedPresence: UserPresence = {
-            user_id: userPresenceObj.user_id,
-            status: userPresenceObj.status,
-            last_seen_at: userPresenceObj.last_seen_at,
-            is_typing: userPresenceObj.is_typing
-          };
-          
-          setPresenceState(typedPresence);
-        }
+      if (userPresenceObj) {
+        extractAndSetUserPresence(userPresenceObj);
       } else {
         // If no presence found, assume offline
         setPresenceState({

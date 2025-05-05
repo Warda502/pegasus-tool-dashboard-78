@@ -27,7 +27,7 @@ export async function setupRealtimeChat() {
       
       const subscription = channel
         .on('postgres_changes', {
-          event: '*',
+          event: 'INSERT' as const,
           schema: 'public',
           table: 'chat_messages'
         }, () => {})
