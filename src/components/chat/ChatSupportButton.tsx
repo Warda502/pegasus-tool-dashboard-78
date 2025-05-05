@@ -1,75 +1,32 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, X, BellRing, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ChatInterface } from "./ChatInterface";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useChatSupport } from "@/hooks/useChatSupport";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { playNotificationSound } from "@/utils/notificationUtils";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/auth/AuthContext";
 
 export function ChatSupportButton() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const { getUnreadCount, markAllAsRead, messages } = useChatSupport();
+  
+  // Use the new hooks for notifications
+  const { 
+    unreadCount, 
+    newMessageReceived, 
+    setNewMessageReceived 
+  } = useChatNotifications(isOpen);
+  
   const [animate, setAnimate] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
-  const prevMessagesLengthRef = useRef(0);
-  const prevMessagesRef = useRef<typeof messages>([]);
   const [pulseEffect, setPulseEffect] = useState(false);
   
-  const unreadCount = getUnreadCount();
-  
-  // Mark messages as read when chat is opened
-  useEffect(() => {
-    if (isOpen && unreadCount > 0) {
-      markAllAsRead();
-      // Also reset animations and notifications when chat is opened
-      setAnimate(false);
-      setShowNotification(false);
-      setPulseEffect(false);
-    }
-  }, [isOpen, unreadCount, markAllAsRead]);
-  
-  // Play sound and show enhanced notification when new messages arrive
-  useEffect(() => {
-    // Only proceed if we have more messages than before
-    if (messages.length > prevMessagesLengthRef.current) {
-      // Find new messages (ones that weren't in the previous messages array)
-      const newMessages = messages.filter(
-        current => !prevMessagesRef.current.some(prev => prev.id === current.id)
-      );
-      
-      // Check if any of the new messages are from admin
-      const newAdminMessages = newMessages.filter(msg => msg.is_from_admin);
-      
-      // Only notify if there's a new message from admin and the chat isn't open
-      if (!isOpen && newAdminMessages.length > 0) {
-        playNotificationSound(0.5);
-        setShowNotification(true);
-        
-        // Trigger pulse effect
-        setPulseEffect(true);
-        setTimeout(() => setPulseEffect(false), 2000);
-        
-        // Auto-hide notification after 5 seconds
-        const timer = setTimeout(() => {
-          setShowNotification(false);
-        }, 5000);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-    
-    // Update references for next comparison
-    prevMessagesLengthRef.current = messages.length;
-    prevMessagesRef.current = [...messages];
-  }, [messages, isOpen]);
-  
-  // Effect to trigger notification animation every 2 seconds when there are unread messages
+  // Effect to trigger notification animation when there are unread messages
   useEffect(() => {
     if (unreadCount > 0 && !isOpen) {
       const interval = setInterval(() => {
@@ -82,10 +39,29 @@ export function ChatSupportButton() {
     }
   }, [unreadCount, isOpen]);
   
+  // Effect to trigger pulse effect when a new message is received
+  useEffect(() => {
+    if (newMessageReceived && !isOpen) {
+      setPulseEffect(true);
+      setTimeout(() => setPulseEffect(false), 2000);
+    }
+  }, [newMessageReceived, isOpen]);
+  
+  // Ensure we stop animations when chat is opened
+  useEffect(() => {
+    if (isOpen) {
+      setAnimate(false);
+      setPulseEffect(false);
+      setNewMessageReceived(false);
+    }
+  }, [isOpen, setNewMessageReceived]);
+  
+  if (!user) return null;
+  
   return (
     <div className="relative">
       {/* Enhanced notification popup with better styling */}
-      {showNotification && unreadCount > 0 && !isOpen && (
+      {newMessageReceived && unreadCount > 0 && !isOpen && (
         <div className="absolute bottom-full right-0 mb-2 w-64 transform transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 z-50">
           <Card className="p-3 bg-card shadow-lg border-l-4 border-l-primary">
             <div className="flex items-center justify-between mb-1">
@@ -100,7 +76,7 @@ export function ChatSupportButton() {
                 variant="ghost" 
                 size="sm" 
                 className="h-6 w-6 p-0 hover:bg-muted/80" 
-                onClick={() => setShowNotification(false)}
+                onClick={() => setNewMessageReceived(false)}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -122,16 +98,9 @@ export function ChatSupportButton() {
               "relative transition-all duration-300",
               unreadCount > 0 ? "animate-pulse" : "",
               animate && unreadCount > 0 ? "bg-muted/80" : "",
-              showNotification ? "ring-2 ring-primary ring-offset-2" : "",
+              newMessageReceived ? "ring-2 ring-primary ring-offset-2" : "",
               pulseEffect ? "shadow-md shadow-primary/30" : ""
             )}
-            onClick={() => {
-              if (unreadCount > 0) {
-                // This will help immediately stop animations when clicking
-                setAnimate(false);
-                setPulseEffect(false);
-              }
-            }}
           >
             <div className={cn(
               "absolute -left-1 -top-1 transition-opacity",
@@ -180,7 +149,7 @@ export function ChatSupportButton() {
                 <span className="sr-only">Close</span>
               </Button>
             </div>
-            <ChatInterface className="flex-1" />
+            <ChatInterface className="flex-1" onChatOpened={() => setIsOpen(true)} />
           </div>
         </SheetContent>
       </Sheet>

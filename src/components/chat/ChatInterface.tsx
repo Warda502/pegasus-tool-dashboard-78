@@ -2,55 +2,59 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useChatSupport, ChatMessage } from "@/hooks/useChatSupport";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
-import { SendHorizontal, Check, CheckCheck, ArrowDown, Loader, CircleDot, CircleOff } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { shouldAutoScroll } from "@/utils/notificationUtils";
+import { useChatMessages } from "@/hooks/useChatMessages";
+import { 
+  Send as SendHorizontal, 
+  Check, 
+  CheckCheck, 
+  ArrowDown, 
+  Loader, 
+  CircleDot, 
+  CircleOff 
+} from "lucide-react";
+import { usePresenceTracking, useObservePresence } from "@/utils/chatPresenceUtils";
+import { MessageBubble } from "./MessageBubble";
+import { ChatMessage } from "@/hooks/useChatSupport";
 
 interface ChatInterfaceProps {
   userId?: string; // For admin to chat with specific user
   className?: string;
+  onChatOpened?: () => void;
 }
 
-// Helper function to format date - moved outside component scope
-const formatDateTime = (timestamp: string) => {
-  try {
-    return format(new Date(timestamp), 'MMM d, h:mm a');
-  } catch (e) {
-    return timestamp;
-  }
-};
-
-export function ChatInterface({ userId, className }: ChatInterfaceProps) {
+export function ChatInterface({ userId, className, onChatOpened }: ChatInterfaceProps) {
   const { t, isRTL } = useLanguage();
   const { user, isAdmin } = useAuth();
-  const { messages, loading, sendMessage, markAsRead } = useChatSupport(userId);
+  const { messages, loading, sendMessage, markAllAsRead } = useChatMessages(userId);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
-  const [userStatus, setUserStatus] = useState<'online' | 'offline'>('offline');
-  const processedMessagesRef = useRef<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Simulate online status for demo purposes
+  // Presence hooks for real-time typing and online status
+  const { updateTypingStatus } = usePresenceTracking(user?.id);
+  const otherUserPresence = useObservePresence(isAdmin ? userId : undefined);
+
+  const isOtherUserTyping = otherUserPresence?.is_typing || false;
+  const isOtherUserOnline = otherUserPresence?.status === 'online';
+
+  // Mark messages as read when chat is opened
   useEffect(() => {
-    // In a real app, this would be based on presence data from Supabase
-    const randomDelay = Math.random() * 10000 + 5000; // Between 5-15 seconds
-    const timer = setTimeout(() => {
-      setUserStatus('online');
-    }, randomDelay);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    if (user && messages.length > 0) {
+      markAllAsRead(isAdmin);
+      if (onChatOpened) onChatOpened();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, messages.length, isAdmin]);
   
   // Function to scroll to bottom
   const scrollToBottom = () => {
@@ -63,13 +67,24 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
   
   // Auto scroll to bottom on new messages if user is already at bottom
   useEffect(() => {
+    if (!messages.length) return;
+    
     const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
     if (isAutoScrollEnabled && scrollElement) {
       scrollToBottom();
     } else if (messages.length > 0) {
       setShowScrollButton(true);
     }
-  }, [messages, isAutoScrollEnabled]);
+    
+    // Highlight the latest message if it's from the other party
+    const latestMessage = messages[messages.length - 1];
+    if (latestMessage && ((isAdmin && !latestMessage.is_from_admin) || (!isAdmin && latestMessage.is_from_admin))) {
+      setHighlightedMessageId(latestMessage.id);
+      setTimeout(() => {
+        setHighlightedMessageId(null);
+      }, 3000);
+    }
+  }, [messages, isAutoScrollEnabled, isAdmin]);
   
   // Detect scroll position to show/hide scroll button
   useEffect(() => {
@@ -88,38 +103,12 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     };
   }, []);
   
-  // Mark messages as read when viewed by the appropriate user
-  useEffect(() => {
-    if (!messages.length) return;
-    
-    // Process new messages that need to be marked as read
-    const unprocessedMessages = messages.filter(msg => {
-      // Only mark messages as unread if:
-      // 1. For admin - messages FROM users (not from admin) that are unread
-      // 2. For users - messages FROM admin that are unread
-      const shouldMarkAsRead = 
-        (isAdmin && !msg.is_from_admin && !msg.is_read) || 
-        (!isAdmin && msg.is_from_admin && !msg.is_read);
-        
-      // Check if we've already processed this message
-      const alreadyProcessed = processedMessagesRef.current.has(msg.id);
-      
-      // If it should be marked as read and hasn't been processed yet
-      return shouldMarkAsRead && !alreadyProcessed;
-    });
-    
-    // Mark each unprocessed message as read
-    unprocessedMessages.forEach(msg => {
-      markAsRead(msg.id);
-      // Add to processed set
-      processedMessagesRef.current.add(msg.id);
-    });
-    
-  }, [isAdmin, messages, markAsRead]);
-  
   // Handle sending message
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
+    
+    // Clear typing status immediately
+    updateTypingStatus(false);
     
     const success = await sendMessage(newMessage, userId);
     if (success) {
@@ -129,12 +118,12 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     }
   };
   
-  // Handle typing indication
+  // Handle typing indication with debounce
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
     
-    // Set typing indicator (for future real-time implementation)
-    setIsTyping(true);
+    // Update typing status for realtime presence
+    updateTypingStatus(true);
     
     // Clear existing timeout
     if (typingTimeoutRef.current) {
@@ -143,7 +132,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     
     // Set new timeout to stop showing typing indicator after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
+      updateTypingStatus(false);
     }, 2000);
   };
   
@@ -154,59 +143,24 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
     }
   };
   
-  // Simulate typing for demo purposes (in real implementation, this would come from realtime subscription)
-  useEffect(() => {
-    if (!isAdmin && !loading) {
-      const typingInterval = setInterval(() => {
-        // 20% chance to show typing indicator
-        const shouldShowTyping = Math.random() < 0.2;
-        setIsTyping(shouldShowTyping);
-        
-        if (shouldShowTyping) {
-          // Stop typing after 1-3 seconds
-          const typingDuration = Math.random() * 2000 + 1000;
-          setTimeout(() => setIsTyping(false), typingDuration);
-        }
-      }, 8000); // Check every 8 seconds
-      
-      return () => clearInterval(typingInterval);
-    }
-  }, [isAdmin, loading]);
-  
   // Cleanup typing timeout on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+      // Ensure typing status is reset when component unmounts
+      updateTypingStatus(false);
     };
-  }, []);
-  
-  // Highlight new messages
-  useEffect(() => {
-    if (messages.length > 0) {
-      const latestMessage = messages[messages.length - 1];
-      if (latestMessage && ((isAdmin && !latestMessage.is_from_admin) || (!isAdmin && latestMessage.is_from_admin))) {
-        setHighlightedMessageId(latestMessage.id);
-        setTimeout(() => {
-          setHighlightedMessageId(null);
-        }, 3000);
-      }
-    }
-  }, [messages, isAdmin]);
+  }, [updateTypingStatus]);
   
   if (!user) {
     return <div>{t("loginRequired") || "Please log in to use chat support"}</div>;
   }
   
-  // Sort messages by creation date in ascending order (oldest to newest)
-  const sortedMessages = [...messages].sort((a, b) => 
-    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
-  
   // Group messages by date for better readability
   const groupedMessages: { [key: string]: ChatMessage[] } = {};
-  sortedMessages.forEach(message => {
+  messages.forEach(message => {
     const messageDate = format(new Date(message.created_at), 'yyyy-MM-dd');
     if (!groupedMessages[messageDate]) {
       groupedMessages[messageDate] = [];
@@ -229,7 +183,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
             {isAdmin ? (
               <div className="flex items-center text-xs text-muted-foreground">
                 <span>{t("userStatus") || "User"}: </span>
-                {userStatus === 'online' ? (
+                {isOtherUserOnline ? (
                   <div className="flex items-center ml-1 text-green-500">
                     <CircleDot className="h-3 w-3 mr-1" />
                     <span>{t("online") || "Online"}</span>
@@ -296,7 +250,7 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
             ))}
             
             {/* Typing indicator */}
-            {isTyping && (
+            {isOtherUserTyping && (
               <div className={`flex mx-2 mb-1 text-xs text-muted-foreground ${isAdmin ? "justify-start" : "justify-end"}`}>
                 <div className={cn(
                   "flex items-center gap-1 px-3 py-2 rounded-full bg-muted/50",
@@ -354,60 +308,6 @@ export function ChatInterface({ userId, className }: ChatInterfaceProps) {
           >
             <SendHorizontal className="h-4 w-4" />
           </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface MessageBubbleProps {
-  message: ChatMessage;
-  isMine: boolean;
-  isRTL: boolean;
-  isHighlighted: boolean;
-}
-
-function MessageBubble({ message, isMine, isRTL, isHighlighted }: MessageBubbleProps) {
-  const [isRead, setIsRead] = useState(message.is_read);
-  
-  // Animate read status change
-  useEffect(() => {
-    if (!isRead && message.is_read) {
-      setIsRead(true);
-    }
-  }, [message.is_read, isRead]);
-
-  return (
-    <div className={cn(
-      "flex", 
-      isMine ? (isRTL ? "flex-row" : "flex-row-reverse") : "",
-      "gap-2 max-w-[85%]",
-      isMine ? (isRTL ? "mr-auto" : "ml-auto") : (isRTL ? "ml-auto" : "mr-auto")
-    )}>
-      <div className={cn(
-        "rounded-lg p-3 text-sm transition-all duration-500",
-        isMine ? 
-          "bg-primary text-primary-foreground" : 
-          "bg-muted text-muted-foreground",
-        isHighlighted ? 
-          "animate-bounce-in shadow-md ring-2 ring-primary ring-offset-1" : "",
-        message.is_read && !isRead ? 
-          "shadow-md ring-1 ring-green-400" : ""
-      )}>
-        <p className="whitespace-pre-wrap break-words">{message.message}</p>
-        <div className={cn(
-          "flex items-center gap-1 mt-1 text-xs opacity-80",
-          isMine ? "justify-end" : "justify-start"
-        )}>
-          <span>{formatDateTime(message.created_at)}</span>
-          {isMine && !message.is_from_admin && (
-            message.is_read ? 
-              <CheckCheck className={cn(
-                "h-3 w-3 transition-all",
-                isRead !== message.is_read ? "scale-150 text-green-400" : ""
-              )} /> : 
-              <Check className="h-3 w-3 opacity-70 transition-opacity" />
-          )}
         </div>
       </div>
     </div>

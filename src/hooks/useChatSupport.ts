@@ -1,9 +1,10 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { toast } from "@/components/ui/sonner";
+import { useChatMessages } from "./useChatMessages";
+import { useChatNotifications } from "./useChatNotifications";
 
 export interface ChatMessage {
   id: string;
@@ -19,11 +20,22 @@ export interface ChatMessage {
 export const useChatSupport = (userId?: string) => {
   const { t } = useLanguage();
   const { user, isAdmin } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const prevMessagesLengthRef = useRef<number>(0);
+  const { 
+    messages, 
+    loading, 
+    error, 
+    sendMessage, 
+    markAsRead, 
+    markAllAsRead 
+  } = useChatMessages(userId);
   
+  const { 
+    unreadCount, 
+    newMessageReceived, 
+    setNewMessageReceived,
+    fetchUnreadCount 
+  } = useChatNotifications();
+
   // For admin UI, fetch user email for each message
   const enhanceMessagesWithUserInfo = useCallback(async (rawMessages: any[]): Promise<ChatMessage[]> => {
     if (!isAdmin || rawMessages.length === 0) return rawMessages as ChatMessage[];
@@ -49,164 +61,6 @@ export const useChatSupport = (userId?: string) => {
       user_email: userEmailMap[msg.user_id] || 'Unknown User'
     }));
   }, [isAdmin]);
-
-  // Fetch messages
-  const fetchMessages = useCallback(async () => {
-    try {
-      setLoading(true);
-      let query = supabase
-        .from('chat_messages')
-        .select('*')
-        .order('created_at', { ascending: true }); // Changed to ascending (oldest to newest)
-      
-      // If not admin and userId provided, filter by user ID
-      if (!isAdmin && userId) {
-        query = query.eq('user_id', userId);
-      } else if (!isAdmin && user) {
-        query = query.eq('user_id', user.id);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      if (data) {
-        const enhancedMessages = await enhanceMessagesWithUserInfo(data);
-        setMessages(enhancedMessages);
-      }
-    } catch (err) {
-      console.error("Error fetching chat messages:", err);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin, userId, user, enhanceMessagesWithUserInfo]);
-
-  // Send a new message
-  const sendMessage = async (messageText: string, recipientId?: string) => {
-    if (!user) return false;
-    
-    try {
-      const newMessage = {
-        user_id: isAdmin ? recipientId! : user.id,
-        admin_id: isAdmin ? user.id : null,
-        message: messageText,
-        is_from_admin: isAdmin,
-        is_read: false
-      };
-      
-      const { error } = await supabase.from('chat_messages').insert(newMessage);
-      
-      if (error) throw error;
-      
-      toast(t("messageSent") || "Message sent");
-      return true;
-    } catch (err) {
-      console.error("Error sending message:", err);
-      toast(t("errorSendingMessage") || "Error sending message", { 
-        description: err instanceof Error ? err.message : String(err) 
-      });
-      return false;
-    }
-  };
-
-  // Mark message as read
-  const markAsRead = async (messageId: string) => {
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .update({ is_read: true })
-        .eq('id', messageId);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setMessages(prev => 
-        prev.map(msg => msg.id === messageId ? { ...msg, is_read: true } : msg)
-      );
-      
-      return true;
-    } catch (err) {
-      console.error("Error marking message as read:", err);
-      return false;
-    }
-  };
-  
-  // Mark all messages as read for the current user
-  const markAllAsRead = async () => {
-    try {
-      // Get all unread messages based on user role
-      let unreadMessages;
-      
-      if (isAdmin) {
-        // For admin: mark messages FROM users (not from admin) as read
-        unreadMessages = messages.filter(msg => !msg.is_read && !msg.is_from_admin);
-      } else {
-        // For regular users: mark messages FROM admin as read
-        unreadMessages = messages.filter(msg => !msg.is_read && msg.is_from_admin);
-      }
-      
-      if (unreadMessages.length === 0) return true;
-      
-      // Mark all as read in DB
-      const messageIds = unreadMessages.map(msg => msg.id);
-      const { error } = await supabase
-        .from('chat_messages')
-        .update({ is_read: true })
-        .in('id', messageIds);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setMessages(prev => 
-        prev.map(msg => messageIds.includes(msg.id) ? { ...msg, is_read: true } : msg)
-      );
-      
-      return true;
-    } catch (err) {
-      console.error("Error marking all messages as read:", err);
-      return false;
-    }
-  };
-
-  // Set up real-time updates
-  useEffect(() => {
-    if (!user) return;
-    
-    const channel = supabase
-      .channel('chat_message_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_messages',
-        },
-        async () => {
-          // Refetch messages when changes occur
-          await fetchMessages();
-        }
-      )
-      .subscribe();
-    
-    // Initial fetch
-    fetchMessages();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchMessages]);
-
-  // Get unread message count based on user role
-  const getUnreadCount = useCallback(() => {
-    if (isAdmin) {
-      // For admin: count messages FROM users (not from admin) that are unread
-      return messages.filter(msg => !msg.is_read && !msg.is_from_admin).length;
-    } else {
-      // For regular users: count messages FROM admin that are unread
-      return messages.filter(msg => !msg.is_read && msg.is_from_admin).length;
-    }
-  }, [messages, isAdmin]);
 
   // Group messages by user
   const getUsersWithMessages = useCallback(() => {
@@ -250,6 +104,11 @@ export const useChatSupport = (userId?: string) => {
     });
   }, [isAdmin, messages]);
 
+  // Getter for unread count
+  const getUnreadCount = useCallback(() => {
+    return unreadCount;
+  }, [unreadCount]);
+
   return {
     messages,
     loading,
@@ -257,8 +116,11 @@ export const useChatSupport = (userId?: string) => {
     sendMessage,
     markAsRead,
     markAllAsRead,
-    fetchMessages,
+    fetchMessages: fetchUnreadCount, // Alias for backward compatibility
     getUnreadCount,
-    getUsersWithMessages
+    getUsersWithMessages,
+    enhanceMessagesWithUserInfo,
+    newMessageReceived,
+    setNewMessageReceived
   };
 };

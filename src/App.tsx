@@ -24,6 +24,8 @@ import GroupsManagement from "./pages/GroupsManagement";
 import ToolUpdate from "./pages/ToolUpdate";
 import ToolSettings from "./pages/ToolSettings";
 import ChatSupport from "./pages/ChatSupport";
+import { useEffect } from "react";
+import { setupRealtimeChat } from "./utils/setupRealtimeChat";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -36,91 +38,98 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <DataProvider>
-            <TooltipProvider>
-              <Routes>
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <AppLayout><Dashboard /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/users-manager" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><UsersManager /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/operations" element={
-                  <ProtectedRoute>
-                    <AppLayout><Operations /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <AppLayout><Settings /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/edit-profile" element={
-                  <ProtectedRoute>
-                    <AppLayout><EditMyProfile /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/server-api-data" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><ServerApiData /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/server-storage" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><ServerStorage /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/my-cert-files" element={
-                  <ProtectedRoute>
-                    <AppLayout><MyCertFiles /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/discounts" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><Discounts /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/groups-management" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><GroupsManagement /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/chat-support" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><ChatSupport /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/tool-update" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><ToolUpdate /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="/tool-settings" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AppLayout><ToolSettings /></AppLayout>
-                  </ProtectedRoute>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster />
-              <Sonner />
-            </TooltipProvider>
-          </DataProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </LanguageProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize Supabase Realtime when app loads
+  useEffect(() => {
+    setupRealtimeChat().catch(console.error);
+  }, []);
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <DataProvider>
+              <TooltipProvider>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <AppLayout><Dashboard /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users-manager" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><UsersManager /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/operations" element={
+                    <ProtectedRoute>
+                      <AppLayout><Operations /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <AppLayout><Settings /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/edit-profile" element={
+                    <ProtectedRoute>
+                      <AppLayout><EditMyProfile /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/server-api-data" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ServerApiData /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/server-storage" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ServerStorage /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/my-cert-files" element={
+                    <ProtectedRoute>
+                      <AppLayout><MyCertFiles /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/discounts" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><Discounts /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/groups-management" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><GroupsManagement /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/chat-support" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ChatSupport /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tool-update" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ToolUpdate /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tool-settings" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ToolSettings /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <Toaster />
+                <Sonner />
+              </TooltipProvider>
+            </DataProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </LanguageProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
