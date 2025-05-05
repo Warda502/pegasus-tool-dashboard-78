@@ -37,7 +37,13 @@ export const usePresenceTracking = (userId?: string) => {
     // Subscribe to the channel and track initial presence
     presenceChannel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
-        await presenceChannel.track(initialPresence);
+        try {
+          await presenceChannel.track(initialPresence);
+        } catch (error) {
+          console.error("Error tracking presence:", error);
+        }
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error("Error connecting to presence channel");
       }
     });
     
@@ -49,6 +55,9 @@ export const usePresenceTracking = (userId?: string) => {
         const offlinePresence = { ...initialPresence, status: 'offline' };
         presenceChannel.track(offlinePresence).then(() => {
           supabase.removeChannel(presenceChannel);
+        }).catch(error => {
+          console.error("Error updating offline status:", error);
+          supabase.removeChannel(presenceChannel);
         });
       }
     };
@@ -58,12 +67,16 @@ export const usePresenceTracking = (userId?: string) => {
   const updateTypingStatus = async (isTyping: boolean) => {
     if (!channel || !userId) return;
     
-    await channel.track({
-      user_id: userId,
-      status: 'online',
-      last_seen_at: new Date().toISOString(),
-      is_typing: isTyping
-    });
+    try {
+      await channel.track({
+        user_id: userId,
+        status: 'online',
+        last_seen_at: new Date().toISOString(),
+        is_typing: isTyping
+      });
+    } catch (error) {
+      console.error("Error updating typing status:", error);
+    }
   };
   
   return { updateTypingStatus };
@@ -102,7 +115,11 @@ export const useObservePresence = (observedUserId?: string) => {
         const state = channel.presenceState();
         updatePresenceFromState(state);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.error("Error connecting to presence channel");
+        }
+      });
     
     // Helper function to extract and validate presence data
     function extractAndSetUserPresence(presenceData: any) {
@@ -126,22 +143,26 @@ export const useObservePresence = (observedUserId?: string) => {
     
     // Helper function to update presence state from the channel state
     function updatePresenceFromState(state: Record<string, any[]>) {
-      // Find presence entries for the observed user
-      const allPresences: any[] = Object.values(state).flat();
-      
-      // Find the user we're observing
-      const userPresenceObj = allPresences.find((p: any) => p.user_id === observedUserId);
-      
-      if (userPresenceObj) {
-        extractAndSetUserPresence(userPresenceObj);
-      } else {
-        // If no presence found, assume offline
-        setPresenceState({
-          user_id: observedUserId,
-          status: 'offline',
-          last_seen_at: new Date().toISOString(),
-          is_typing: false
-        });
+      try {
+        // Find presence entries for the observed user
+        const allPresences: any[] = Object.values(state).flat();
+        
+        // Find the user we're observing
+        const userPresenceObj = allPresences.find((p: any) => p.user_id === observedUserId);
+        
+        if (userPresenceObj) {
+          extractAndSetUserPresence(userPresenceObj);
+        } else {
+          // If no presence found, assume offline
+          setPresenceState({
+            user_id: observedUserId,
+            status: 'offline',
+            last_seen_at: new Date().toISOString(),
+            is_typing: false
+          });
+        }
+      } catch (error) {
+        console.error("Error processing presence state:", error);
       }
     }
     

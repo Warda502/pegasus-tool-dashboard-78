@@ -33,7 +33,10 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
       
       const { count, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching unread count:", error.message);
+        return unreadCount; // Return the current value if there's an error
+      }
       
       // Update state only if the count has changed to avoid unnecessary renders
       if (count !== unreadCount) {
@@ -42,8 +45,9 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
       
       return count || 0;
     } catch (err) {
-      console.error("Error fetching unread count:", err);
-      return 0;
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Error fetching unread count:", errorMessage);
+      return unreadCount; // Return the current value if there's an error
     }
   }, [user, isAdmin, unreadCount]);
 
@@ -67,28 +71,32 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
         ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` })
       },
       (payload) => {
-        const newMessage = payload.new as ChatMessage;
-        
-        // For admin: only notify for messages from users
-        // For users: only notify for messages from admin
-        const shouldNotify = isAdmin 
-          ? !newMessage.is_from_admin 
-          : (newMessage.is_from_admin && newMessage.user_id === user.id);
+        try {
+          const newMessage = payload.new as ChatMessage;
           
-        if (shouldNotify) {
-          // Don't notify if the chat is already open
-          if (!chatOpen) {
-            playNotificationSound(0.5);
-            setNewMessageReceived(true);
+          // For admin: only notify for messages from users
+          // For users: only notify for messages from admin
+          const shouldNotify = isAdmin 
+            ? !newMessage.is_from_admin 
+            : (newMessage.is_from_admin && newMessage.user_id === user.id);
             
-            // Auto-hide notification after 5 seconds
-            setTimeout(() => {
-              setNewMessageReceived(false);
-            }, 5000);
+          if (shouldNotify) {
+            // Don't notify if the chat is already open
+            if (!chatOpen) {
+              playNotificationSound(0.5);
+              setNewMessageReceived(true);
+              
+              // Auto-hide notification after 5 seconds
+              setTimeout(() => {
+                setNewMessageReceived(false);
+              }, 5000);
+            }
+            
+            // Update unread count
+            fetchUnreadCount();
           }
-          
-          // Update unread count
-          fetchUnreadCount();
+        } catch (error) {
+          console.error("Error processing chat notification:", error);
         }
       }
     );
@@ -103,17 +111,25 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
         ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` })
       },
       (payload) => {
-        const updatedMessage = payload.new as ChatMessage;
-        
-        // If a message was marked as read, update the unread count
-        if (updatedMessage.is_read) {
-          fetchUnreadCount();
+        try {
+          const updatedMessage = payload.new as ChatMessage;
+          
+          // If a message was marked as read, update the unread count
+          if (updatedMessage.is_read) {
+            fetchUnreadCount();
+          }
+        } catch (error) {
+          console.error("Error processing chat update:", error);
         }
       }
     );
     
-    // Subscribe to the channel
-    channel.subscribe();
+    // Subscribe to the channel with error handling
+    channel.subscribe((status) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.error("Error connecting to chat notifications channel");
+      }
+    });
       
     return () => {
       supabase.removeChannel(channel);

@@ -22,7 +22,13 @@ export async function setupRealtimeChat() {
           console.log("Realtime channels appear to be functioning.");
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log("Successfully subscribed to test channel");
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error("Error subscribing to test channel");
+        }
+      });
       
       // If we get here without errors, realtime appears to be functioning
       console.log("Realtime setup completed successfully");
@@ -34,11 +40,13 @@ export async function setupRealtimeChat() {
       
       return true;
     } catch (err) {
-      console.error("Error setting up Realtime for chat:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("Error setting up Realtime for chat:", errorMessage);
       return false;
     }
   } catch (err) {
-    console.error("Error in setupRealtimeChat:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error("Error in setupRealtimeChat:", errorMessage);
     return false;
   }
 }

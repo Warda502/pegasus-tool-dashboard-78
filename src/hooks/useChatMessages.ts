@@ -63,13 +63,23 @@ export const useChatMessages = (userId?: string) => {
       
       const { error } = await supabase.from('chat_messages').insert(newMessage);
       
-      if (error) throw error;
+      if (error) {
+        // Properly format the error message
+        const errorMessage = error.message || "Unknown error occurred";
+        toast(t("errorSendingMessage") || "Error sending message", { 
+          description: errorMessage
+        });
+        console.error("Error sending message:", error);
+        return false;
+      }
       
       return true;
     } catch (err) {
-      console.error("Error sending message:", err);
+      // Improved error handling for any exceptions
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Exception sending message:", errorMessage);
       toast(t("errorSendingMessage") || "Error sending message", { 
-        description: err instanceof Error ? err.message : String(err) 
+        description: errorMessage
       });
       return false;
     }
@@ -125,7 +135,8 @@ export const useChatMessages = (userId?: string) => {
       
       return true;
     } catch (err) {
-      console.error("Error marking all messages as read:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Error marking all messages as read:", errorMessage);
       return false;
     }
   };
@@ -161,10 +172,7 @@ export const useChatMessages = (userId?: string) => {
           setMessages(prev => [...prev, newMessage]);
         }
       }
-    );
-    
-    // Listen for UPDATE events
-    channel.on(
+    ).on(
       'postgres_changes',
       {
         event: 'UPDATE',
@@ -181,10 +189,14 @@ export const useChatMessages = (userId?: string) => {
           prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
         );
       }
-    );
-    
-    // Subscribe to the channel
-    channel.subscribe();
+    ).subscribe((status) => {
+      console.log(`Chat messages real-time status: ${status}`);
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to chat messages');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Error subscribing to chat messages');
+      }
+    });
     
     return () => {
       supabase.removeChannel(channel);
