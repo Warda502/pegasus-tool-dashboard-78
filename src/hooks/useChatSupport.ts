@@ -4,7 +4,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { toast } from "@/components/ui/sonner";
-import { playNotificationSound } from "@/utils/notificationUtils";
 
 export interface ChatMessage {
   id: string;
@@ -166,23 +165,11 @@ export const useChatSupport = (userId?: string) => {
     }
   };
 
-  // Play notification sound for new messages
+  // Update message length reference without playing sound
   useEffect(() => {
-    // Check if we have new messages
-    if (messages.length > prevMessagesLengthRef.current && messages.length > 0) {
-      // Find the newest message
-      const latestMessage = messages[messages.length - 1];
-      
-      // Play sound if it's an incoming message (not from the current user)
-      if ((isAdmin && !latestMessage.is_from_admin) || 
-          (!isAdmin && latestMessage.is_from_admin)) {
-        playNotificationSound(0.3);
-      }
-    }
-    
     // Update ref with current length
     prevMessagesLengthRef.current = messages.length;
-  }, [messages, isAdmin]);
+  }, [messages]);
 
   // Set up real-time updates
   useEffect(() => {
