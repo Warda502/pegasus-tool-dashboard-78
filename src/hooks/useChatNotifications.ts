@@ -60,31 +60,35 @@ export const useChatNotifications = (chatOpen: boolean = false) => {
     
     const channel = supabase
       .channel('chat-notifications')
-      .on('postgres_changes', channelOptions, (payload) => {
-        const newMessage = payload.new as ChatMessage;
-        
-        // For admin: only notify for messages from users
-        // For users: only notify for messages from admin
-        const shouldNotify = isAdmin 
-          ? !newMessage.is_from_admin 
-          : (newMessage.is_from_admin && newMessage.user_id === user.id);
+      .on(
+        'postgres_changes',
+        channelOptions,
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
           
-        if (shouldNotify) {
-          // Don't notify if the chat is already open
-          if (!chatOpen) {
-            playNotificationSound(0.5);
-            setNewMessageReceived(true);
+          // For admin: only notify for messages from users
+          // For users: only notify for messages from admin
+          const shouldNotify = isAdmin 
+            ? !newMessage.is_from_admin 
+            : (newMessage.is_from_admin && newMessage.user_id === user.id);
             
-            // Auto-hide notification after 5 seconds
-            setTimeout(() => {
-              setNewMessageReceived(false);
-            }, 5000);
+          if (shouldNotify) {
+            // Don't notify if the chat is already open
+            if (!chatOpen) {
+              playNotificationSound(0.5);
+              setNewMessageReceived(true);
+              
+              // Auto-hide notification after 5 seconds
+              setTimeout(() => {
+                setNewMessageReceived(false);
+              }, 5000);
+            }
+            
+            // Update unread count
+            fetchUnreadCount();
           }
-          
-          // Update unread count
-          fetchUnreadCount();
         }
-      })
+      )
       .subscribe();
       
     return () => {

@@ -141,36 +141,40 @@ export const useChatMessages = (userId?: string) => {
     
     // Set up channel for real-time updates
     const channelOptions = {
-      event: 'INSERT' as 'INSERT' | 'UPDATE' | 'DELETE',
+      event: 'INSERT' as const,
       schema: 'public',
       table: 'chat_messages',
       ...(userId ? { filter: `user_id=eq.${userId}` } : {})
     };
     
-    // Subscribe to changes
+    // Subscribe to changes using the correct method signature for Supabase channels
     const channel = supabase
       .channel('chat-messages-changes')
-      .on('postgres_changes', channelOptions, (payload) => {
-        console.log('Chat message change detected:', payload.eventType);
-        
-        if (payload.eventType === 'INSERT') {
-          const newMessage = payload.new as ChatMessage;
-          console.log('New message:', newMessage);
+      .on(
+        'postgres_changes',
+        channelOptions,
+        (payload) => {
+          console.log('Chat message change detected:', payload.eventType);
           
-          // Only add to state if it matches our filter
-          if (!userId || newMessage.user_id === userId) {
-            setMessages(prev => [...prev, newMessage]);
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as ChatMessage;
+            console.log('New message:', newMessage);
+            
+            // Only add to state if it matches our filter
+            if (!userId || newMessage.user_id === userId) {
+              setMessages(prev => [...prev, newMessage]);
+            }
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedMessage = payload.new as ChatMessage;
+            console.log('Updated message:', updatedMessage);
+            
+            setMessages(prev => 
+              prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+            );
           }
-        } 
-        else if (payload.eventType === 'UPDATE') {
-          const updatedMessage = payload.new as ChatMessage;
-          console.log('Updated message:', updatedMessage);
-          
-          setMessages(prev => 
-            prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
-          );
         }
-      })
+      )
       .subscribe();
     
     return () => {

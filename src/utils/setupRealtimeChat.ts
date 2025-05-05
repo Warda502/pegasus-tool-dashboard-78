@@ -26,11 +26,15 @@ export async function setupRealtimeChat() {
       const channel = supabase.channel('test-realtime');
       
       const subscription = channel
-        .on('postgres_changes', {
-          event: 'INSERT' as const,
-          schema: 'public',
-          table: 'chat_messages'
-        }, () => {})
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT' as const,
+            schema: 'public',
+            table: 'chat_messages'
+          },
+          () => {}
+        )
         .subscribe();
       
       // If we get here, realtime appears to be functioning

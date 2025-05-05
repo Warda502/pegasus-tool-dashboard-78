@@ -130,7 +130,7 @@ export const useObservePresence = (observedUserId?: string) => {
       // Find presence entries for the observed user
       const allPresences: any[] = Object.values(state).flat();
       
-      // Use type casting with explicit check to ensure the presence object matches our expected structure
+      // Find the user we're observing
       const userPresenceObj = allPresences.find((p: any) => p.user_id === observedUserId);
       
       if (userPresenceObj) {
