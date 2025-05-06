@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -67,27 +66,45 @@ export default function SupportedModels() {
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['supportedModels'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('supported_models')
-        .select('*');
-      
-      if (error) {
+      try {
+        const { data, error } = await supabase
+          .from('supported_models')
+          .select('*');
+        
+        if (error) {
+          console.error("Error fetching models:", error);
+          toast.error(t("fetchError") || "Error fetching models");
+          throw error;
+        }
+        
+        return data as SupportedModel[];
+      } catch (err) {
+        console.error("Exception in fetch:", err);
         toast.error(t("fetchError") || "Error fetching models");
-        throw error;
+        return [];
       }
-      
-      return data as SupportedModel[];
     }
   });
 
   // Upload mutation (batch insert)
   const uploadMutation = useMutation({
     mutationFn: async (data: Omit<SupportedModel, 'id'>[]) => {
-      const { error } = await supabase
-        .from('supported_models')
-        .insert(data);
-      
-      if (error) throw error;
+      try {
+        console.log("Uploading data:", data);
+        const { data: result, error } = await supabase
+          .from('supported_models')
+          .insert(data);
+        
+        if (error) {
+          console.error("Upload error:", error);
+          throw error;
+        }
+        
+        return result;
+      } catch (err) {
+        console.error("Exception in upload:", err);
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
@@ -96,6 +113,7 @@ export default function SupportedModels() {
       setJsonData("");
     },
     onError: (error) => {
+      console.error("Error in mutation handler:", error);
       toast.error(t("uploadError") || "Failed to upload models", {
         description: error instanceof Error ? error.message : String(error)
       });
@@ -208,10 +226,17 @@ export default function SupportedModels() {
         return;
       }
 
+      // Remove any id fields that might be in the input data to avoid conflicts
       const validData = parsedData.filter(item => 
         item && typeof item === 'object' && 
         item.brand && item.model
-      );
+      ).map(item => ({
+        brand: item.brand,
+        model: item.model,
+        carrier: item.carrier || '',
+        operation: item.operation || '',
+        security: item.security || ''
+      }));
 
       if (validData.length === 0) {
         toast.error(t("invalidData") || "Invalid data", {
@@ -220,8 +245,10 @@ export default function SupportedModels() {
         return;
       }
 
+      console.log("Prepared data for upload:", validData);
       uploadMutation.mutate(validData);
     } catch (error) {
+      console.error("JSON parse error:", error);
       toast.error(t("invalidJson") || "Invalid JSON", {
         description: t("pleaseCheckFormat") || "Please check the format of your JSON data"
       });
