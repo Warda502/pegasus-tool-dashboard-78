@@ -1253,6 +1253,14 @@ export const translations: Translations = {
   "confirmDeleteModel": {
     "en": "Are you sure you want to delete this model?",
     "ar": "هل أنت متأكد أنك تريد حذف هذا الطراز؟"
+  },
+    "pricing": {
+    "en": "Pricing",
+    "ar": "التسعير"
+  },
+    "webSettings": {
+    "en": "Web Settings",
+    "ar": "إعدادات الويب"
   }
 };
 
