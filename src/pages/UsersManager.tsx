@@ -1,154 +1,172 @@
-
-import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { Card } from "@/components/ui/card";
-import { UsersTable } from "@/components/users/UsersTable";
-import { UserHeaderActions } from "@/components/users/UserHeaderActions";
-import { AddUserDialog } from "@/components/users/AddUserDialog";
-import { EditUserDialog } from "@/components/users/EditUserDialog";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSharedData, useLanguage } from "@/hooks/useSharedData";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { toast } from "@/components/ui/sonner";
+import { Users } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { ViewUserDialog } from "@/components/users/ViewUserDialog";
+import { EditUserDialog } from "@/components/users/EditUserDialog";
+import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
-import { useSharedData } from "@/hooks/data/DataContext";
-import { useAuth } from "@/hooks/auth/AuthContext";
-import { User } from "@/hooks/useSharedData"; // Keep this import for type compatibility
-import { supabase } from "@/integrations/supabase/client";
-import { useLanguage } from "@/hooks/useLanguage";
+import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
+import { UserFilters } from "@/components/users/UserFilters";
+import { UserHeaderActions } from "@/components/users/UserHeaderActions";
+import { useUserDialogs } from "@/hooks/useUserDialogs";
 import { useUserOperations } from "@/hooks/useUserOperations";
-import { UserSearch } from "@/components/users/UserSearch";
+import { UsersTable } from "@/components/users/UsersTable";
 
 export default function UsersManager() {
-  const { isRTL } = useLanguage();
-  const { toast } = useToast();
-  const { users, isLoading, refreshData } = useSharedData();
-  const { isAdmin } = useAuth();
-  const { deleteUser } = useUserOperations();
+  const navigate = useNavigate();
+  const { users, isLoading, addCreditToUser, refreshData } = useSharedData();
+  const { t, isRTL } = useLanguage();
+  const queryClient = useQueryClient();
+  const { role } = useAuth();
+  const {
+    selectedUser,
+    isViewDialogOpen,
+    isEditDialogOpen,
+    isAddDialogOpen,
+    isRenewDialogOpen,
+    isAddCreditsDialogOpen,
+    setIsViewDialogOpen,
+    setIsEditDialogOpen,
+    setIsAddDialogOpen,
+    setIsRenewDialogOpen,
+    setIsAddCreditsDialogOpen,
+    openViewDialog,
+    openEditDialog,
+    openRenewDialog,
+    openAddDialog,
+    openAddCreditsDialog
+  } = useUserDialogs();
   
-  // State for user dialogs
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
+  const { updateUser, addUser, renewUser, deleteUser } = useUserOperations();
+  
   const [searchQuery, setSearchQuery] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState(users);
 
-  // Handlers for user actions
-  const handleAddUser = () => {
-    setIsAddDialogOpen(true);
-  };
-
-  const handleViewUser = (user: User) => {
-    setSelectedUser(user);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleRenewUser = (user: User) => {
-    setSelectedUser(user);
-    setIsRenewDialogOpen(true);
-  };
-
-  const handleAddCredits = () => {
-    // You can implement the add credits functionality here
-    console.log("Add credits clicked");
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    const success = await deleteUser(userId);
-    if (success) {
-      toast({
-        title: "User deleted successfully",
-        description: "The user has been removed from the system.",
-      });
-      refreshData();
-    }
-    return success;
-  };
-
-  // Filter users based on search query
-  const filteredUsers = users.filter(user => {
-    if (!searchQuery) return true;
+  useEffect(() => {
+    // Initial data refresh when component mounts
+    console.log("Triggering initial data refresh");
+    refreshData();
+  }, [refreshData]);
+  
+  // Function to handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
     
-    const query = searchQuery.toLowerCase();
-    return (
-      user.Email?.toLowerCase().includes(query) ||
-      user.Name?.toLowerCase().includes(query) ||
-      user.User_Type?.toLowerCase().includes(query) ||
-      user.Country?.toLowerCase().includes(query)
-    );
-  });
+    // Filter users based on search query - but admin sees all users
+    const filtered = users.filter(user => {
+      const matchesSearch = query.trim() === "" || 
+        (user.Email?.toLowerCase().includes(query.toLowerCase())) ||
+        (user.Name?.toLowerCase().includes(query.toLowerCase())) ||
+        (user.Phone?.toLowerCase().includes(query.toLowerCase())) ||
+        (user.Country?.toLowerCase().includes(query.toLowerCase()));
+      
+      return matchesSearch;
+    });
+    
+    setFilteredUsers(filtered);
+  };
+
+  const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
+    try {
+      await addCreditToUser(userId, creditsToAdd);
+      
+      toast(t("addCreditSuccess"), {
+        description: t("addCreditDescription")
+      });
+      
+      // Refresh data after adding credits
+      refreshData();
+    } catch (error) {
+      console.error("Error adding credits:", error);
+      toast("Error", {
+        description: "Failed to add credits"
+      });
+    }
+  };
+
+  // Initialize filtered users when users change
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [users, searchQuery]);
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
-      <Card className="p-6">
-        <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-          <UserSearch 
-            value={searchQuery} 
-            onChange={setSearchQuery} 
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span>{t("users")}</span>
+            </CardTitle>
+            <CardDescription>
+              {t("usersDescription")}
+              {users.length > 0 && (
+                <span className="ml-2 font-medium">
+                  ({users.length} {t("totalUsers") || "total users"})
+                </span>
+              )}
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <UserFilters onSearch={handleSearch} />
+            
+            <UserHeaderActions
+              onRefresh={refreshData}
+              onAddCredits={openAddCreditsDialog}
+              onAddUser={openAddDialog}
+            />
+          </div>
+          
+          <UsersTable
+            users={filteredUsers}
+            isLoading={isLoading}
+            onViewUser={openViewDialog}
+            onEditUser={openEditDialog}
+            onRenewUser={openRenewDialog}
+            onDeleteUser={deleteUser}
           />
-          <UserHeaderActions 
-            onAddUser={handleAddUser} 
-            onRefresh={refreshData} 
-            onAddCredits={handleAddCredits} 
-          />
-        </div>
-        <UsersTable
-          users={filteredUsers as User[]}
-          isLoading={isLoading}
-          onViewUser={handleViewUser}
-          onEditUser={handleEditUser}
-          onRenewUser={handleRenewUser}
-          onDeleteUser={handleDeleteUser}
-          isAdmin={isAdmin}
-        />
+        </CardContent>
       </Card>
 
-      {/* User Dialogs */}
-      {isAddDialogOpen && (
-        <AddUserDialog
-          isOpen={isAddDialogOpen}
-          onClose={() => setIsAddDialogOpen(false)}
-          onSave={() => {
-            refreshData();
-            return Promise.resolve(true);
-          }}
-        />
-      )}
+      <ViewUserDialog 
+        isOpen={isViewDialogOpen} 
+        onClose={() => setIsViewDialogOpen(false)} 
+        user={selectedUser} 
+      />
+      
+      <EditUserDialog 
+        isOpen={isEditDialogOpen} 
+        onClose={() => setIsEditDialogOpen(false)} 
+        user={selectedUser}
+        onSave={updateUser}
+      />
+      
+      <RenewUserDialog
+        isOpen={isRenewDialogOpen}
+        onClose={() => setIsRenewDialogOpen(false)}
+        onConfirm={(months) => selectedUser && renewUser(selectedUser, months)}
+        userType={selectedUser?.User_Type || ""}
+      />
+      
+      <AddUserDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSave={addUser}
+      />
 
-      {selectedUser && isEditDialogOpen && (
-        <EditUserDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          user={selectedUser}
-          onSave={() => {
-            refreshData();
-            return Promise.resolve(true);
-          }}
-        />
-      )}
-
-      {selectedUser && isViewDialogOpen && (
-        <ViewUserDialog
-          isOpen={isViewDialogOpen}
-          onClose={() => setIsViewDialogOpen(false)}
-          user={selectedUser}
-        />
-      )}
-
-      {selectedUser && isRenewDialogOpen && (
-        <RenewUserDialog
-          isOpen={isRenewDialogOpen}
-          onClose={() => setIsRenewDialogOpen(false)}
-          userType={selectedUser.User_Type}
-          onConfirm={() => {
-            refreshData();
-            return Promise.resolve(true);
-          }}
-        />
-      )}
+      <AddCreditsDialog
+        isOpen={isAddCreditsDialogOpen}
+        onClose={() => setIsAddCreditsDialogOpen(false)}
+        users={users}
+        onAddCredits={handleAddCreditsConfirm}
+      />
     </div>
   );
 }
