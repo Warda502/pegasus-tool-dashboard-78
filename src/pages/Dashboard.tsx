@@ -11,7 +11,7 @@ import { ErrorAlert } from "@/components/common/ErrorAlert";
 export default function Dashboard() {
   const { isLoading, refreshData, isError, users, operations } = useSharedData();
   const { isAdmin, user } = useAuth();
-  const { t, isRTL } = useLanguage();
+  const { t } = useLanguage();
 
   // Refresh data when dashboard mounts
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
+    <div className="space-y-6">
       {isAdmin ? <AdminDashboard /> : <UserDashboard />}
     </div>
   );

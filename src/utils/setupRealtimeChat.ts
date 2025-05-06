@@ -1,45 +1,49 @@
 
-// This file has been simplified as we're removing chat functionality
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Initialize the Supabase Realtime features (simplified version)
+ * Initialize the Supabase Realtime features for chat
  * This should be called once when the app initializes
  */
 export async function setupRealtimeChat() {
   try {
-    console.log("Setting up Realtime features...");
+    console.log("Setting up Realtime chat features...");
     
-    // Set up a test channel for basic realtime functionality
+    // Use a simpler approach to check if realtime is working
     try {
-      // Simple test channel
+      // Set up a test channel for chat
       const channel = supabase.channel('test-realtime');
       
-      channel.subscribe((status) => {
+      // Add a simple listener to test if channels are working
+      channel.on(
+        'presence', 
+        { event: 'sync' }, 
+        () => {
+          console.log("Realtime channels appear to be functioning.");
+        }
+      )
+      .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log("Successfully subscribed to test channel");
-          
-          // Clean up test subscription
-          setTimeout(() => {
-            supabase.removeChannel(channel);
-          }, 1000);
-          
-          return true;
         } else if (status === 'CHANNEL_ERROR') {
           console.error("Error subscribing to test channel");
-          return false;
         }
-        
-        return false;
       });
+      
+      // If we get here without errors, realtime appears to be functioning
+      console.log("Realtime setup completed successfully");
+      
+      // Clean up test subscription
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 1000);
+      
+      return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error("Error setting up Realtime:", errorMessage);
+      console.error("Error setting up Realtime for chat:", errorMessage);
       return false;
     }
-    
-    return true;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error("Error in setupRealtimeChat:", errorMessage);
