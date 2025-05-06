@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -13,6 +14,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 
+// Updated Operation interface to be compatible with the one used in Operations.tsx
 interface Operation {
   id: string;
   operation_type: string;
@@ -22,6 +24,24 @@ interface Operation {
   user_email?: string;
   status?: string;
   credits?: number;
+  // Fields from the Operations.tsx Operation type
+  OprationID?: string;
+  OprationTypes?: string;
+  Phone_SN?: string;
+  Brand?: string;
+  Model?: string;
+  Imei?: string;
+  UserName?: string;
+  Credit?: string | number;
+  Time?: string;
+  Status?: string;
+  Android?: string;
+  Baseband?: string;
+  Carrier?: string;
+  Security_Patch?: string;
+  UID?: string;
+  Hwid?: string;
+  LogOpration?: string;
 }
 
 interface OperationDetailsDialogProps {
@@ -93,7 +113,7 @@ export function OperationDetailsDialog({
             )}
           </DialogTitle>
           <DialogDescription>
-            {t("operationId") || "Operation ID"}: {operation.id}
+            {t("operationId") || "Operation ID"}: {operation.id || operation.OprationID}
           </DialogDescription>
         </DialogHeader>
         
@@ -101,22 +121,22 @@ export function OperationDetailsDialog({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="font-medium mb-1">{t("type") || "Type"}</div>
-              <div>{operation.operation_type}</div>
+              <div>{operation.operation_type || operation.OprationTypes}</div>
             </div>
             <div>
               <div className="font-medium mb-1">{t("date") || "Date"}</div>
-              <div>{formatDate(operation.created_at)}</div>
+              <div>{formatDate(operation.created_at || operation.Time || "")}</div>
             </div>
-            {operation.user_email && (
+            {(operation.user_email || operation.UserName) && (
               <div>
                 <div className="font-medium mb-1">{t("user") || "User"}</div>
-                <div>{operation.user_email}</div>
+                <div>{operation.user_email || operation.UserName}</div>
               </div>
             )}
-            {operation.credits !== undefined && (
+            {(operation.credits !== undefined || operation.Credit) && (
               <div>
                 <div className="font-medium mb-1">{t("credits") || "Credits"}</div>
-                <div>{operation.credits}</div>
+                <div>{operation.credits || operation.Credit}</div>
               </div>
             )}
           </div>
@@ -125,7 +145,7 @@ export function OperationDetailsDialog({
             <div className="font-medium">{t("operationData") || "Operation Data"}</div>
             <ScrollArea className="h-[300px] w-full rounded-md border p-4">
               <pre className="text-xs whitespace-pre-wrap break-all">
-                {formatOperationData(operation.operation_data)}
+                {formatOperationData(operation.operation_data || operation.LogOpration)}
               </pre>
             </ScrollArea>
           </div>
