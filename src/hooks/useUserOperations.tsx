@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -23,17 +24,7 @@ export const useUserOperations = () => {
     try {
       console.log("Deleting user with ID:", userId);
       
-      // First, delete the user from the auth system
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (authError) {
-        console.error("Failed to delete user from auth system:", authError);
-        throw new Error(`Failed to delete user from authentication system: ${authError.message}`);
-      }
-      
-      console.log("Successfully deleted user from auth system");
-      
-      // Then, delete the user from the users table
+      // Delete the user from the users table first
       const { error: dbError } = await supabase
         .from('users')
         .delete()
@@ -45,6 +36,19 @@ export const useUserOperations = () => {
       }
       
       console.log("Successfully deleted user from database");
+      
+      // For the authentication system deletion, we'll use a custom RPC function
+      // which will run with server-side privileges
+      const { error: authError } = await supabase.rpc('delete_auth_user', { user_id: userId });
+      
+      if (authError) {
+        console.error("Failed to delete user from auth system:", authError);
+        console.warn("User was removed from the database but may remain in the auth system");
+        // We don't throw here because we already deleted from the database
+        // and we want the UI to update
+      } else {
+        console.log("Successfully deleted user from auth system");
+      }
       
       toast(t("deleteSuccess"), {
         description: t("deleteUserSuccess")
