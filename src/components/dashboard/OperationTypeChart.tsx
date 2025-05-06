@@ -80,15 +80,15 @@ export function OperationTypeChart({ operations, className }: OperationTypeChart
   
   if (typeData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+      <div className="flex items-center justify-center h-full w-full text-muted-foreground">
         {t("noOperationsFound") || "No operations data available"}
       </div>
     );
   }
   
   return (
-    <div className={`w-full h-[250px] ${className || ""}`}>
-      <ChartContainer config={chartConfig} className="h-full">
+    <div className={`w-full h-full ${className || ""}`}>
+      <ChartContainer config={chartConfig} className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

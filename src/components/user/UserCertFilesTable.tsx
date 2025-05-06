@@ -97,60 +97,62 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
         />
       </div>
 
-      <Card className="overflow-hidden border">
-        <ScrollArea className="h-[calc(100vh-450px)] sm:h-[calc(100vh-420px)]">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="whitespace-nowrap">{t("email") || "Email"}</TableHead>
-                  <TableHead className="whitespace-nowrap">{t("hwid") || "HWID"}</TableHead>
-                  <TableHead className="whitespace-nowrap">{t("imei") || "IMEI"}</TableHead>
-                  <TableHead className="whitespace-nowrap">{t("model") || "Model"}</TableHead>
-                  <TableHead className="whitespace-nowrap">{t("phoneSn") || "Phone S/N"}</TableHead>
-                  <TableHead className="whitespace-nowrap">{t("notes") || "Notes"}</TableHead>
-                  <TableHead className={`${isRTL ? 'text-left' : 'text-right'} whitespace-nowrap`}>{t("actions") || "Actions"}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentItems.length > 0 ? (
-                  currentItems.map((item) => (
-                    <TableRow 
-                      key={item.uid} 
-                      className="text-xs sm:text-sm hover:bg-muted/50 transition-colors"
-                    >
-                      <TableCell className="max-w-[100px] truncate">{item.Email}</TableCell>
-                      <TableCell className="max-w-[80px] truncate">{item.Hwid}</TableCell>
-                      <TableCell className="max-w-[80px] truncate">{item.Imei}</TableCell>
-                      <TableCell className="max-w-[80px] truncate">{item.Model}</TableCell>
-                      <TableCell className="max-w-[80px] truncate">{item.Phone_sn}</TableCell>
-                      <TableCell className="max-w-[80px] truncate">{item.Notes}</TableCell>
-                      <TableCell className={`${isRTL ? 'text-left' : 'text-right'}`}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleExportRow(item)}
-                          className="hover:bg-accent h-7 px-2 text-xs"
-                        >
-                          <Download className={`h-3 w-3 sm:h-4 sm:w-4 ${isRTL ? 'ml-1 sm:ml-2' : 'mr-1 sm:mr-2'}`} />
-                          {t("export") || "Export"}
-                        </Button>
+      <Card className="border">
+        <div className="overflow-hidden">
+          <ScrollArea className="h-[calc(100vh-450px)] sm:h-[calc(100vh-420px)]">
+            <div className="overflow-x-auto min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">{t("email") || "Email"}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("hwid") || "HWID"}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("imei") || "IMEI"}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("model") || "Model"}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("phoneSn") || "Phone S/N"}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("notes") || "Notes"}</TableHead>
+                    <TableHead className={`${isRTL ? 'text-left' : 'text-right'} whitespace-nowrap`}>{t("actions") || "Actions"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentItems.length > 0 ? (
+                    currentItems.map((item) => (
+                      <TableRow 
+                        key={item.uid} 
+                        className="text-xs sm:text-sm hover:bg-muted/50 transition-colors"
+                      >
+                        <TableCell className="max-w-[100px] truncate">{item.Email}</TableCell>
+                        <TableCell className="max-w-[80px] truncate">{item.Hwid}</TableCell>
+                        <TableCell className="max-w-[80px] truncate">{item.Imei}</TableCell>
+                        <TableCell className="max-w-[80px] truncate">{item.Model}</TableCell>
+                        <TableCell className="max-w-[80px] truncate">{item.Phone_sn}</TableCell>
+                        <TableCell className="max-w-[80px] truncate">{item.Notes}</TableCell>
+                        <TableCell className={`${isRTL ? 'text-left' : 'text-right'}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleExportRow(item)}
+                            className="hover:bg-accent h-7 px-2 text-xs"
+                          >
+                            <Download className={`h-3 w-3 sm:h-4 sm:w-4 ${isRTL ? 'ml-1 sm:ml-2' : 'mr-1 sm:mr-2'}`} />
+                            {t("export") || "Export"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-6">
+                        {searchTerm 
+                          ? t("noData") || "No matching data found" 
+                          : t("noData") || "No data available"}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6">
-                      {searchTerm 
-                        ? t("noData") || "No matching data found" 
-                        : t("noData") || "No data available"}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </ScrollArea>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
+        </div>
       </Card>
 
       {filteredData.length > 0 && (

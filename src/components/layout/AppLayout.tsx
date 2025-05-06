@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSubButton,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -116,8 +117,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="flex min-h-screen w-full bg-gray-100 dark:bg-gray-900">
-        <Sidebar dir={isRTL ? "rtl" : "ltr"} variant={isMobile ? "floating" : "sidebar"}>
+      <div className="flex min-h-screen w-full bg-gray-100 dark:bg-gray-900" dir={isRTL ? "rtl" : "ltr"}>
+        <Sidebar 
+          side={isRTL ? "right" : "left"}
+          variant={isMobile ? "floating" : "sidebar"}
+        >
           <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b dark:border-gray-800">
             <h1 className="text-lg sm:text-xl font-bold dark:text-white">{t("pegasusTool")}</h1>
             <div className="flex flex-col sm:flex-row items-center sm:justify-between w-full mt-2 gap-2">
@@ -160,10 +164,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 p-3 sm:p-6 overflow-auto dark:bg-gray-900 dark:text-white">
           <div className="flex items-center mb-4 sm:mb-6">
-            <SidebarTrigger className={cn(
-              "text-sm sm:text-base",
-              isRTL ? "ml-2" : "mr-2"
-            )} />
+            <SidebarTrigger className="text-sm sm:text-base mr-2 rtl:mr-0 rtl:ml-2" />
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
               {getCurrentPageTitle()}
             </h1>

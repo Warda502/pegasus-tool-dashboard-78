@@ -30,8 +30,6 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
       };
     }).reverse();
     
-    console.log("Processing operations for chart:", operations.length);
-    
     // Custom date parser for format: yyyy/MM/dd hh:mm -tt
     const extractMonthYearKey = (timeStr: string): string | null => {
       if (!timeStr) return null;
@@ -67,12 +65,6 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
       }
     });
     
-    console.log("Monthly data:", months.map(m => ({
-      key: m.monthKey, 
-      name: m.displayName, 
-      count: m.count
-    })));
-    
     return months.map(m => ({
       name: m.displayName,
       value: m.count
@@ -91,15 +83,15 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
   
   if (monthlyData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+      <div className="flex items-center justify-center h-full w-full text-muted-foreground">
         {t("noOperationsFound") || "No operations data available"}
       </div>
     );
   }
   
   return (
-    <div className={`w-full h-[250px] ${className || ""}`}>
-      <ChartContainer config={chartConfig} className="h-full">
+    <div className={`w-full h-full ${className || ""}`}>
+      <ChartContainer config={chartConfig} className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
             <XAxis 

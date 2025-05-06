@@ -33,35 +33,31 @@ export function UserActions({
         <Eye className="h-4 w-4 mr-1" />
         {t("viewDetails")}
       </Button>
-      {isAdmin && (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(user)}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            {t("edit")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onRenew(user)}
-          >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            {t("renew")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onDelete(user.id)}
-          >
-            <Trash className="h-4 w-4 mr-1" />
-            {t("delete")}
-          </Button>
-        </>
-      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onEdit(user)}
+      >
+        <Edit className="h-4 w-4 mr-1" />
+        {t("edit")}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onRenew(user)}
+      >
+        <RefreshCw className="h-4 w-4 mr-1" />
+        {t("renew")}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={() => onDelete(user.id)}
+      >
+        <Trash className="h-4 w-4 mr-1" />
+        {t("delete")}
+      </Button>
     </div>
   );
 }

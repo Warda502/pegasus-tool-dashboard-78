@@ -31,7 +31,7 @@ export function ChartCard({
         </div>
       </CardHeader>
       <CardContent className="p-1 sm:p-2 md:p-6 flex-1 flex items-center justify-center">
-        <div className="w-full h-full">
+        <div className="w-full h-full flex-1 flex items-center justify-center">
           {children}
         </div>
       </CardContent>
