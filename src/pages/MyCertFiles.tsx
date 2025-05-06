@@ -9,7 +9,7 @@ import { FileCheck } from "lucide-react";
 
 export default function MyCertFiles() {
   const { data, isLoading, error } = useUserCertFiles();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
 
   if (isLoading) {
     return <Loading text={t("loadingData") || "Loading data..."} />;
@@ -24,10 +24,8 @@ export default function MyCertFiles() {
     );
   }
 
-  console.log("MyCertFiles page data:", data);
-
   return (
-    <div className="space-y-6">
+    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
@@ -45,7 +43,7 @@ export default function MyCertFiles() {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="px-2 sm:px-6">
+        <CardContent className="p-0">
           <UserCertFilesTable data={data || []} />
         </CardContent>
       </Card>
