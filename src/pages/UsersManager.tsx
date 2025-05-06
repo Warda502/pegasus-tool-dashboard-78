@@ -50,16 +50,10 @@ export default function UsersManager() {
   
   // Function to handle data refreshing with enhanced logging
   const handleRefresh = () => {
-    console.log("UsersManager: Refreshing data...");
     refreshData();
-    toast(t("refreshing") || "Refreshing", {
-      description: t("refreshingUserData") || "Updating user data..."
-    });
   };
 
   useEffect(() => {
-    // Initial data refresh when component mounts
-    console.log("UsersManager: Initial data refresh");
     handleRefresh();
   }, []);
   
@@ -90,9 +84,6 @@ export default function UsersManager() {
       toast(t("addCreditSuccess") || "Credits Added", {
         description: t("addCreditDescription") || "Credits have been added successfully"
       });
-      
-      // Refresh data after adding credits
-      console.log("UsersManager: Refreshing data after adding credits");
       handleRefresh();
     } catch (error) {
       console.error("Error adding credits:", error);
