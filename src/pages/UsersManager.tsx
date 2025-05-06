@@ -119,6 +119,7 @@ export default function UsersManager() {
             <UserFilters onSearch={handleSearch} />
             
             <UserHeaderActions
+              isAdmin={role === "admin"}
               onRefresh={refreshData}
               onAddCredits={openAddCreditsDialog}
               onAddUser={openAddDialog}
@@ -127,6 +128,7 @@ export default function UsersManager() {
           
           <UsersTable
             users={filteredUsers}
+            isAdmin={role === "admin"}
             isLoading={isLoading}
             onViewUser={openViewDialog}
             onEditUser={openEditDialog}
