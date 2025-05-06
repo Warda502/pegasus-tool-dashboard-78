@@ -217,7 +217,7 @@ export default function Pricing() {
             setIsAddDialogOpen(true);
           }}>
             <Plus className="mr-2 h-4 w-4" />
-            {t("addNewValue") || "addNewValue"}
+            {t("addNewPlan") || "addNewPlan"}
           </Button>
         </CardHeader>
         <CardContent>
