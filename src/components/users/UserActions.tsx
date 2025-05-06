@@ -23,12 +23,32 @@ export function UserActions({
 }: UserActionsProps) {
   const { t } = useLanguage();
 
+  const handleView = () => {
+    console.log("View button clicked for user:", user.id);
+    onView(user);
+  };
+
+  const handleEdit = () => {
+    console.log("Edit button clicked for user:", user.id);
+    onEdit(user);
+  };
+
+  const handleRenew = () => {
+    console.log("Renew button clicked for user:", user.id);
+    onRenew(user);
+  };
+
+  const handleDelete = () => {
+    console.log("Delete button clicked for user:", user.id);
+    onDelete(user.id || "");
+  };
+
   return (
     <div className="flex items-center gap-2">
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => onView(user)}
+        onClick={handleView}
       >
         <Eye className="h-4 w-4 mr-1" />
         {t("viewDetails")}
@@ -36,7 +56,7 @@ export function UserActions({
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => onEdit(user)}
+        onClick={handleEdit}
       >
         <Edit className="h-4 w-4 mr-1" />
         {t("edit")}
@@ -44,7 +64,7 @@ export function UserActions({
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => onRenew(user)}
+        onClick={handleRenew}
       >
         <RefreshCw className="h-4 w-4 mr-1" />
         {t("renew")}
@@ -53,7 +73,7 @@ export function UserActions({
         variant="ghost"
         size="sm"
         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={() => onDelete(user.id)}
+        onClick={handleDelete}
       >
         <Trash className="h-4 w-4 mr-1" />
         {t("delete")}

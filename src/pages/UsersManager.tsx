@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage } from "@/hooks/useSharedData";
@@ -46,18 +47,27 @@ export default function UsersManager() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState(users);
+  
+  // Function to handle data refreshing with enhanced logging
+  const handleRefresh = () => {
+    console.log("UsersManager: Refreshing data...");
+    refreshData();
+    toast(t("refreshing") || "Refreshing", {
+      description: t("refreshingUserData") || "Updating user data..."
+    });
+  };
 
   useEffect(() => {
     // Initial data refresh when component mounts
-    console.log("Triggering initial data refresh");
-    refreshData();
-  }, [refreshData]);
+    console.log("UsersManager: Initial data refresh");
+    handleRefresh();
+  }, []);
   
   // Function to handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     
-    // Filter users based on search query - but admin sees all users
+    // Filter users based on search query
     const filtered = users.filter(user => {
       const matchesSearch = query.trim() === "" || 
         (user.Email?.toLowerCase().includes(query.toLowerCase())) ||
@@ -71,26 +81,83 @@ export default function UsersManager() {
     setFilteredUsers(filtered);
   };
 
+  // Enhanced handler with logging for adding credits
   const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
+    console.log(`UsersManager: Adding ${creditsToAdd} credits to user ${userId}`);
     try {
       await addCreditToUser(userId, creditsToAdd);
       
-      toast(t("addCreditSuccess"), {
-        description: t("addCreditDescription")
+      toast(t("addCreditSuccess") || "Credits Added", {
+        description: t("addCreditDescription") || "Credits have been added successfully"
       });
       
       // Refresh data after adding credits
-      refreshData();
+      console.log("UsersManager: Refreshing data after adding credits");
+      handleRefresh();
     } catch (error) {
       console.error("Error adding credits:", error);
-      toast("Error", {
-        description: "Failed to add credits"
+      toast(t("error") || "Error", {
+        description: t("failedToAddCredits") || "Failed to add credits"
       });
+    }
+  };
+
+  // Enhanced handlers for user operations
+  const handleUpdateUser = async (updatedUser: any) => {
+    console.log("UsersManager: Updating user:", updatedUser.id);
+    try {
+      await updateUser(updatedUser);
+      console.log("UsersManager: User updated, refreshing data");
+      handleRefresh();
+      return true;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return false;
+    }
+  };
+
+  const handleAddUser = async (newUser: any) => {
+    console.log("UsersManager: Adding new user");
+    try {
+      await addUser(newUser);
+      console.log("UsersManager: User added, refreshing data");
+      handleRefresh();
+      return true;
+    } catch (error) {
+      console.error("Error adding user:", error);
+      return false;
+    }
+  };
+
+  const handleRenewUser = async (user: any, months: string) => {
+    console.log(`UsersManager: Renewing user ${user.id} for ${months} months`);
+    try {
+      await renewUser(user, months);
+      console.log("UsersManager: User renewed, refreshing data");
+      handleRefresh();
+      return true;
+    } catch (error) {
+      console.error("Error renewing user:", error);
+      return false;
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    console.log(`UsersManager: Deleting user ${userId}`);
+    if (confirm(t("confirmDelete") || "Are you sure you want to delete this user?")) {
+      try {
+        await deleteUser(userId);
+        console.log("UsersManager: User deleted, refreshing data");
+        handleRefresh();
+      } catch (error) {
+        console.error("Error deleting user:", error);
+      }
     }
   };
 
   // Initialize filtered users when users change
   useEffect(() => {
+    console.log(`UsersManager: Users data changed, total: ${users.length}`);
     handleSearch(searchQuery);
   }, [users, searchQuery]);
 
@@ -118,7 +185,7 @@ export default function UsersManager() {
             <UserFilters onSearch={handleSearch} />
             
             <UserHeaderActions
-              onRefresh={refreshData}
+              onRefresh={handleRefresh}
               onAddCredits={openAddCreditsDialog}
               onAddUser={openAddDialog}
             />
@@ -130,7 +197,7 @@ export default function UsersManager() {
             onViewUser={openViewDialog}
             onEditUser={openEditDialog}
             onRenewUser={openRenewDialog}
-            onDeleteUser={deleteUser}
+            onDeleteUser={handleDeleteUser}
           />
         </CardContent>
       </Card>
@@ -145,20 +212,20 @@ export default function UsersManager() {
         isOpen={isEditDialogOpen} 
         onClose={() => setIsEditDialogOpen(false)} 
         user={selectedUser}
-        onSave={updateUser}
+        onSave={handleUpdateUser}
       />
       
       <RenewUserDialog
         isOpen={isRenewDialogOpen}
         onClose={() => setIsRenewDialogOpen(false)}
-        onConfirm={(months) => selectedUser && renewUser(selectedUser, months)}
+        onConfirm={(months) => selectedUser && handleRenewUser(selectedUser, months)}
         userType={selectedUser?.User_Type || ""}
       />
       
       <AddUserDialog
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onSave={addUser}
+        onSave={handleAddUser}
       />
 
       <AddCreditsDialog
