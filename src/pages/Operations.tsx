@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,7 +27,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Operations() {
   const { operations, isLoading, refreshData } = useSharedData();
-  const { t, language, isRTL } = useLanguage();
+  const { t, currentLanguage, isRTL } = useLanguage();
   const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);

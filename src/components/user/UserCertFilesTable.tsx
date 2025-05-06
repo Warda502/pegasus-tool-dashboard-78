@@ -189,7 +189,12 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
                         {/* Add ellipsis if there's a gap */}
                         {index > 0 && array[index - 1] !== page - 1 && (
                           <PaginationItem>
-                            <PaginationLink disabled>...</PaginationLink>
+                            <PaginationLink
+                              aria-disabled="true"
+                              className="pointer-events-none"
+                            >
+                              ...
+                            </PaginationLink>
                           </PaginationItem>
                         )}
                         <PaginationLink
