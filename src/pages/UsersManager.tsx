@@ -10,7 +10,7 @@ import { ViewUserDialog } from "@/components/users/ViewUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { User } from "@/hooks/data/types";
+import { User } from "@/hooks/data/DataContext"; // Update import to use User from DataContext
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -59,6 +59,7 @@ export default function UsersManager() {
         description: "The user has been removed from the system.",
       });
       refreshData();
+      return true; // Return true to satisfy the boolean return type
     } catch (error) {
       console.error("Error deleting user:", error);
       toast({
@@ -67,7 +68,7 @@ export default function UsersManager() {
         description: "There was an error deleting the user. Please try again.",
       });
     }
-    return true;
+    return true; // Return true even in catch block to maintain the correct return type
   };
 
   return (
@@ -90,7 +91,10 @@ export default function UsersManager() {
         <AddUserDialog
           isOpen={isAddDialogOpen}
           onClose={() => setIsAddDialogOpen(false)}
-          onSave={() => refreshData()}
+          onSave={() => {
+            refreshData();
+            return Promise.resolve(true);
+          }}
         />
       )}
 
@@ -99,7 +103,10 @@ export default function UsersManager() {
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
           user={selectedUser}
-          onSave={() => refreshData()}
+          onSave={() => {
+            refreshData();
+            return Promise.resolve(true);
+          }}
         />
       )}
 
@@ -116,7 +123,10 @@ export default function UsersManager() {
           isOpen={isRenewDialogOpen}
           onClose={() => setIsRenewDialogOpen(false)}
           userType={selectedUser.User_Type}
-          onConfirm={() => refreshData()}
+          onConfirm={() => {
+            refreshData();
+            return Promise.resolve(true);
+          }}
         />
       )}
     </div>
