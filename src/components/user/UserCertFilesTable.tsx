@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Table,
@@ -16,7 +15,6 @@ import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Card } from "@/components/ui/card";
 
-// Interface for CertFile
 interface CertFile {
   Email: string | null;
   Hwid: string | null;
@@ -53,17 +51,13 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
   const currentItems = filteredData.slice(startIndex, endIndex);
 
   const handleExportRow = (row: CertFile) => {
-    // Format data according to the requested format
     const exportData = `[${row.Notes || ''}]\nIMEI=${row.Imei || ''}\nImeiSign=${row.ImeiSign || ''}\nPubKey=${row.PubKey || ''}\nPubKeySign=${row.PubKeySign || ''}`;
-    
     const model = row.Model || 'Unknown';
     const imei = row.Imei || 'Unknown';
     const phoneSn = row.Phone_sn || 'Unknown';
     const fileName = `${model}_${imei}_${phoneSn}.Cert`;
-    
     const blob = new Blob([exportData], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
-    
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
@@ -71,7 +65,6 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    
     toast.success(t("exportSuccess") || "Data exported successfully");
   };
 
@@ -92,68 +85,59 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
-            setCurrentPage(1); // Reset to first page on search
+            setCurrentPage(1);
           }}
         />
       </div>
 
-      <Card className="border">
-        <div className="overflow-hidden">
-          <ScrollArea className="h-[calc(100vh-450px)] sm:h-[calc(100vh-420px)]">
-            <div className="overflow-x-auto min-w-full">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="whitespace-nowrap">{t("email") || "Email"}</TableHead>
-                    <TableHead className="whitespace-nowrap">{t("hwid") || "HWID"}</TableHead>
-                    <TableHead className="whitespace-nowrap">{t("imei") || "IMEI"}</TableHead>
-                    <TableHead className="whitespace-nowrap">{t("model") || "Model"}</TableHead>
-                    <TableHead className="whitespace-nowrap">{t("phoneSn") || "Phone S/N"}</TableHead>
-                    <TableHead className="whitespace-nowrap">{t("notes") || "Notes"}</TableHead>
-                    <TableHead className={`${isRTL ? 'text-left' : 'text-right'} whitespace-nowrap`}>{t("actions") || "Actions"}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map((item) => (
-                      <TableRow 
-                        key={item.uid} 
-                        className="text-xs sm:text-sm hover:bg-muted/50 transition-colors"
+      <ScrollArea className="rounded-xl border bg-muted/30">
+        <div className="min-w-full overflow-auto">
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("email") || "Email"}</TableHead>
+                <TableHead>{t("hwid") || "HWID"}</TableHead>
+                <TableHead>{t("imei") || "IMEI"}</TableHead>
+                <TableHead>{t("model") || "Model"}</TableHead>
+                <TableHead>{t("phoneSn") || "Phone S/N"}</TableHead>
+                <TableHead>{t("notes") || "Notes"}</TableHead>
+                <TableHead className={`${isRTL ? 'text-left' : 'text-right'}`}>{t("actions") || "Actions"}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentItems.length > 0 ? (
+                currentItems.map((item) => (
+                  <TableRow key={item.uid} className="hover:bg-muted/50">
+                    <TableCell className="max-w-[150px] truncate">{item.Email}</TableCell>
+                    <TableCell className="max-w-[120px] truncate">{item.Hwid}</TableCell>
+                    <TableCell className="max-w-[100px] truncate">{item.Imei}</TableCell>
+                    <TableCell className="max-w-[100px] truncate">{item.Model}</TableCell>
+                    <TableCell className="max-w-[100px] truncate">{item.Phone_sn}</TableCell>
+                    <TableCell className="max-w-[100px] truncate">{item.Notes}</TableCell>
+                    <TableCell className={`${isRTL ? 'text-left' : 'text-right'}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleExportRow(item)}
+                        className="h-7 px-2 text-xs hover:bg-accent"
                       >
-                        <TableCell className="max-w-[100px] truncate">{item.Email}</TableCell>
-                        <TableCell className="max-w-[80px] truncate">{item.Hwid}</TableCell>
-                        <TableCell className="max-w-[80px] truncate">{item.Imei}</TableCell>
-                        <TableCell className="max-w-[80px] truncate">{item.Model}</TableCell>
-                        <TableCell className="max-w-[80px] truncate">{item.Phone_sn}</TableCell>
-                        <TableCell className="max-w-[80px] truncate">{item.Notes}</TableCell>
-                        <TableCell className={`${isRTL ? 'text-left' : 'text-right'}`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleExportRow(item)}
-                            className="hover:bg-accent h-7 px-2 text-xs"
-                          >
-                            <Download className={`h-3 w-3 sm:h-4 sm:w-4 ${isRTL ? 'ml-1 sm:ml-2' : 'mr-1 sm:mr-2'}`} />
-                            {t("export") || "Export"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6">
-                        {searchTerm 
-                          ? t("noData") || "No matching data found" 
-                          : t("noData") || "No data available"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </ScrollArea>
+                        <Download className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        {t("export") || "Export"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6">
+                    {searchTerm ? t("noData") || "No matching data found" : t("noData") || "No data available"}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-      </Card>
+      </ScrollArea>
 
       {filteredData.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
@@ -171,11 +155,9 @@ export function UserCertFilesTable({ data }: UserCertFilesTableProps) {
               <ChevronLeft className="h-4 w-4" />
               <span className="sr-only">Previous</span>
             </Button>
-            
-            <div className="flex items-center justify-center text-sm font-medium min-w-[4rem]">
+            <div className="min-w-[4rem] text-sm font-medium text-center">
               {currentPage} / {totalPages || 1}
             </div>
-            
             <Button
               variant="outline"
               size="sm"
