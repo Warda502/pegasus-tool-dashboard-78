@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { User } from './data/types';
+import { User } from './useSharedData';
 
 // Custom hook to manage all user-related dialogs
 export const useUserDialogs = () => {
@@ -12,30 +12,25 @@ export const useUserDialogs = () => {
   const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
 
   const openViewDialog = (user: User) => {
-    console.log("useUserDialogs: Opening view dialog for user:", user.Email);
     setSelectedUser(user);
     setIsViewDialogOpen(true);
   };
 
   const openEditDialog = (user: User) => {
-    console.log("useUserDialogs: Opening edit dialog for user:", user.Email);
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
 
   const openRenewDialog = (user: User) => {
-    console.log("useUserDialogs: Opening renew dialog for user:", user.Email);
     setSelectedUser(user);
     setIsRenewDialogOpen(true);
   };
 
   const openAddDialog = () => {
-    console.log("useUserDialogs: Opening add user dialog");
     setIsAddDialogOpen(true);
   };
 
   const openAddCreditsDialog = () => {
-    console.log("useUserDialogs: Opening add credits dialog");
     setIsAddCreditsDialogOpen(true);
   };
 

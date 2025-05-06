@@ -1,5 +1,5 @@
 
-import { User } from "@/hooks/data/types";
+import { User } from "@/hooks/useSharedData";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
   Table,
@@ -26,7 +26,7 @@ import { ChevronFirst, ChevronLast } from "lucide-react";
 
 interface UsersTableProps {
   users: User[];
-  isAdmin?: boolean; // Made optional
+  isAdmin: boolean;
   isLoading: boolean;
   onViewUser: (user: User) => void;
   onEditUser: (user: User) => void;
@@ -36,7 +36,7 @@ interface UsersTableProps {
 
 export function UsersTable({
   users,
-  isAdmin = true, // Default value provided
+  isAdmin,
   isLoading,
   onViewUser,
   onEditUser,
@@ -138,6 +138,7 @@ export function UsersTable({
                 <TableCell>
                   <UserActions
                     user={user}
+                    isAdmin={isAdmin}
                     onView={onViewUser}
                     onEdit={onEditUser}
                     onRenew={onRenewUser}

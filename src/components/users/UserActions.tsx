@@ -1,11 +1,12 @@
 
-import { User } from "@/hooks/data/types";
+import { User } from "@/hooks/useSharedData";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, RefreshCw, Trash } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface UserActionsProps {
   user: User;
+  isAdmin: boolean;
   onView: (user: User) => void;
   onEdit: (user: User) => void;
   onRenew: (user: User) => void;
@@ -13,7 +14,8 @@ interface UserActionsProps {
 }
 
 export function UserActions({ 
-  user,  
+  user, 
+  isAdmin, 
   onView, 
   onEdit, 
   onRenew, 
@@ -21,38 +23,12 @@ export function UserActions({
 }: UserActionsProps) {
   const { t } = useLanguage();
 
-  // Function to handle view action with logging
-  const handleView = () => {
-    console.log("View action triggered for user:", user.Email);
-    onView(user);
-  };
-
-  // Function to handle edit action with logging
-  const handleEdit = () => {
-    console.log("Edit action triggered for user:", user.Email);
-    onEdit(user);
-  };
-
-  // Function to handle renew action with logging
-  const handleRenew = () => {
-    console.log("Renew action triggered for user:", user.Email);
-    onRenew(user);
-  };
-
-  // Function to handle delete action with confirmation and logging
-  const handleDelete = () => {
-    console.log("Delete action triggered for user:", user.Email);
-    if (confirm(t("confirmDeleteUser") || "Are you sure you want to delete this user?")) {
-      onDelete(user.id);
-    }
-  };
-
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2">
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleView}
+        onClick={() => onView(user)}
       >
         <Eye className="h-4 w-4 mr-1" />
         {t("viewDetails")}
@@ -60,7 +36,7 @@ export function UserActions({
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleEdit}
+        onClick={() => onEdit(user)}
       >
         <Edit className="h-4 w-4 mr-1" />
         {t("edit")}
@@ -68,7 +44,7 @@ export function UserActions({
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleRenew}
+        onClick={() => onRenew(user)}
       >
         <RefreshCw className="h-4 w-4 mr-1" />
         {t("renew")}
@@ -77,7 +53,7 @@ export function UserActions({
         variant="ghost"
         size="sm"
         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={handleDelete}
+        onClick={() => onDelete(user.id)}
       >
         <Trash className="h-4 w-4 mr-1" />
         {t("delete")}
