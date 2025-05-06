@@ -5,23 +5,18 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserHeaderActionsProps {
-  isAdmin: boolean;
   onRefresh: () => void;
   onAddCredits: () => void;
   onAddUser: () => void;
 }
 
 export function UserHeaderActions({
-  isAdmin,
   onRefresh,
   onAddCredits,
   onAddUser,
 }: UserHeaderActionsProps) {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
-
-  if (!isAdmin) return null;
-
   return (
     <div className="flex items-center gap-2">
       <Button 
