@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage } from "@/hooks/useSharedData";
@@ -14,7 +15,7 @@ import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
 import { UserFilters } from "@/components/users/UserFilters";
 import { UserHeaderActions } from "@/components/users/UserHeaderActions";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
-import { useUserOperations } from "@/hooks/useUserOperations";
+import { useUserOperations } from "@/hooks/data/useUserOperations";
 import { UsersTable } from "@/components/users/UsersTable";
 
 export default function UsersManager() {
@@ -23,6 +24,8 @@ export default function UsersManager() {
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const { role } = useAuth();
+  
+  // User dialogs state management using custom hook
   const {
     selectedUser,
     isViewDialogOpen,
@@ -42,22 +45,25 @@ export default function UsersManager() {
     openAddCreditsDialog
   } = useUserDialogs();
   
+  // User operations from data hook with consistent type definitions
   const { updateUser, addUser, renewUser, deleteUser } = useUserOperations();
   
+  // Search and filtering state
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState(users);
 
+  // Initial data load
   useEffect(() => {
-    // Initial data refresh when component mounts
-    console.log("Triggering initial data refresh");
+    console.log("UsersManager: Triggering initial data refresh");
     refreshData();
   }, [refreshData]);
   
-  // Function to handle search
+  // Search handler with improved logging
   const handleSearch = (query: string) => {
+    console.log("UsersManager: Searching for:", query);
     setSearchQuery(query);
     
-    // Filter users based on search query - but admin sees all users
+    // Filter users based on search query
     const filtered = users.filter(user => {
       const matchesSearch = query.trim() === "" || 
         (user.Email?.toLowerCase().includes(query.toLowerCase())) ||
@@ -68,10 +74,13 @@ export default function UsersManager() {
       return matchesSearch;
     });
     
+    console.log(`UsersManager: Found ${filtered.length} matching users`);
     setFilteredUsers(filtered);
   };
 
+  // Handler for adding credits with improved error handling
   const handleAddCreditsConfirm = async (userId: string, creditsToAdd: number) => {
+    console.log(`UsersManager: Adding ${creditsToAdd} credits to user ID ${userId}`);
     try {
       await addCreditToUser(userId, creditsToAdd);
       
@@ -79,20 +88,86 @@ export default function UsersManager() {
         description: t("addCreditDescription")
       });
       
-      // Refresh data after adding credits
+      // Explicitly refresh data and query client after operation
+      console.log("UsersManager: Refreshing data after adding credits");
       refreshData();
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
-      console.error("Error adding credits:", error);
-      toast("Error", {
-        description: "Failed to add credits"
+      console.error("UsersManager: Error adding credits:", error);
+      toast(t("error") || "Error", {
+        description: t("failedAddCredits") || "Failed to add credits"
       });
     }
   };
 
-  // Initialize filtered users when users change
+  // Enhanced delete handler with confirmation and refresh
+  const handleDeleteUser = async (userId: string) => {
+    console.log("UsersManager: Deleting user with ID:", userId);
+    try {
+      const success = await deleteUser(userId);
+      
+      if (success) {
+        console.log("UsersManager: User deleted successfully, refreshing data");
+        refreshData(); // Ensure UI is updated
+      }
+    } catch (error) {
+      console.error("UsersManager: Error deleting user:", error);
+    }
+  };
+
+  // Enhanced update handler with refresh
+  const handleUpdateUser = async (updatedUser: any) => {
+    console.log("UsersManager: Updating user:", updatedUser);
+    try {
+      const success = await updateUser(updatedUser);
+      
+      if (success) {
+        console.log("UsersManager: User updated successfully, refreshing data");
+        setIsEditDialogOpen(false);
+        refreshData(); // Ensure UI is updated
+      }
+    } catch (error) {
+      console.error("UsersManager: Error updating user:", error);
+    }
+  };
+
+  // Enhanced add user handler with refresh
+  const handleAddUser = async (newUser: any) => {
+    console.log("UsersManager: Adding new user:", newUser);
+    try {
+      const success = await addUser(newUser);
+      
+      if (success) {
+        console.log("UsersManager: User added successfully, refreshing data");
+        setIsAddDialogOpen(false);
+        refreshData(); // Ensure UI is updated
+      }
+    } catch (error) {
+      console.error("UsersManager: Error adding user:", error);
+    }
+  };
+
+  // Enhanced renew user handler with refresh
+  const handleRenewUser = async (user: any, months: string) => {
+    console.log(`UsersManager: Renewing user ${user?.Email} for ${months} months`);
+    try {
+      const success = await renewUser(user, months);
+      
+      if (success) {
+        console.log("UsersManager: User renewed successfully, refreshing data");
+        setIsRenewDialogOpen(false);
+        refreshData(); // Ensure UI is updated
+      }
+    } catch (error) {
+      console.error("UsersManager: Error renewing user:", error);
+    }
+  };
+
+  // Update filtered users when source data changes
   useEffect(() => {
+    console.log("UsersManager: Users data changed, re-applying filter");
     handleSearch(searchQuery);
-  }, [users, searchQuery]);
+  }, [users]);
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
@@ -118,19 +193,37 @@ export default function UsersManager() {
             <UserFilters onSearch={handleSearch} />
             
             <UserHeaderActions
-              onRefresh={refreshData}
-              onAddCredits={openAddCreditsDialog}
-              onAddUser={openAddDialog}
+              onRefresh={() => {
+                console.log("UsersManager: Refresh button clicked");
+                refreshData();
+              }}
+              onAddCredits={() => {
+                console.log("UsersManager: Add credits button clicked");
+                openAddCreditsDialog();
+              }}
+              onAddUser={() => {
+                console.log("UsersManager: Add user button clicked");
+                openAddDialog();
+              }}
             />
           </div>
           
           <UsersTable
             users={filteredUsers}
             isLoading={isLoading}
-            onViewUser={openViewDialog}
-            onEditUser={openEditDialog}
-            onRenewUser={openRenewDialog}
-            onDeleteUser={deleteUser}
+            onViewUser={(user) => {
+              console.log("UsersManager: View user action triggered for:", user.Email);
+              openViewDialog(user);
+            }}
+            onEditUser={(user) => {
+              console.log("UsersManager: Edit user action triggered for:", user.Email);
+              openEditDialog(user);
+            }}
+            onRenewUser={(user) => {
+              console.log("UsersManager: Renew user action triggered for:", user.Email);
+              openRenewDialog(user);
+            }}
+            onDeleteUser={handleDeleteUser}
           />
         </CardContent>
       </Card>
@@ -145,20 +238,20 @@ export default function UsersManager() {
         isOpen={isEditDialogOpen} 
         onClose={() => setIsEditDialogOpen(false)} 
         user={selectedUser}
-        onSave={updateUser}
+        onSave={handleUpdateUser}
       />
       
       <RenewUserDialog
         isOpen={isRenewDialogOpen}
         onClose={() => setIsRenewDialogOpen(false)}
-        onConfirm={(months) => selectedUser && renewUser(selectedUser, months)}
+        onConfirm={(months) => selectedUser && handleRenewUser(selectedUser, months)}
         userType={selectedUser?.User_Type || ""}
       />
       
       <AddUserDialog
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onSave={addUser}
+        onSave={handleAddUser}
       />
 
       <AddCreditsDialog

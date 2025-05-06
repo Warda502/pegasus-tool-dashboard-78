@@ -1,8 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { PlusCircle, UserPlus } from "lucide-react";
+import { Plus, Coins, RefreshCcw } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserHeaderActionsProps {
   onRefresh: () => void;
@@ -10,31 +9,52 @@ interface UserHeaderActionsProps {
   onAddUser: () => void;
 }
 
-export function UserHeaderActions({
-  onRefresh,
-  onAddCredits,
-  onAddUser,
+export function UserHeaderActions({ 
+  onRefresh, 
+  onAddCredits, 
+  onAddUser 
 }: UserHeaderActionsProps) {
   const { t } = useLanguage();
-  const isMobile = useIsMobile();
+
+  // Add logging to button actions for debugging
+  const handleRefresh = () => {
+    console.log("UserHeaderActions: Refresh button clicked");
+    onRefresh();
+  };
+
+  const handleAddCredits = () => {
+    console.log("UserHeaderActions: Add credits button clicked");
+    onAddCredits();
+  };
+
+  const handleAddUser = () => {
+    console.log("UserHeaderActions: Add user button clicked");
+    onAddUser();
+  };
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 ml-auto">
       <Button 
-        onClick={onAddCredits} 
-        className="flex items-center" 
-        variant="outline"
-        size={isMobile ? "sm" : "default"}
+        variant="outline" 
+        size="sm"
+        onClick={handleRefresh}
       >
-        <PlusCircle className="h-4 w-4 mr-1" />
+        <RefreshCcw className="h-4 w-4 mr-1" />
+        {t("refresh")}
+      </Button>
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={handleAddCredits}
+      >
+        <Coins className="h-4 w-4 mr-1" />
         {t("addCredit")}
       </Button>
       <Button 
-        onClick={onAddUser} 
-        className="flex items-center" 
-        variant="outline"
-        size={isMobile ? "sm" : "default"}
+        size="sm"
+        onClick={handleAddUser}
       >
-        <UserPlus className="h-4 w-4 mr-1" />
+        <Plus className="h-4 w-4 mr-1" />
         {t("addUser")}
       </Button>
     </div>
