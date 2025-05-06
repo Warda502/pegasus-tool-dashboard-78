@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define supported languages
@@ -180,7 +179,7 @@ export const translations: Translations = {
   },
   operationsManagement: {
     en: "View And Manage System Operations",
-    ar: "عرض وإدارة العمليات المسجلة في النظام"
+    ar: "عرض وإدارة العمليات المس��لة في النظام"
   },
   totalOperations: {
     en: "Total Operations",
@@ -512,7 +511,7 @@ export const translations: Translations = {
   },
   monthlyLicense: {
     en: "Monthly License",
-    ar: "رخصة شهرية"
+    ar: "رخص�� شهرية"
   },
   subscriptionPeriod: {
     en: "Subscription Period",
@@ -1102,6 +1101,18 @@ export const translations: Translations = {
   deleting: {
     en: "Deleting...",
     ar: "جاري الحذف..."
+  },
+  notifications: {
+    en: "Notifications",
+    ar: "الإشعارات"
+  },
+  sound: {
+    en: "Sound",
+    ar: "الصوت"
+  },
+  darkMode: {
+    en: "Dark Mode",
+    ar: "الوضع المظلم"
   }
 };
 

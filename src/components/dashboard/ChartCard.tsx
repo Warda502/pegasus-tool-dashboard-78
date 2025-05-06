@@ -18,7 +18,7 @@ export function ChartCard({
   children 
 }: ChartCardProps) {
   return (
-    <Card className={cn("h-full overflow-hidden", className)}>
+    <Card className={cn("h-full overflow-hidden flex flex-col", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex flex-col">
           <CardTitle className="text-sm md:text-base font-medium flex items-center gap-2">
@@ -30,8 +30,10 @@ export function ChartCard({
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-1 sm:p-2 md:p-6">
-        {children}
+      <CardContent className="p-1 sm:p-2 md:p-6 flex-1 flex items-center justify-center">
+        <div className="w-full h-full">
+          {children}
+        </div>
       </CardContent>
     </Card>
   );

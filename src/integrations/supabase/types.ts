@@ -321,12 +321,34 @@ export type Database = {
     }
     Functions: {
       deduct_credits_with_discount: {
-        Args: { pxu: string; pxc: string; pxm: string; pxe: string }
+        Args:
+          | { pxu: string; pxc: string; pxm: string; pxe: string }
+          | {
+              pxu: string
+              pxe: string
+              pxm: string
+              pxc: string
+              pxoi: string
+              pxot: string
+              pxps: string
+              pxbr: string
+              pxim: string
+              pxst: string
+              pxan: string
+              pxba: string
+              pxca: string
+              pxse: string
+              pxhw: string
+            }
         Returns: string
       }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      verify_login_status: {
+        Args: { loui: string; lohw: string; lova: string }
+        Returns: Json
       }
     }
     Enums: {

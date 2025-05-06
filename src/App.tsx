@@ -23,9 +23,7 @@ import Discounts from "./pages/Discounts";
 import GroupsManagement from "./pages/GroupsManagement";
 import ToolUpdate from "./pages/ToolUpdate";
 import ToolSettings from "./pages/ToolSettings";
-import ChatSupport from "./pages/ChatSupport";
 import { useEffect } from "react";
-import { setupRealtimeChat } from "./utils/setupRealtimeChat";
 
 // Configure React Query with better defaults
 const queryClient = new QueryClient({
@@ -39,9 +37,31 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Initialize Supabase Realtime when app loads
+  // Initialize theme based on user preference
   useEffect(() => {
-    setupRealtimeChat().catch(console.error);
+    const theme = localStorage.getItem("theme");
+    
+    if (theme === "dark" || 
+       (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    
+    // Listen for system preference changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (localStorage.getItem("theme") === "system") {
+        if (e.matches) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    };
+    
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
   
   return (
@@ -102,11 +122,6 @@ const App = () => {
                   <Route path="/groups-management" element={
                     <ProtectedRoute allowedRoles={["admin"]}>
                       <AppLayout><GroupsManagement /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/chat-support" element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><ChatSupport /></AppLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/tool-update" element={

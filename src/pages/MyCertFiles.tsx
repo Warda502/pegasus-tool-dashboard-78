@@ -24,8 +24,6 @@ export default function MyCertFiles() {
     );
   }
 
-  console.log("MyCertFiles page data:", data);
-
   return (
     <div className="space-y-6">
       <Card>

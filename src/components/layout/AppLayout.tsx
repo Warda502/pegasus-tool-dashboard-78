@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -11,14 +12,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, MessageSquare, BellRing } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useSharedData } from "@/hooks/data/DataContext";
-import { ChatSupportButton } from "@/components/chat/ChatSupportButton";
-import { useEffect, useState } from "react";
-import { useChatSupport } from "@/hooks/useChatSupport";
 import { cn } from "@/lib/utils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,26 +26,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, isRTL } = useLanguage();
   const { role, logout, user, isAdmin } = useAuth();
   const { users } = useSharedData();
-  const { getUnreadCount } = useChatSupport();
-  const [animate, setAnimate] = useState(false);
 
   const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
-
-  const unreadCount = getUnreadCount();
-  const isChatPage = location.pathname === "/chat-support";
-
-  // Effect to trigger notification animation every 2 seconds when there are unread messages
-  useEffect(() => {
-    if (unreadCount > 0 && !isChatPage) {
-      const interval = setInterval(() => {
-        setAnimate(prev => !prev);
-      }, 2000);
-      
-      return () => clearInterval(interval);
-    } else {
-      setAnimate(false);
-    }
-  }, [unreadCount, isChatPage]);
 
   const handleLogout = async () => {
     await logout();
@@ -97,22 +77,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       show: role === "admin"
     },
     {
-      title: t("chatSupport"),
-      path: "/chat-support",
-      icon: MessageSquare,
-      show: role === "admin",
-      notificationIcon: unreadCount > 0 ? (
-        <div className={cn(
-          "absolute -left-1 -top-1",
-          animate ? "animate-fade-in" : "opacity-0"
-        )}>
-          <BellRing className="h-3 w-3 text-amber-500" />
-        </div>
-      ) : null,
-      badge: unreadCount > 0 ? unreadCount : null,
-      animateBadge: animate
-    },
-    {
       title: t("toolUpdate"),
       path: "/tool-update",
       icon: Download,
@@ -152,12 +116,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="flex min-h-screen w-full bg-gray-100">
+      <div className="flex min-h-screen w-full bg-gray-100 dark:bg-gray-900">
         <Sidebar dir={isRTL ? "rtl" : "ltr"} variant={isMobile ? "floating" : "sidebar"}>
-          <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b">
-            <h1 className="text-lg sm:text-xl font-bold">{t("pegasusTool")}</h1>
+          <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b dark:border-gray-800">
+            <h1 className="text-lg sm:text-xl font-bold dark:text-white">{t("pegasusTool")}</h1>
             <div className="flex flex-col sm:flex-row items-center sm:justify-between w-full mt-2 gap-2">
-              <span className="text-xs sm:text-sm text-muted-foreground truncate">
+              <span className="text-xs sm:text-sm text-muted-foreground truncate dark:text-gray-400">
                 {t("welcome")}, {userName}
               </span>
               <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs h-7 px-2">
@@ -180,20 +144,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       onClick={() => navigate(item.path)}
                       className="w-full text-xs sm:text-sm relative"
                     >
-                      {item.notificationIcon}
-                      <item.icon className={cn(
-                        "h-4 w-4 sm:h-5 sm:w-5",
-                        animate && item.badge ? "text-primary" : ""
-                      )} />
+                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                       <span>{item.title}</span>
-                      {item.badge && (
-                        <span className={cn(
-                          "absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground",
-                          item.animateBadge ? "animate-pulse" : ""
-                        )}>
-                          {item.badge}
-                        </span>
-                      )}
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -201,20 +153,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           
-          <SidebarFooter className="p-2 sm:p-4 text-xs text-center text-muted-foreground">
-            {!isAdmin && (
-              <div className="mb-2">
-                <ChatSupportButton />
-              </div>
-            )}
+          <SidebarFooter className="p-2 sm:p-4 text-xs text-center text-muted-foreground dark:text-gray-500">
             {t("allRightsReserved")}
           </SidebarFooter>
         </Sidebar>
 
-        <main className="flex-1 p-3 sm:p-6 overflow-auto">
+        <main className="flex-1 p-3 sm:p-6 overflow-auto dark:bg-gray-900 dark:text-white">
           <div className="flex items-center mb-4 sm:mb-6">
-            <SidebarTrigger className={`${isRTL ? "ml-2" : "mr-2"} text-sm sm:text-base`} />
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+            <SidebarTrigger className={cn(
+              "text-sm sm:text-base",
+              isRTL ? "ml-2" : "mr-2"
+            )} />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
               {getCurrentPageTitle()}
             </h1>
           </div>
