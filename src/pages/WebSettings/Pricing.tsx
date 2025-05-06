@@ -7,18 +7,10 @@ import {
   CardTitle, 
   CardDescription 
 } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash, Check } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
@@ -68,9 +60,7 @@ export default function Pricing() {
         .select('*');
       
       if (error) {
-        toast.error(t("fetchError"), {
-          description: error.message
-        });
+        toast.error(t("fetchError") || "Error fetching data");
         throw error;
       }
       
@@ -89,14 +79,12 @@ export default function Pricing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricingPlans'] });
-      toast.success(t("addSuccess") || "Add successful", {
-        description: t("planAdded") || "Pricing plan has been added successfully"
-      });
+      toast.success(t("addSuccess") || "Plan added successfully");
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast.error(t("addError") || "Add failed", {
+      toast.error(t("addError") || "Failed to add plan", {
         description: error instanceof Error ? error.message : String(error)
       });
     }
@@ -114,13 +102,11 @@ export default function Pricing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricingPlans'] });
-      toast.success(t("updateSuccess") || "Update successful", {
-        description: t("planUpdated") || "Pricing plan has been updated successfully"
-      });
+      toast.success(t("updateSuccess") || "Plan updated successfully");
       setIsEditDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(t("updateError") || "Update failed", {
+      toast.error(t("updateError") || "Failed to update plan", {
         description: error instanceof Error ? error.message : String(error)
       });
     }
@@ -138,13 +124,11 @@ export default function Pricing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricingPlans'] });
-      toast.success(t("deleteSuccess") || "Delete successful", {
-        description: t("planDeleted") || "Pricing plan has been deleted successfully"
-      });
+      toast.success(t("deleteSuccess") || "Plan deleted successfully");
       setIsDeleteDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(t("deleteError") || "Delete failed", {
+      toast.error(t("deleteError") || "Failed to delete plan", {
         description: error instanceof Error ? error.message : String(error)
       });
     }
@@ -164,7 +148,6 @@ export default function Pricing() {
   };
 
   const handleAddPlan = () => {
-    // Basic validation
     if (!formData.name_plan.trim() || !formData.price.trim()) {
       toast.error(t("validationError") || "Validation Error", {
         description: t("nameAndPriceRequired") || "Plan name and price are required"
@@ -189,7 +172,6 @@ export default function Pricing() {
   const handleUpdatePlan = () => {
     if (!selectedPlan) return;
     
-    // Basic validation
     if (!formData.name_plan.trim() || !formData.price.trim()) {
       toast.error(t("validationError") || "Validation Error", {
         description: t("nameAndPriceRequired") || "Plan name and price are required"
@@ -214,14 +196,20 @@ export default function Pricing() {
     }
   };
 
+  // Helper function to parse features as an array
+  const getFeaturesList = (featuresStr: string): string[] => {
+    if (!featuresStr) return [];
+    return featuresStr.split('\n').filter(feature => feature.trim());
+  };
+
   return (
     <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>{t("pricing") || "Pricing"}</CardTitle>
+            <CardTitle>{t("pricingManagement") || "Pricing Management"}</CardTitle>
             <CardDescription>
-              {t("pricingDescription") || "Manage pricing plans for the application"}
+              {t("pricingDescription") || "Take a look of our Pricing and select Your Choice"}
             </CardDescription>
           </div>
           <Button onClick={() => {
@@ -229,66 +217,79 @@ export default function Pricing() {
             setIsAddDialogOpen(true);
           }}>
             <Plus className="mr-2 h-4 w-4" />
-            {t("addPricingPlan") || "Add Pricing Plan"}
+            {t("addNewValue") || "addNewValue"}
           </Button>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {isLoading ? (
-              <div className="col-span-3 text-center py-10">
-                {t("loading") || "Loading..."}
-              </div>
-            ) : pricingPlans.length === 0 ? (
-              <div className="col-span-3 text-center py-10">
-                {t("noPricingPlans") || "No pricing plans defined yet"}
-              </div>
-            ) : (
-              pricingPlans.map((plan) => (
-                <Card key={plan.id} className="flex flex-col justify-between">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-xl">{plan.name_plan}</CardTitle>
-                      <div className="flex space-x-2 rtl:space-x-reverse">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditPlan(plan)}
-                          className="h-7 w-7"
-                        >
-                          <Pencil className="h-4 w-4 text-blue-500" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeletePlan(plan)}
-                          className="h-7 w-7"
-                        >
-                          <Trash className="h-4 w-4 text-destructive" />
-                        </Button>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : pricingPlans.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              {t("noPricingPlans") || "No pricing plans defined yet"}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {pricingPlans.map((plan) => (
+                <Card 
+                  key={plan.id} 
+                  className="overflow-hidden border border-muted shadow-lg relative group"
+                >
+                  {/* Edit and delete buttons (visible on hover) */}
+                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditPlan(plan)}
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeletePlan(plan)}
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm text-destructive"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="p-6 space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold tracking-tight uppercase">
+                        {plan.name_plan}
+                      </h3>
+                      <div className="mt-3 flex items-baseline justify-center">
+                        <span className="text-3xl font-bold">$</span>
+                        <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
+                        <span className="ml-1 text-sm font-medium text-muted-foreground">
+                          / 1 credit
+                        </span>
                       </div>
                     </div>
-                    <div className="mt-2">
-                      <span className="text-2xl font-bold">${plan.price}</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">{t("features") || "Features"}</h4>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{plan.features}</p>
-                      </div>
-                      {plan.perks && (
-                        <div>
-                          <h4 className="font-semibold mb-2">{t("perks") || "Perks"}</h4>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{plan.perks}</p>
+
+                    <div className="space-y-2">
+                      {getFeaturesList(plan.features || '').map((feature, idx) => (
+                        <div key={idx} className="flex items-center">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
+                          <span>{feature}</span>
                         </div>
-                      )}
+                      ))}
+                      
+                      {plan.perks && getFeaturesList(plan.perks).map((perk, idx) => (
+                        <div key={`perk-${idx}`} className="flex items-center">
+                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
+                          <span>{perk}</span>
+                        </div>
+                      ))}
                     </div>
-                  </CardContent>
+                  </div>
                 </Card>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -304,7 +305,7 @@ export default function Pricing() {
               <Input
                 value={formData.name_plan}
                 onChange={(e) => handleInputChange("name_plan", e.target.value)}
-                placeholder="e.g., Basic, Premium, Pro"
+                placeholder="e.g., CREDIT LICENSE, API PLAN"
               />
             </div>
             <div className="space-y-2">
@@ -312,7 +313,7 @@ export default function Pricing() {
               <Input
                 value={formData.price}
                 onChange={(e) => handleInputChange("price", e.target.value)}
-                placeholder="e.g., 9.99"
+                placeholder="e.g., 1"
               />
             </div>
             <div className="space-y-2">
@@ -328,7 +329,7 @@ export default function Pricing() {
               </p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("perks") || "Perks"}</label>
+              <label className="text-sm font-medium">{t("perks") || "Additional Perks"}</label>
               <Textarea
                 value={formData.perks}
                 onChange={(e) => handleInputChange("perks", e.target.value)}
@@ -378,7 +379,7 @@ export default function Pricing() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("perks") || "Perks"}</label>
+              <label className="text-sm font-medium">{t("perks") || "Additional Perks"}</label>
               <Textarea
                 value={formData.perks}
                 onChange={(e) => handleInputChange("perks", e.target.value)}
@@ -403,7 +404,7 @@ export default function Pricing() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmDelete") || "Confirm Delete"}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("confirmDeletePlan", { name: selectedPlan?.name_plan }) || 
+              {t("confirmDeletePlan") || 
                 `Are you sure you want to delete the "${selectedPlan?.name_plan}" plan?`}
             </AlertDialogDescription>
           </AlertDialogHeader>

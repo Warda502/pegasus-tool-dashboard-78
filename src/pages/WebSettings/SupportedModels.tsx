@@ -17,19 +17,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash, Pencil, Upload, Search } from "lucide-react";
-import { useLanguage } from "@/hooks/useLanguage";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -40,31 +29,40 @@ import {
   AlertDialogHeader, 
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import { useLanguage } from "@/hooks/useLanguage";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Trash, Upload } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 type SupportedModel = {
   id: string;
   brand: string;
   model: string;
   carrier: string;
-  security: string;
   operation: string;
-  price?: string;
+  security: string;
 };
 
 export default function SupportedModels() {
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [importData, setImportData] = useState("");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  const [modelFilter, setModelFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<SupportedModel | null>(null);
-  const [editForm, setEditForm] = useState<Partial<SupportedModel>>({});
-  const itemsPerPage = 10;
-
+  const [jsonData, setJsonData] = useState("");
+  const [formData, setFormData] = useState<Omit<SupportedModel, 'id'>>({
+    brand: '',
+    model: '',
+    carrier: '',
+    operation: '',
+    security: ''
+  });
+  
   // Fetch supported models
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['supportedModels'],
@@ -74,9 +72,7 @@ export default function SupportedModels() {
         .select('*');
       
       if (error) {
-        toast.error(t("fetchError"), {
-          description: error.message
-        });
+        toast.error(t("fetchError") || "Error fetching models");
         throw error;
       }
       
@@ -84,26 +80,9 @@ export default function SupportedModels() {
     }
   });
 
-  // Filter models based on search
-  const filteredModels = models.filter(model => 
-    !searchTerm ||
-    model.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.carrier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.security?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.operation?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
-  const paginatedModels = filteredModels.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  );
-
-  // Import mutation
-  const importMutation = useMutation({
-    mutationFn: async (data: any[]) => {
+  // Upload mutation (batch insert)
+  const uploadMutation = useMutation({
+    mutationFn: async (data: Omit<SupportedModel, 'id'>[]) => {
       const { error } = await supabase
         .from('supported_models')
         .insert(data);
@@ -112,14 +91,34 @@ export default function SupportedModels() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
-      toast.success(t("importSuccess") || "Import successful", {
-        description: t("modelsImported") || "Models have been imported successfully"
-      });
-      setIsImportDialogOpen(false);
-      setImportData("");
+      toast.success(t("uploadSuccess") || "Models uploaded successfully");
+      setIsUploadDialogOpen(false);
+      setJsonData("");
     },
     onError: (error) => {
-      toast.error(t("importError") || "Import failed", {
+      toast.error(t("uploadError") || "Failed to upload models", {
+        description: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: Omit<SupportedModel, 'id'> }) => {
+      const { error } = await supabase
+        .from('supported_models')
+        .update(data)
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
+      toast.success(t("updateSuccess") || "Model updated successfully");
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error(t("updateError") || "Failed to update model", {
         description: error instanceof Error ? error.message : String(error)
       });
     }
@@ -137,78 +136,48 @@ export default function SupportedModels() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
-      toast.success(t("deleteSuccess") || "Delete successful", {
-        description: t("modelDeleted") || "Model has been deleted successfully"
-      });
+      toast.success(t("deleteSuccess") || "Model deleted successfully");
       setIsDeleteDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(t("deleteError") || "Delete failed", {
+      toast.error(t("deleteError") || "Failed to delete model", {
         description: error instanceof Error ? error.message : String(error)
       });
     }
   });
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string, data: Partial<SupportedModel> }) => {
-      const { error } = await supabase
-        .from('supported_models')
-        .update(data)
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
-      toast.success(t("updateSuccess") || "Update successful", {
-        description: t("modelUpdated") || "Model has been updated successfully"
-      });
-      setIsEditDialogOpen(false);
-    },
-    onError: (error) => {
-      toast.error(t("updateError") || "Update failed", {
-        description: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  const handleImport = () => {
-    try {
-      const jsonData = JSON.parse(importData);
-      if (!Array.isArray(jsonData)) {
-        toast.error(t("invalidFormat") || "Invalid format", {
-          description: t("jsonArrayRequired") || "JSON must be an array of objects"
-        });
-        return;
-      }
-      
-      // Validate structure of each object
-      const isValid = jsonData.every(item => 
-        typeof item === 'object' && 
-        item.brand && 
-        item.model && 
-        item.operation
-      );
-      
-      if (!isValid) {
-        toast.error(t("invalidFormat") || "Invalid format", {
-          description: t("requiredFieldsMissing") || "All items must have brand, model, and operation fields"
-        });
-        return;
-      }
-      
-      importMutation.mutate(jsonData);
-    } catch (error) {
-      toast.error(t("invalidJson") || "Invalid JSON", {
-        description: t("pleaseCheckFormat") || "Please check your JSON format"
-      });
-    }
+  
+  const handleEditModel = (model: SupportedModel) => {
+    setSelectedModel(model);
+    setFormData({
+      brand: model.brand,
+      model: model.model,
+      carrier: model.carrier || '',
+      operation: model.operation || '',
+      security: model.security || ''
+    });
+    setIsEditDialogOpen(true);
   };
 
-  const handleDelete = (model: SupportedModel) => {
+  const handleDeleteModel = (model: SupportedModel) => {
     setSelectedModel(model);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleUpdateModel = () => {
+    if (!selectedModel) return;
+    
+    // Basic validation
+    if (!formData.brand.trim() || !formData.model.trim()) {
+      toast.error(t("validationError") || "Validation Error", {
+        description: t("brandAndModelRequired") || "Brand and model are required"
+      });
+      return;
+    }
+
+    updateMutation.mutate({
+      id: selectedModel.id,
+      data: formData
+    });
   };
 
   const confirmDelete = () => {
@@ -217,31 +186,56 @@ export default function SupportedModels() {
     }
   };
 
-  const handleEdit = (model: SupportedModel) => {
-    setSelectedModel(model);
-    setEditForm({
-      brand: model.brand,
-      model: model.model,
-      carrier: model.carrier,
-      security: model.security,
-      operation: model.operation,
-      price: model.price
-    });
-    setIsEditDialogOpen(true);
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleEditChange = (field: string, value: string) => {
-    setEditForm(prev => ({ ...prev, [field]: value }));
-  };
+  const handleUploadData = () => {
+    if (!jsonData.trim()) {
+      toast.error(t("noDataError") || "No data provided", {
+        description: t("pleaseEnterJsonData") || "Please enter JSON data to upload"
+      });
+      return;
+    }
 
-  const confirmEdit = () => {
-    if (selectedModel && editForm) {
-      updateMutation.mutate({ 
-        id: selectedModel.id, 
-        data: editForm 
+    try {
+      const parsedData = JSON.parse(jsonData);
+      
+      if (!Array.isArray(parsedData)) {
+        toast.error(t("invalidFormat") || "Invalid format", {
+          description: t("dataMustBeArray") || "Data must be an array of objects"
+        });
+        return;
+      }
+
+      const validData = parsedData.filter(item => 
+        item && typeof item === 'object' && 
+        item.brand && item.model
+      );
+
+      if (validData.length === 0) {
+        toast.error(t("invalidData") || "Invalid data", {
+          description: t("noValidModelsFound") || "No valid models found in the data"
+        });
+        return;
+      }
+
+      uploadMutation.mutate(validData);
+    } catch (error) {
+      toast.error(t("invalidJson") || "Invalid JSON", {
+        description: t("pleaseCheckFormat") || "Please check the format of your JSON data"
       });
     }
   };
+
+  // Filter models based on search inputs
+  const filteredModels = models.filter(model => {
+    const matchesModel = modelFilter === "" || 
+      model.model.toLowerCase().includes(modelFilter.toLowerCase());
+    const matchesBrand = brandFilter === "" || 
+      model.brand.toLowerCase().includes(brandFilter.toLowerCase());
+    return matchesModel && matchesBrand;
+  });
 
   return (
     <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
@@ -250,36 +244,42 @@ export default function SupportedModels() {
           <div>
             <CardTitle>{t("supportedModels") || "Supported Models"}</CardTitle>
             <CardDescription>
-              {t("supportedModelsDescription") || "Manage device models supported by the system"}
+              {t("supportedModelsDescription") || "Manage supported device models"}
             </CardDescription>
           </div>
-          <Button onClick={() => setIsImportDialogOpen(true)}>
+          <Button onClick={() => setIsUploadDialogOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
-            {t("importModels") || "Import Models"}
+            {t("uploadModels") || "Upload Models"}
           </Button>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t("search") || "Search..."}
-              className="w-full pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-1">
+                <Input
+                  placeholder={t("filterByBrand") || "Filter by brand..."}
+                  value={brandFilter}
+                  onChange={(e) => setBrandFilter(e.target.value)}
+                />
+              </div>
+              <div className="flex-1">
+                <Input
+                  placeholder={t("filterByModel") || "Filter by model..."}
+                  value={modelFilter}
+                  onChange={(e) => setModelFilter(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <div className="rounded-md border overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="rounded-md border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("brand") || "Brand"}</TableHead>
                     <TableHead>{t("model") || "Model"}</TableHead>
                     <TableHead>{t("carrier") || "Carrier"}</TableHead>
-                    <TableHead>{t("security") || "Security"}</TableHead>
                     <TableHead>{t("operation") || "Operation"}</TableHead>
+                    <TableHead>{t("security") || "Security"}</TableHead>
                     <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -287,44 +287,44 @@ export default function SupportedModels() {
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-10">
-                        {t("loading") || "Loading..."}
+                        <div className="flex justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ) : paginatedModels.length === 0 ? (
+                  ) : filteredModels.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10">
-                        {searchTerm ? 
-                          (t("noResultsFound") || "No results found") : 
-                          (t("noModelsYet") || "No models added yet")}
+                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                        {modelFilter || brandFilter ? 
+                          (t("noModelsFound") || "No models matching your filter") :
+                          (t("noModels") || "No models available")}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedModels.map((model) => (
+                    filteredModels.map((model) => (
                       <TableRow key={model.id}>
                         <TableCell className="font-medium">{model.brand}</TableCell>
                         <TableCell>{model.model}</TableCell>
-                        <TableCell>{model.carrier}</TableCell>
-                        <TableCell>{model.security}</TableCell>
-                        <TableCell>{model.operation}</TableCell>
+                        <TableCell>{model.carrier || "-"}</TableCell>
+                        <TableCell>{model.operation || "-"}</TableCell>
+                        <TableCell>{model.security || "-"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleEdit(model)}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditModel(model)}
                               className="h-8 w-8"
                             >
-                              <Pencil className="h-4 w-4 text-blue-500" />
-                              <span className="sr-only">{t("edit")}</span>
+                              <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleDelete(model)}
-                              className="h-8 w-8"
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteModel(model)}
+                              className="h-8 w-8 text-destructive"
                             >
-                              <Trash className="h-4 w-4 text-destructive" />
-                              <span className="sr-only">{t("delete")}</span>
+                              <Trash className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -335,66 +335,22 @@ export default function SupportedModels() {
               </Table>
             </div>
           </div>
-
-          {totalPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                
-                {[...Array(totalPages)].map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(i + 1)}
-                      isActive={currentPage === i + 1}
-                    >
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-          
-          <div className="text-sm text-muted-foreground">
-            {filteredModels.length > 0 && (
-              <span>
-                {t("showingOf", { 
-                  start: (currentPage - 1) * itemsPerPage + 1,
-                  end: Math.min(currentPage * itemsPerPage, filteredModels.length),
-                  total: filteredModels.length
-                }) || `Showing ${(currentPage - 1) * itemsPerPage + 1} to ${Math.min(currentPage * itemsPerPage, filteredModels.length)} of ${filteredModels.length} models`}
-              </span>
-            )}
-          </div>
         </CardContent>
       </Card>
 
-      {/* Import Dialog */}
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+      {/* Upload Dialog */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("importModels") || "Import Models"}</DialogTitle>
+            <DialogTitle>{t("uploadModels") || "Upload Models"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              {t("pasteJsonData") || "Paste your JSON data below:"}
+              {t("uploadInstructions") || "Paste JSON data below to import models."}
             </p>
-            <textarea
-              className="w-full min-h-[150px] p-2 border rounded-md"
-              value={importData}
-              onChange={(e) => setImportData(e.target.value)}
+            <Textarea
+              value={jsonData}
+              onChange={(e) => setJsonData(e.target.value)}
               placeholder={`[
   {
     "brand": "Samsung",
@@ -404,14 +360,70 @@ export default function SupportedModels() {
     "operation": "Direct Unlock"
   }
 ]`}
+              rows={10}
+              className="font-mono text-xs"
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
               {t("cancel") || "Cancel"}
             </Button>
-            <Button onClick={handleImport} disabled={!importData.trim()}>
-              {t("import") || "Import"}
+            <Button onClick={handleUploadData}>
+              {t("upload") || "Upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("editModel") || "Edit Model"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("brand") || "Brand"}</label>
+              <Input
+                value={formData.brand}
+                onChange={(e) => handleInputChange("brand", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("model") || "Model"}</label>
+              <Input
+                value={formData.model}
+                onChange={(e) => handleInputChange("model", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("carrier") || "Carrier"}</label>
+              <Input
+                value={formData.carrier}
+                onChange={(e) => handleInputChange("carrier", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("operation") || "Operation"}</label>
+              <Input
+                value={formData.operation}
+                onChange={(e) => handleInputChange("operation", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("security") || "Security"}</label>
+              <Input
+                value={formData.security}
+                onChange={(e) => handleInputChange("security", e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              {t("cancel") || "Cancel"}
+            </Button>
+            <Button onClick={handleUpdateModel}>
+              {t("save") || "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -423,8 +435,8 @@ export default function SupportedModels() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmDelete") || "Confirm Delete"}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("confirmDeleteModel", { brand: selectedModel?.brand, model: selectedModel?.model }) || 
-                `Are you sure you want to delete ${selectedModel?.brand} ${selectedModel?.model}?`}
+              {t("confirmDeleteModel") || 
+                `Are you sure you want to delete the ${selectedModel?.brand} ${selectedModel?.model} model?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -435,71 +447,6 @@ export default function SupportedModels() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {t("editModel") || "Edit Model"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("brand") || "Brand"}</label>
-                <Input
-                  value={editForm.brand || ""}
-                  onChange={(e) => handleEditChange("brand", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("model") || "Model"}</label>
-                <Input
-                  value={editForm.model || ""}
-                  onChange={(e) => handleEditChange("model", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("carrier") || "Carrier"}</label>
-                <Input
-                  value={editForm.carrier || ""}
-                  onChange={(e) => handleEditChange("carrier", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("security") || "Security"}</label>
-                <Input
-                  value={editForm.security || ""}
-                  onChange={(e) => handleEditChange("security", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("operation") || "Operation"}</label>
-                <Input
-                  value={editForm.operation || ""}
-                  onChange={(e) => handleEditChange("operation", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t("price") || "Price"}</label>
-                <Input
-                  value={editForm.price || ""}
-                  onChange={(e) => handleEditChange("price", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              {t("cancel") || "Cancel"}
-            </Button>
-            <Button onClick={confirmEdit}>
-              {t("save") || "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
