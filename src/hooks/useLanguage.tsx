@@ -1113,6 +1113,146 @@ export const translations: Translations = {
   darkMode: {
     en: "Dark Mode",
     ar: "الوضع المظلم"
+  },
+  "fetchError": {
+    "en": "Error fetching data",
+    "ar": "خطأ في جلب البيانات"
+  },
+  "addError": {
+    "en": "Failed To Add",
+    "ar": "فشل في الإضافة"
+  },
+  "updateError": {
+    "en": "Failed To Update",
+    "ar": "فشل في التحديث"
+  },
+  "deleteError": {
+    "en": "Failed To Delete",
+    "ar": "فشل في الحذف"
+  },
+  "validationError": {
+    "en": "Validation Error",
+    "ar": "خطأ في التحقق من الصحة"
+  },
+  "nameAndPriceRequired": {
+    "en": "Plan name and price are required",
+    "ar": "اسم الخطة والسعر مطلوبان"
+  },
+  "pricingManagement": {
+    "en": "Pricing Management",
+    "ar": "إدارة التسعير"
+  },
+  "pricingDescription": {
+    "en": "Take a look of our Pricing and select Your Choice",
+    "ar": "اطلع على خطط التسعير واختر ما يناسبك"
+  },
+  "noPricingPlans": {
+    "en": "No pricing plans defined yet",
+    "ar": "لم يتم تعريف أي خطط تسعير بعد"
+  },
+  "addNewPlan": {
+    "en": "addNewPlan",
+    "ar": "إضافة خطة جديدة"
+  },
+  "addPricingPlan": {
+    "en": "Add Pricing Plan",
+    "ar": "إضافة خطة تسعير"
+  },
+  "planName": {
+    "en": "Plan Name",
+    "ar": "اسم الخطة"
+  },
+  "price": {
+    "en": "Price",
+    "ar": "السعر"
+  },
+  "features": {
+    "en": "Features",
+    "ar": "المميزات"
+  },
+  "featuresHelp": {
+    "en": "Add each feature on a new line",
+    "ar": "أضف كل ميزة في سطر جديد"
+  },
+  "perks": {
+    "en": "Additional Perks",
+    "ar": "امتيازات إضافية"
+  },
+  "editPricingPlan": {
+    "en": "Edit Pricing Plan",
+    "ar": "تعديل خطة التسعير"
+  },
+  "confirmDeletePlan": {
+    "en": "Are you sure you want to delete this plan?",
+    "ar": "هل أنت متأكد أنك تريد حذف هذه الخطة؟"
+  },
+  "brandAndModelRequired": {
+    "en": "Brand and model are required",
+    "ar": "العلامة التجارية والطراز مطلوبان"
+  },
+  "pleaseEnterJsonData": {
+    "en": "Please enter JSON data to upload",
+    "ar": "يرجى إدخال بيانات JSON للتحميل"
+  },
+  "dataMustBeArray": {
+    "en": "Data must be an array of objects",
+    "ar": "يجب أن تكون البيانات عبارة عن مصفوفة من الكائنات"
+  },
+  "noValidModelsFound": {
+    "en": "No valid models found in the data",
+    "ar": "لم يتم العثور على طرازات صالحة في البيانات"
+  },
+  "pleaseCheckFormat": {
+    "en": "Please check the format of your JSON data",
+    "ar": "يرجى التحقق من تنسيق بيانات JSON الخاصة بك"
+  },
+  "supportedModels": {
+    "en": "Supported Models",
+    "ar": "الطرازات المدعومة"
+  },
+  "supportedModelsDescription": {
+    "en": "Manage supported device models",
+    "ar": "إدارة الطرازات المدعومة للأجهزة"
+  },
+  "uploadModels": {
+    "en": "Upload Models",
+    "ar": "تحميل الطرازات"
+  },
+  "filterByBrand": {
+    "en": "Filter by brand...",
+    "ar": "تصفية حسب العلامة التجارية..."
+  },
+  "filterByModel": {
+    "en": "Filter by model...",
+    "ar": "تصفية حسب الطراز..."
+  },
+  "operation": {
+    "en": "Operation",
+    "ar": "العملية"
+  },
+  "security": {
+    "en": "Security",
+    "ar": "الأمان"
+  },
+  "noModelsFound": {
+    "en": "No models matching your filter",
+    "ar": "لم يتم العثور على طرازات مطابقة للفلتر"
+  },
+  "noModels": {
+    "en": "No models available",
+    "ar": "لا توجد طرازات متاحة"
+  },
+  "uploadInstructions": {
+    "en": "Paste JSON data below to import models.",
+    "ar": "الصق بيانات JSON أدناه لاستيراد الطرازات."
+  },
+  "editModel": {
+    "en": "Edit Model",
+    "ar": "تعديل الطراز"
+  },
+  "confirmDeleteModel": {
+    "en": "Are you sure you want to delete this model?",
+    "ar": "هل أنت متأكد أنك تريد حذف هذا الطراز؟"
   }
 };
 
