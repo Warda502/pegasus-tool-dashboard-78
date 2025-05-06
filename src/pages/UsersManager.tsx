@@ -10,7 +10,7 @@ import { ViewUserDialog } from "@/components/users/ViewUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { User } from "@/hooks/data/DataContext"; // Update import to use User from DataContext
+import { User } from "@/hooks/useSharedData"; // Import User from useSharedData instead of DataContext
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -76,7 +76,7 @@ export default function UsersManager() {
       <Card className="p-6">
         <UserHeaderActions onAddUser={handleAddUser} onRefresh={refreshData} onAddCredits={() => {}} />
         <UsersTable
-          users={users}
+          users={users as User[]} // Type assertion to fix the type error
           isLoading={isLoading}
           onViewUser={handleViewUser}
           onEditUser={handleEditUser}
@@ -102,7 +102,7 @@ export default function UsersManager() {
         <EditUserDialog
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
-          user={selectedUser}
+          user={selectedUser as User} // Type assertion to fix the type error
           onSave={() => {
             refreshData();
             return Promise.resolve(true);
@@ -114,7 +114,7 @@ export default function UsersManager() {
         <ViewUserDialog
           isOpen={isViewDialogOpen}
           onClose={() => setIsViewDialogOpen(false)}
-          user={selectedUser}
+          user={selectedUser as User} // Type assertion to fix the type error
         />
       )}
 
