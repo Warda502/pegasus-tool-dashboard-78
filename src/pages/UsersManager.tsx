@@ -10,7 +10,7 @@ import { ViewUserDialog } from "@/components/users/ViewUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { User } from "@/hooks/useSharedData"; // Import User from useSharedData
+import { User } from "@/hooks/useSharedData"; // Keep this import for type compatibility
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useUserOperations } from "@/hooks/useUserOperations";
@@ -96,7 +96,7 @@ export default function UsersManager() {
           />
         </div>
         <UsersTable
-          users={filteredUsers as User[]} // Filter and type assertion
+          users={filteredUsers as User[]}
           isLoading={isLoading}
           onViewUser={handleViewUser}
           onEditUser={handleEditUser}
@@ -122,7 +122,7 @@ export default function UsersManager() {
         <EditUserDialog
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
-          user={selectedUser as User} // Type assertion
+          user={selectedUser}
           onSave={() => {
             refreshData();
             return Promise.resolve(true);
@@ -134,7 +134,7 @@ export default function UsersManager() {
         <ViewUserDialog
           isOpen={isViewDialogOpen}
           onClose={() => setIsViewDialogOpen(false)}
-          user={selectedUser as User} // Type assertion
+          user={selectedUser}
         />
       )}
 

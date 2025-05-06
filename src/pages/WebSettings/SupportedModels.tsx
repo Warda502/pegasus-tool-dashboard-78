@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Card, 
@@ -33,6 +34,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationEllipsis,
+  PaginationNext,
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 type SupportedModel = {
   id: string;
@@ -61,6 +71,10 @@ export default function SupportedModels() {
     operation: '',
     security: ''
   });
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   
   // Fetch supported models
   const { data: models = [], isLoading } = useQuery({
@@ -114,8 +128,9 @@ export default function SupportedModels() {
     },
     onError: (error) => {
       console.error("Error in mutation handler:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       toast.error(t("uploadError") || "Failed to upload models", {
-        description: error instanceof Error ? error.message : String(error)
+        description: errorMessage
       });
     }
   });
@@ -231,11 +246,11 @@ export default function SupportedModels() {
         item && typeof item === 'object' && 
         item.brand && item.model
       ).map(item => ({
-        brand: item.brand,
-        model: item.model,
-        carrier: item.carrier || '',
-        operation: item.operation || '',
-        security: item.security || ''
+        brand: String(item.brand),
+        model: String(item.model),
+        carrier: item.carrier ? String(item.carrier) : '',
+        operation: item.operation ? String(item.operation) : '',
+        security: item.security ? String(item.security) : ''
       }));
 
       if (validData.length === 0) {
@@ -263,6 +278,19 @@ export default function SupportedModels() {
       model.brand.toLowerCase().includes(brandFilter.toLowerCase());
     return matchesModel && matchesBrand;
   });
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredModels.length);
+  const currentPageData = filteredModels.slice(startIndex, endIndex);
+  
+  // Go to specific page
+  const goToPage = (page: number) => {
+    if (page < 1) page = 1;
+    if (page > totalPages) page = totalPages;
+    setCurrentPage(page);
+  };
 
   return (
     <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
@@ -319,7 +347,7 @@ export default function SupportedModels() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : filteredModels.length === 0 ? (
+                  ) : currentPageData.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                         {modelFilter || brandFilter ? 
@@ -328,7 +356,7 @@ export default function SupportedModels() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredModels.map((model) => (
+                    currentPageData.map((model) => (
                       <TableRow key={model.id}>
                         <TableCell className="font-medium">{model.brand}</TableCell>
                         <TableCell>{model.model}</TableCell>
@@ -361,6 +389,68 @@ export default function SupportedModels() {
                 </TableBody>
               </Table>
             </div>
+            
+            {/* Pagination */}
+            {filteredModels.length > itemsPerPage && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  {t("showingResults") || "Showing"} {startIndex + 1} - {endIndex} {t("of") || "of"} {filteredModels.length}
+                </div>
+                <Pagination className="mt-0">
+                  <PaginationContent className="flex-wrap">
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => goToPage(currentPage - 1)}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Always show first page, current page, last page, and pages adjacent to current
+                      const shouldShow = 
+                        page === 1 || 
+                        page === totalPages || 
+                        Math.abs(page - currentPage) <= 1;
+                      
+                      // Show ellipsis where there are gaps
+                      const showLeftEllipsis = page === currentPage - 2 && currentPage > 3;
+                      const showRightEllipsis = page === currentPage + 2 && currentPage < totalPages - 2;
+                      
+                      if (showLeftEllipsis) {
+                        return <PaginationEllipsis key={`ellipsis-left-${page}`} />;
+                      }
+                      
+                      if (showRightEllipsis) {
+                        return <PaginationEllipsis key={`ellipsis-right-${page}`} />;
+                      }
+                      
+                      if (shouldShow) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink 
+                              onClick={() => goToPage(page)} 
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      }
+                      
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => goToPage(currentPage + 1)}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
