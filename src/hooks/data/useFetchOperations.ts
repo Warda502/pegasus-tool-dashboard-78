@@ -77,7 +77,16 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
     }
 
     return allOperations.map(op => ({
+      // Map database fields to both naming conventions for compatibility
+      id: op.operation_id,
       operation_id: op.operation_id,
+      operation_type: op.operation_type,
+      user_id: op.uid,
+      created_at: op.time,
+      status: op.status,
+      credits: op.credit,
+      user_email: op.username,
+      // Also include legacy field names
       OprationID: op.operation_id,
       OprationTypes: op.operation_type,
       Phone_SN: op.phone_sn,
@@ -94,7 +103,7 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
       Security_Patch: op.security_patch,
       UID: op.uid,
       Hwid: op.hwid,
-      LogOpration: null
+      LogOpration: null // Placeholder for operation data
     }));
   } catch (error) {
     console.error("Error in fetchOperations:", error);

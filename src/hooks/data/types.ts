@@ -35,18 +35,24 @@ export interface User {
 }
 
 export interface Operation {
+  // New unified fields
   id?: string;
-  uid?: string;
-  username?: string;
   operation_id?: string;
   operation_type?: string;
+  operation_data?: any;
+  created_at?: string;
+  user_id?: string;
+  user_email?: string;
+  status?: string;
+  credits?: string | number;
+  uid?: string;
+  username?: string;
   phone_sn?: string;
   brand?: string;
   model?: string;
   imei?: string;
   credit?: string | number;
   time?: string;
-  status?: string;
   android?: string;
   baseband?: string;
   carrier?: string;
