@@ -1,3 +1,4 @@
+
 import { User } from "@/hooks/useSharedData";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
@@ -25,7 +26,7 @@ import { ChevronFirst, ChevronLast } from "lucide-react";
 
 interface UsersTableProps {
   users: User[];
-  isAdmin?: boolean; // Make isAdmin optional
+  isAdmin?: boolean; // Make isAdmin optional with default value
   isLoading: boolean;
   onViewUser: (user: User) => void;
   onEditUser: (user: User) => void;
@@ -35,7 +36,7 @@ interface UsersTableProps {
 
 export function UsersTable({
   users,
-  isAdmin = true, // Provide default value
+  isAdmin = true, // Default value for isAdmin
   isLoading,
   onViewUser,
   onEditUser,

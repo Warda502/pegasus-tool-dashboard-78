@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -97,6 +98,7 @@ export const useUserOperations = () => {
     try {
       console.log("Attempting to create new user:", newUser.Email);
       
+      // First, create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.Email,
         password: newUser.Password
@@ -115,15 +117,17 @@ export const useUserOperations = () => {
       const userId = authData.user.id;
       console.log("Auth user created successfully with ID:", userId);
       
+      // Then insert the user data into the users table
+      // IMPORTANT: We use the same ID that was created in the auth table
       const { error: userError } = await supabase.from('users').insert({
         id: userId,
-        uid: userId,
+        uid: userId, // Use the same ID for uid field
         email: newUser.Email,
         password: newUser.Password,
         name: newUser.Name || '',
         phone: newUser.Phone || '',
         country: newUser.Country,
-        activate: 'Activate',
+        activate: 'Active',
         block: newUser.Block || 'Not Blocked',
         credits: newUser.Credits || '0.0',
         user_type: newUser.User_Type,
@@ -135,6 +139,14 @@ export const useUserOperations = () => {
 
       if (userError) {
         console.error("User data error:", userError);
+        // If we fail to insert user data, we should attempt to delete the auth user
+        // to maintain database consistency
+        try {
+          await supabase.auth.admin.deleteUser(userId);
+          console.log("Cleaned up auth user after failed user data insertion");
+        } catch (cleanupError) {
+          console.error("Failed to clean up auth user:", cleanupError);
+        }
         throw new Error("Failed to add user data: " + userError.message);
       }
       
