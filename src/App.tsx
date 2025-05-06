@@ -23,6 +23,9 @@ import Discounts from "./pages/Discounts";
 import GroupsManagement from "./pages/GroupsManagement";
 import ToolUpdate from "./pages/ToolUpdate";
 import ToolSettings from "./pages/ToolSettings";
+import WebSettings from "./pages/WebSettings";
+import SupportedModels from "./pages/WebSettings/SupportedModels";
+import Pricing from "./pages/WebSettings/Pricing";
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -134,6 +137,16 @@ const App = () => {
                       <AppLayout><ToolSettings /></AppLayout>
                     </ProtectedRoute>
                   } />
+                  {/* Web Settings Routes */}
+                  <Route path="/web-settings" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><WebSettings /></AppLayout>
+                    </ProtectedRoute>
+                  }>
+                    <Route path="" element={<Navigate to="/web-settings/supported-models" replace />} />
+                    <Route path="supported-models" element={<SupportedModels />} />
+                    <Route path="pricing" element={<Pricing />} />
+                  </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Toaster />

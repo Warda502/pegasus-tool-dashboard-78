@@ -180,6 +180,30 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing: {
+        Row: {
+          features: string | null
+          id: string
+          name_plan: string
+          perks: string | null
+          price: string | null
+        }
+        Insert: {
+          features?: string | null
+          id?: string
+          name_plan: string
+          perks?: string | null
+          price?: string | null
+        }
+        Update: {
+          features?: string | null
+          id?: string
+          name_plan?: string
+          perks?: string | null
+          price?: string | null
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           key: string
@@ -201,36 +225,30 @@ export type Database = {
         }
         Relationships: []
       }
-      transactions_log: {
+      supported_models: {
         Row: {
-          created_at: string | null
-          email: string | null
-          final_credits: string | null
+          brand: string
+          carrier: string | null
           id: string
-          model: string | null
-          original_deduction: string | null
-          refund_applied: string | null
-          uid: string
+          model: string
+          operation: string | null
+          security: string | null
         }
         Insert: {
-          created_at?: string | null
-          email?: string | null
-          final_credits?: string | null
+          brand: string
+          carrier?: string | null
           id?: string
-          model?: string | null
-          original_deduction?: string | null
-          refund_applied?: string | null
-          uid?: string
+          model: string
+          operation?: string | null
+          security?: string | null
         }
         Update: {
-          created_at?: string | null
-          email?: string | null
-          final_credits?: string | null
+          brand?: string
+          carrier?: string | null
           id?: string
-          model?: string | null
-          original_deduction?: string | null
-          refund_applied?: string | null
-          uid?: string
+          model?: string
+          operation?: string | null
+          security?: string | null
         }
         Relationships: []
       }
