@@ -56,9 +56,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(() => refreshData(), 1000);
         } else if (userResults.data.length === 0) {
           console.error("DataContext: Failed to find user data after max retries");
-          toast.error("Error", {
-            description: "Failed to load user data after multiple attempts"
-          });
         } else {
           console.log("DataContext: User data found after refresh:", userResults.data[0]);
           setRetryCount(0);
@@ -101,13 +98,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } else {
         console.log("DataContext: No user data loaded yet");
-        if (retryCount === 0) {
-          // Only show this warning once, not on every retry
-          toast.warning("Data Warning", {
-            description: "Your user profile was not found in the data. This might affect dashboard display.",
-            duration: 7000
-          });
-        }
       }
       
       console.log("DataContext: Operations loaded:", operations.length);
