@@ -2,12 +2,12 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
-import UsersTable from "@/components/users/UsersTable";
-import UserHeaderActions from "@/components/users/UserHeaderActions";
-import AddUserDialog from "@/components/users/AddUserDialog";
-import EditUserDialog from "@/components/users/EditUserDialog";
-import ViewUserDialog from "@/components/users/ViewUserDialog";
-import RenewUserDialog from "@/components/users/RenewUserDialog";
+import { UsersTable } from "@/components/users/UsersTable";
+import { UserHeaderActions } from "@/components/users/UserHeaderActions";
+import { AddUserDialog } from "@/components/users/AddUserDialog";
+import { EditUserDialog } from "@/components/users/EditUserDialog";
+import { ViewUserDialog } from "@/components/users/ViewUserDialog";
+import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { User } from "@/hooks/data/types";
@@ -17,7 +17,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 export default function UsersManager() {
   const { isRTL } = useLanguage();
   const { toast } = useToast();
-  const { users, loading, refreshUsers } = useSharedData();
+  const { users, isLoading, refreshData } = useSharedData();
   const { isAdmin } = useAuth();
   
   // State for user dialogs
@@ -58,7 +58,7 @@ export default function UsersManager() {
         title: "User deleted successfully",
         description: "The user has been removed from the system.",
       });
-      refreshUsers();
+      refreshData();
     } catch (error) {
       console.error("Error deleting user:", error);
       toast({
@@ -73,10 +73,10 @@ export default function UsersManager() {
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
       <Card className="p-6">
-        <UserHeaderActions onAddUser={handleAddUser} />
+        <UserHeaderActions onAddUser={handleAddUser} onRefresh={refreshData} onAddCredits={() => {}} />
         <UsersTable
           users={users}
-          isLoading={loading}
+          isLoading={isLoading}
           onViewUser={handleViewUser}
           onEditUser={handleEditUser}
           onRenewUser={handleRenewUser}
@@ -88,35 +88,35 @@ export default function UsersManager() {
       {/* User Dialogs */}
       {isAddDialogOpen && (
         <AddUserDialog
-          open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
-          onUserAdded={refreshUsers}
+          isOpen={isAddDialogOpen}
+          onClose={() => setIsAddDialogOpen(false)}
+          onSave={() => refreshData()}
         />
       )}
 
       {selectedUser && isEditDialogOpen && (
         <EditUserDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
           user={selectedUser}
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          onUserUpdated={refreshUsers}
+          onSave={() => refreshData()}
         />
       )}
 
       {selectedUser && isViewDialogOpen && (
         <ViewUserDialog
+          isOpen={isViewDialogOpen}
+          onClose={() => setIsViewDialogOpen(false)}
           user={selectedUser}
-          open={isViewDialogOpen}
-          onOpenChange={setIsViewDialogOpen}
         />
       )}
 
       {selectedUser && isRenewDialogOpen && (
         <RenewUserDialog
-          user={selectedUser}
-          open={isRenewDialogOpen}
-          onOpenChange={setIsRenewDialogOpen}
-          onUserUpdated={refreshUsers}
+          isOpen={isRenewDialogOpen}
+          onClose={() => setIsRenewDialogOpen(false)}
+          userType={selectedUser.User_Type}
+          onConfirm={() => refreshData()}
         />
       )}
     </div>
