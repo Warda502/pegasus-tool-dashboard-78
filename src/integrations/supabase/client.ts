@@ -4,14 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { authenticator, totp } from 'otplib';
 import QRCode from 'qrcode';
+// Import Buffer explicitly
+import { Buffer } from 'buffer';
 
 const SUPABASE_URL = "https://sxigocnatqgqgiedrgue.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4aWdvY25hdHFncWdpZWRyZ3VlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNTY1ODgsImV4cCI6MjA2MDgzMjU4OH0.JaRFyEuVOC9VXoPFc7ohO77F1qM_NwY_jOgNcSacfp4";
 
-// Configure otplib
-// This fixes the "CB.randomBytes is not a function" error by providing a custom random bytes function
+// Configure otplib with browser-compatible settings
 authenticator.options = { 
   window: 1,
+  // Use a custom crypto implementation that works in browsers
   crypto: {
     randomBytes: (size) => {
       const array = new Uint8Array(size);

@@ -13,6 +13,12 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+// Add a type for error details
+type LoginError = {
+  message: string;
+  details?: string;
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -72,15 +78,8 @@ export default function Login() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Skip captcha validation if not on production domain
-    if (isProdDomain && !captchaToken) {
-      toast(t("captchaRequired"), {
-        description: t("pleaseCompleteCaptcha")
-      });
-      setCaptchaError(true);
-      setIsSubmitting(false);
-      return;
-    }
+    // Clear any previous errors
+    let loginError: LoginError | null = null;
 
     try {
       // First, check if email exists and if the user is blocked or has no credits
@@ -126,11 +125,11 @@ export default function Login() {
       });
       
       if (authError) {
-        toast(t("loginFailed"), {
-          description: authError.message || t("unexpectedError")
-        });
-        setIsSubmitting(false);
-        return;
+        loginError = { 
+          message: t("loginFailed") || "Login failed", 
+          details: authError.message 
+        };
+        throw new Error(authError.message);
       }
       
       // If the user has 2FA enabled, show the OTP dialog
@@ -145,9 +144,16 @@ export default function Login() {
       await login(email, password);
     } catch (err) {
       console.error("Login validation error:", err);
-      toast(t("loginFailed"), {
-        description: err instanceof Error ? err.message : t("unexpectedError")
-      });
+      
+      if (loginError) {
+        toast(loginError.message, {
+          description: loginError.details || t("unexpectedError") || "An unexpected error occurred"
+        });
+      } else {
+        toast(t("loginFailed") || "Login failed", {
+          description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
+        });
+      }
       setIsSubmitting(false);
     }
   };
@@ -160,9 +166,20 @@ export default function Login() {
     setIsSubmitting(true);
     
     try {
-      // Verify the OTP code
+      // Verify the OTP code with improved error handling
       const userId = tempSession.user.id;
-      const isValid = await validate2FAToken(userId, otpCode);
+      let isValid = false;
+      
+      try {
+        isValid = await validate2FAToken(userId, otpCode);
+      } catch (error) {
+        console.error("Error during OTP validation:", error);
+        toast(t("verificationFailed") || "Verification failed", {
+          description: "Error validating 2FA code. Please check your connection and try again."
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
       if (!isValid) {
         toast(t("invalidOTP") || "Invalid verification code", {

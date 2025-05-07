@@ -88,17 +88,32 @@ export default function TwoFactorAuth() {
       
       console.log("Starting 2FA setup for user:", user.id);
       
-      // Generate a new 2FA secret
-      const result = await generate2FASecret(user.id, user.email);
-      
-      console.log("2FA setup successful, got secret and QR code");
-      
-      // Update state with the new secret and QR code
-      setSecret(result.secret);
-      setQrCodeUrl(result.qrCodeDataUrl);
-      
-      // Show verification dialog
-      setShowVerifyDialog(true);
+      // Generate a new 2FA secret with more detailed error handling
+      try {
+        const result = await generate2FASecret(user.id, user.email);
+        
+        console.log("2FA setup successful, got secret and QR code");
+        
+        // Update state with the new secret and QR code
+        setSecret(result.secret);
+        setQrCodeUrl(result.qrCodeDataUrl);
+        
+        // Show verification dialog
+        setShowVerifyDialog(true);
+      } catch (error) {
+        console.error('Detailed error during 2FA setup:', error);
+        
+        // Check for specific error types
+        if (error instanceof Error) {
+          if (error.message.includes('randomBytes')) {
+            setErrorMessage('Browser compatibility issue with cryptography functions. Please try a different browser.');
+          } else {
+            setErrorMessage(error.message);
+          }
+        } else {
+          setErrorMessage('حدث خطأ أثناء إعداد المصادقة الثنائية. يرجى المحاولة مرة أخرى.');
+        }
+      }
     } catch (error) {
       console.error('Error setting up 2FA:', error);
       
