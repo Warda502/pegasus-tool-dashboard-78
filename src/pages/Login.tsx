@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -9,7 +8,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { Eye, EyeOff, Key } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, validate2FAToken } from "@/integrations/supabase/client";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -89,14 +88,14 @@ export default function Login() {
         .from('users')
         .select('email, email_type, block, credits, two_factor_enabled')
         .eq('email', email)
-        .single();
+        .maybeSingle();
 
       if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error("Error checking user:", userError);
         // Continue with login attempt as normal
       } else if (userData) {
         // Check if this is a regular user (not an admin)
-        if (userData.email_type.toLowerCase() !== 'admin') {
+        if (userData.email_type && userData.email_type.toLowerCase() !== 'admin') {
           // Check if user is blocked
           if (userData.block === 'Blocked') {
             toast(t("accountBlocked"), {
@@ -107,13 +106,15 @@ export default function Login() {
           }
 
           // Check if user has no credits
-          const creditsValue = parseFloat(userData.credits.toString().replace(/"/g, ''));
-          if (!isNaN(creditsValue) && creditsValue <= 0) {
-            toast(t("noCreditsLeft"), {
-              description: t("noCreditsLeftDescription")
-            });
-            setIsSubmitting(false);
-            return;
+          if (userData.credits) {
+            const creditsValue = parseFloat(userData.credits.toString().replace(/"/g, ''));
+            if (!isNaN(creditsValue) && creditsValue <= 0) {
+              toast(t("noCreditsLeft"), {
+                description: t("noCreditsLeftDescription")
+              });
+              setIsSubmitting(false);
+              return;
+            }
           }
         }
       }
@@ -161,29 +162,26 @@ export default function Login() {
     try {
       // Verify the OTP code
       const userId = tempSession.user.id;
-      const { data, error } = await supabase.rpc('verify_otp', { 
-        user_id: userId, 
-        otp_code: otpCode 
-      });
+      const isValid = await validate2FAToken(userId, otpCode);
       
-      if (error || !data) {
-        toast(t("invalidOTP"), {
-          description: t("invalidOTPDescription")
+      if (!isValid) {
+        toast(t("invalidOTP") || "Invalid verification code", {
+          description: t("invalidOTPDescription") || "Please try again with the correct code"
         });
         setIsSubmitting(false);
         return;
       }
       
       // OTP verified, continue with login
-      toast(t("loginSuccess"), {
-        description: t("welcomeBack")
+      toast(t("loginSuccess") || "Login successful", {
+        description: t("welcomeBack") || "Welcome back"
       });
       
       navigate('/dashboard');
     } catch (error) {
       console.error("OTP verification error:", error);
-      toast(t("verificationFailed"), {
-        description: error instanceof Error ? error.message : t("unexpectedError")
+      toast(t("verificationFailed") || "Verification failed", {
+        description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
     } finally {
       setIsSubmitting(false);
@@ -302,15 +300,15 @@ export default function Login() {
             <DialogTitle>
               <div className="flex items-center">
                 <Key className="mr-2 h-5 w-5" />
-                {t("twoFactorAuth")}
+                {t("twoFactorAuth") || "Two-Factor Authentication"}
               </div>
             </DialogTitle>
-            <DialogDescription>{t("enterVerificationCode")}</DialogDescription>
+            <DialogDescription>{t("enterVerificationCode") || "Enter the verification code from your authenticator app"}</DialogDescription>
           </DialogHeader>
           
           <div className="flex flex-col items-center space-y-4 py-4">
             <div className="w-full space-y-2">
-              <Label className="text-center block">{t("authenticationCode")}</Label>
+              <Label className="text-center block">{t("authenticationCode") || "Authentication Code"}</Label>
               <InputOTP 
                 maxLength={6} 
                 value={otpCode}
@@ -329,7 +327,7 @@ export default function Login() {
               </InputOTP>
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              {t("useAuthenticatorApp")}
+              {t("useAuthenticatorApp") || "Use your authenticator app to get the code"}
             </p>
           </div>
           
@@ -339,7 +337,7 @@ export default function Login() {
               disabled={otpCode.length !== 6 || isSubmitting}
               className="w-full"
             >
-              {isSubmitting ? t("verifying") : t("verify")}
+              {isSubmitting ? t("verifying") : t("verify") || "Verify"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -12,9 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from '@/hooks/auth/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from '@/components/ui/sonner';
-import { generate2FASecret, verify2FAToken, disable2FA, saveQRCodeFile } from '@/integrations/supabase/client';
+import { supabase, generate2FASecret, verify2FAToken, disable2FA, saveQRCodeFile } from '@/integrations/supabase/client';
 import { Loading } from '@/components/ui/loading';
-import { supabase } from '@/integrations/supabase/client'; // Added missing import
 
 export default function TwoFactorAuth() {
   const navigate = useNavigate();
@@ -42,17 +41,24 @@ export default function TwoFactorAuth() {
 
       try {
         setIsLoading(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('users')
           .select('two_factor_enabled')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
+        
+        if (error) {
+          throw error;
+        }
         
         if (data) {
           setHas2FAEnabled(!!data.two_factor_enabled);
         }
       } catch (error) {
         console.error('Error checking 2FA status:', error);
+        toast(t("error") || "Error", {
+          description: t("failedToCheckStatus") || "Failed to check 2FA status"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -61,7 +67,7 @@ export default function TwoFactorAuth() {
     if (isAuthenticated && user) {
       checkTwoFactorStatus();
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, t]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -78,8 +84,12 @@ export default function TwoFactorAuth() {
       setIsSetting2FA(true);
       setErrorMessage(null);
       
+      console.log("Starting 2FA setup for user:", user.id);
+      
       // Generate a new 2FA secret
       const result = await generate2FASecret(user.id, user.email);
+      
+      console.log("2FA setup successful, got secret and QR code");
       
       // Update state with the new secret and QR code
       setSecret(result.secret);
@@ -89,9 +99,9 @@ export default function TwoFactorAuth() {
       setShowVerifyDialog(true);
     } catch (error) {
       console.error('Error setting up 2FA:', error);
-      setErrorMessage('حدث خطأ أثناء إعداد المصادقة الثنائية. يرجى المحاولة مرة أخرى.');
-      toast(t("error"), {
-        description: t("twoFactorSetupError")
+      setErrorMessage(t("twoFactorSetupError") || 'حدث خطأ أثناء إعداد المصادقة الثنائية. يرجى المحاولة مرة أخرى.');
+      toast(t("error") || "Error", {
+        description: t("twoFactorSetupError") || "An error occurred during two-factor authentication setup. Please try again."
       });
     } finally {
       setIsSetting2FA(false);
@@ -107,8 +117,8 @@ export default function TwoFactorAuth() {
       const result = await saveQRCodeFile(user.id, qrCodeUrl);
       
       if (result.success) {
-        toast(t("success"), {
-          description: t("qrCodeSaved")
+        toast(t("success") || "Success", {
+          description: t("qrCodeSaved") || "QR code saved successfully"
         });
         
         // Open the QR code in a new tab for download
@@ -116,8 +126,8 @@ export default function TwoFactorAuth() {
       }
     } catch (error) {
       console.error('Error saving QR code:', error);
-      toast(t("error"), {
-        description: t("qrCodeSaveError")
+      toast(t("error") || "Error", {
+        description: t("qrCodeSaveError") || "Failed to save QR code"
       });
     } finally {
       setIsProcessing(false);
@@ -128,21 +138,24 @@ export default function TwoFactorAuth() {
   const handleVerifyCode = async () => {
     if (!user) return;
     if (verificationCode.length !== 6) {
-      toast(t("error"), {
-        description: t("invalidVerificationCode")
+      toast(t("error") || "Error", {
+        description: t("invalidVerificationCode") || "Please enter a valid 6-digit verification code"
       });
       return;
     }
     
     try {
       setIsProcessing(true);
+      console.log("Verifying 2FA code for user:", user.id);
+      
       const isValid = await verify2FAToken(user.id, verificationCode);
+      console.log("2FA verification result:", isValid);
       
       if (isValid) {
         setHas2FAEnabled(true);
         setShowVerifyDialog(false);
-        toast(t("success"), {
-          description: t("twoFactorEnabled")
+        toast(t("success") || "Success", {
+          description: t("twoFactorEnabled") || "Two-factor authentication enabled successfully"
         });
         
         // Save QR code file automatically
@@ -150,14 +163,14 @@ export default function TwoFactorAuth() {
           await saveQRCodeFile(user.id, qrCodeUrl);
         }
       } else {
-        toast(t("error"), {
-          description: t("invalidVerificationCode")
+        toast(t("error") || "Error", {
+          description: t("invalidVerificationCode") || "Invalid verification code. Please try again."
         });
       }
     } catch (error) {
       console.error('Error verifying 2FA code:', error);
-      toast(t("error"), {
-        description: t("verificationError")
+      toast(t("error") || "Error", {
+        description: t("verificationError") || "Verification failed. Please try again."
       });
     } finally {
       setIsProcessing(false);
@@ -170,23 +183,25 @@ export default function TwoFactorAuth() {
     
     try {
       setIsProcessing(true);
+      console.log("Disabling 2FA for user:", user.id);
+      
       const success = await disable2FA(user.id);
       
       if (success) {
         setHas2FAEnabled(false);
         setShowDisableDialog(false);
-        toast(t("success"), {
-          description: t("twoFactorDisabled")
+        toast(t("success") || "Success", {
+          description: t("twoFactorDisabled") || "Two-factor authentication disabled"
         });
       } else {
-        toast(t("error"), {
-          description: t("disableError")
+        toast(t("error") || "Error", {
+          description: t("disableError") || "Failed to disable two-factor authentication"
         });
       }
     } catch (error) {
       console.error('Error disabling 2FA:', error);
-      toast(t("error"), {
-        description: t("disableError")
+      toast(t("error") || "Error", {
+        description: t("disableError") || "Failed to disable two-factor authentication"
       });
     } finally {
       setIsProcessing(false);
@@ -208,13 +223,13 @@ export default function TwoFactorAuth() {
 
   return (
     <div className="container max-w-3xl py-6">
-      <h1 className="text-2xl font-bold mb-6">{t("twoFactorAuthentication")}</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("twoFactorAuthentication") || "Two-Factor Authentication"}</h1>
       
       <Card>
         <CardHeader>
-          <CardTitle>{t("twoFactorSecurity")}</CardTitle>
+          <CardTitle>{t("twoFactorSecurity") || "Two-Factor Security"}</CardTitle>
           <CardDescription>
-            {t("twoFactorDescription")}
+            {t("twoFactorDescription") || "Enable two-factor authentication to add an extra layer of security to your account."}
           </CardDescription>
         </CardHeader>
         
@@ -231,17 +246,17 @@ export default function TwoFactorAuth() {
                 }
               }} 
             />
-            <Label htmlFor="2fa-switch">{t("enable2FA")}</Label>
+            <Label htmlFor="2fa-switch">{t("enable2FA") || "Enable Two-Factor Authentication"}</Label>
           </div>
           
           {has2FAEnabled && (
             <Alert className="mt-4 bg-green-50 dark:bg-green-900/20">
               <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertTitle className="text-green-800 dark:text-green-400">
-                {t("twoFactorEnabled")}
+                {t("twoFactorEnabled") || "Two-Factor Authentication Enabled"}
               </AlertTitle>
               <AlertDescription className="text-green-700 dark:text-green-300">
-                {t("twoFactorEnabledDescription")}
+                {t("twoFactorEnabledDescription") || "Your account is protected with two-factor authentication."}
               </AlertDescription>
             </Alert>
           )}
@@ -250,10 +265,10 @@ export default function TwoFactorAuth() {
             <Alert className="mt-4 bg-orange-50 dark:bg-orange-900/20">
               <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               <AlertTitle className="text-orange-800 dark:text-orange-400">
-                {t("twoFactorNotEnabled")}
+                {t("twoFactorNotEnabled") || "Two-Factor Authentication Not Enabled"}
               </AlertTitle>
               <AlertDescription className="text-orange-700 dark:text-orange-300">
-                {t("twoFactorNotEnabledDescription")}
+                {t("twoFactorNotEnabledDescription") || "Your account is not protected with two-factor authentication."}
               </AlertDescription>
             </Alert>
           )}
@@ -262,7 +277,7 @@ export default function TwoFactorAuth() {
             <Alert className="mt-4 bg-red-50 dark:bg-red-900/20">
               <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
               <AlertTitle className="text-red-800 dark:text-red-400">
-                {t("error")}
+                {t("error") || "Error"}
               </AlertTitle>
               <AlertDescription className="text-red-700 dark:text-red-300">
                 {errorMessage}
@@ -274,17 +289,21 @@ export default function TwoFactorAuth() {
         <CardFooter className="flex justify-between">
           <div className="text-sm text-muted-foreground flex items-center">
             <InfoIcon className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
-            {t("twoFactorNote")}
+            {t("twoFactorNote") || "You'll need an authenticator app like Google Authenticator or Authy to use 2FA."}
           </div>
         </CardFooter>
       </Card>
       
       {/* Verification Dialog */}
-      <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+      <Dialog open={showVerifyDialog} onOpenChange={(open) => {
+        if (!open) {
+          handleCancelSetup();
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("setup2FA")}</DialogTitle>
-            <DialogDescription>{t("setup2FADescription")}</DialogDescription>
+            <DialogTitle>{t("setup2FA") || "Set Up Two-Factor Authentication"}</DialogTitle>
+            <DialogDescription>{t("setup2FADescription") || "Scan the QR code with your authenticator app and enter the verification code to enable 2FA."}</DialogDescription>
           </DialogHeader>
           
           {qrCodeUrl && (
@@ -304,12 +323,12 @@ export default function TwoFactorAuth() {
                 disabled={isProcessing}
               >
                 <Download className="mr-2 h-4 w-4 rtl:ml-2 rtl:mr-0" />
-                {t("saveQRCode")}
+                {t("saveQRCode") || "Save QR Code"}
               </Button>
               
               {secret && (
                 <div className="w-full text-center">
-                  <p className="text-sm text-muted-foreground mb-1">{t("secretKey")}</p>
+                  <p className="text-sm text-muted-foreground mb-1">{t("secretKey") || "Secret Key"}</p>
                   <p className="font-mono bg-muted p-2 rounded text-sm break-all">
                     {secret}
                   </p>
@@ -317,7 +336,7 @@ export default function TwoFactorAuth() {
               )}
               
               <div className="w-full space-y-2">
-                <Label>{t("verificationCode")}</Label>
+                <Label>{t("verificationCode") || "Verification Code"}</Label>
                 <InputOTP 
                   maxLength={6} 
                   value={verificationCode}
@@ -344,13 +363,13 @@ export default function TwoFactorAuth() {
               onClick={handleCancelSetup}
               disabled={isProcessing}
             >
-              {t("cancel")}
+              {t("cancel") || "Cancel"}
             </Button>
             <Button 
               onClick={handleVerifyCode}
               disabled={verificationCode.length !== 6 || isProcessing}
             >
-              {isProcessing ? t("verifying") : t("verify")}
+              {isProcessing ? t("verifying") || "Verifying..." : t("verify") || "Verify"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -360,18 +379,18 @@ export default function TwoFactorAuth() {
       <Dialog open={showDisableDialog} onOpenChange={setShowDisableDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("disable2FA")}</DialogTitle>
-            <DialogDescription>{t("disable2FADescription")}</DialogDescription>
+            <DialogTitle>{t("disable2FA") || "Disable Two-Factor Authentication"}</DialogTitle>
+            <DialogDescription>{t("disable2FADescription") || "Are you sure you want to disable two-factor authentication? This will make your account less secure."}</DialogDescription>
           </DialogHeader>
           
           <div className="flex flex-col space-y-4 py-4">
             <Alert className="bg-red-50 dark:bg-red-900/20">
               <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
               <AlertTitle className="text-red-800 dark:text-red-400">
-                {t("warning")}
+                {t("warning") || "Warning"}
               </AlertTitle>
               <AlertDescription className="text-red-700 dark:text-red-300">
-                {t("disable2FAWarning")}
+                {t("disable2FAWarning") || "Disabling 2FA will reduce the security of your account. Are you sure you want to proceed?"}
               </AlertDescription>
             </Alert>
           </div>
@@ -385,14 +404,14 @@ export default function TwoFactorAuth() {
               }}
               disabled={isProcessing}
             >
-              {t("cancel")}
+              {t("cancel") || "Cancel"}
             </Button>
             <Button 
               variant="destructive"
               onClick={handleDisable2FA}
               disabled={isProcessing}
             >
-              {isProcessing ? t("disabling") : t("disable")}
+              {isProcessing ? t("disabling") || "Disabling..." : t("disable") || "Disable"}
             </Button>
           </DialogFooter>
         </DialogContent>

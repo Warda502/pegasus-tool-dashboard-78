@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +29,7 @@ export const useAuth = () => {
         .from('users')
         .select('email_type, email')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching user role:", error);
@@ -163,8 +164,8 @@ export const useAuth = () => {
     setIsAuthenticated(false);
     
     if (window.location.pathname !== '/login') {
-      toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
-        description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
+      toast(t("sessionExpired") || "Session expired", {
+        description: t("pleaseLoginAgain") || "Please login again"
       });
       
       navigate('/login?sessionExpired=true');
@@ -249,8 +250,8 @@ export const useAuth = () => {
         setIsAuthenticated(false);
         
         if (window.location.pathname !== '/login') {
-          toast(t("loggedOutInAnotherTab") || "تم تسجيل الخروج في نافذة أخرى", {
-            description: t("sessionEnded") || "تم إنهاء جلستك"
+          toast(t("loggedOutInAnotherTab") || "Logged out in another tab", {
+            description: t("sessionEnded") || "Your session has ended"
           });
           
           navigate('/login?loggedOutInAnotherTab=true');
