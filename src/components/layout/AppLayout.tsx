@@ -111,6 +111,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       show: role === "admin"
     },
     {
+      title: t("TwoFactorAuth"),
+      path: "/two-factor-auth",
+      icon: FileQuestion,
+      show: true
+    },
+    {
       title: t("settings"),
       path: "/settings",
       icon: Settings,
