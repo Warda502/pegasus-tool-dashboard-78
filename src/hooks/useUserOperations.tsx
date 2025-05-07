@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -37,12 +36,9 @@ export const useUserOperations = () => {
       
       console.log("Successfully deleted user from database");
       
-      // For the authentication system deletion, we'll use a direct query
-      // instead of the RPC function since it's not registered in the TypeScript types
+      // Use the RPC function to delete the user from auth system
       const { error: authError } = await supabase
-        .from('auth.users')
-        .delete()
-        .eq('id', userId);
+        .rpc('delete_auth_user', { user_id: userId });
       
       if (authError) {
         console.error("Failed to delete user from auth system:", authError);
