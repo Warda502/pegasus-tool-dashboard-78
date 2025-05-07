@@ -9,11 +9,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { InfoIcon, AlertTriangle, Download, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from '@/components/ui/sonner';
 import { supabase, generate2FASecret, verify2FAToken, disable2FA, saveQRCodeFile } from '@/integrations/supabase/client';
 import { Loading } from '@/components/ui/loading';
+import { ErrorAlert } from '@/components/common/ErrorAlert';
 
 export default function TwoFactorAuth() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export default function TwoFactorAuth() {
           .maybeSingle();
         
         if (error) {
+          console.error('Error checking 2FA status:', error);
           throw error;
         }
         
@@ -99,7 +101,10 @@ export default function TwoFactorAuth() {
       setShowVerifyDialog(true);
     } catch (error) {
       console.error('Error setting up 2FA:', error);
-      setErrorMessage(t("twoFactorSetupError") || 'حدث خطأ أثناء إعداد المصادقة الثنائية. يرجى المحاولة مرة أخرى.');
+      
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ أثناء إعداد المصادقة الثنائية. يرجى المحاولة مرة أخرى.';
+      setErrorMessage(errorMessage);
+      
       toast(t("error") || "Error", {
         description: t("twoFactorSetupError") || "An error occurred during two-factor authentication setup. Please try again."
       });
@@ -274,15 +279,11 @@ export default function TwoFactorAuth() {
           )}
           
           {errorMessage && (
-            <Alert className="mt-4 bg-red-50 dark:bg-red-900/20">
-              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <AlertTitle className="text-red-800 dark:text-red-400">
-                {t("error") || "Error"}
-              </AlertTitle>
-              <AlertDescription className="text-red-700 dark:text-red-300">
-                {errorMessage}
-              </AlertDescription>
-            </Alert>
+            <ErrorAlert 
+              title={t("error") || "Error"} 
+              description={errorMessage}
+              className="mt-4"
+            />
           )}
         </CardContent>
         
