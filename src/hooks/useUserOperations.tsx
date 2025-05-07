@@ -37,15 +37,16 @@ export const useUserOperations = () => {
       
       console.log("Successfully deleted user from database");
       
-      // For the authentication system deletion, we'll use a custom RPC function
-      // which will run with server-side privileges
-      const { error: authError } = await supabase.rpc('delete_auth_user', { user_id: userId });
+      // For the authentication system deletion, we'll use a direct query
+      // instead of the RPC function since it's not registered in the TypeScript types
+      const { error: authError } = await supabase
+        .from('auth.users')
+        .delete()
+        .eq('id', userId);
       
       if (authError) {
         console.error("Failed to delete user from auth system:", authError);
         console.warn("User was removed from the database but may remain in the auth system");
-        // We don't throw here because we already deleted from the database
-        // and we want the UI to update
       } else {
         console.log("Successfully deleted user from auth system");
       }

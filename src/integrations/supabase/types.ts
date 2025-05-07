@@ -48,36 +48,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chat_messages: {
-        Row: {
-          admin_id: string | null
-          created_at: string
-          id: string
-          is_from_admin: boolean
-          is_read: boolean
-          message: string
-          user_id: string
-        }
-        Insert: {
-          admin_id?: string | null
-          created_at?: string
-          id?: string
-          is_from_admin?: boolean
-          is_read?: boolean
-          message: string
-          user_id: string
-        }
-        Update: {
-          admin_id?: string | null
-          created_at?: string
-          id?: string
-          is_from_admin?: boolean
-          is_read?: boolean
-          message?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       discounts: {
         Row: {
           count_refund: number | null
@@ -252,6 +222,30 @@ export type Database = {
         }
         Relationships: []
       }
+      two_factor_verification: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       update: {
         Row: {
           changelog: string | null
@@ -291,9 +285,11 @@ export type Database = {
           hwid: string | null
           id: string
           name: string | null
+          otp_secret: string | null
           password: string
           phone: string | null
           start_date: string | null
+          two_factor_enabled: boolean | null
           uid: string
           user_type: string | null
         }
@@ -308,9 +304,11 @@ export type Database = {
           hwid?: string | null
           id: string
           name?: string | null
+          otp_secret?: string | null
           password: string
           phone?: string | null
           start_date?: string | null
+          two_factor_enabled?: boolean | null
           uid: string
           user_type?: string | null
         }
@@ -325,9 +323,11 @@ export type Database = {
           hwid?: string | null
           id?: string
           name?: string | null
+          otp_secret?: string | null
           password?: string
           phone?: string | null
           start_date?: string | null
+          two_factor_enabled?: boolean | null
           uid?: string
           user_type?: string | null
         }
@@ -339,26 +339,28 @@ export type Database = {
     }
     Functions: {
       deduct_credits_with_discount: {
-        Args:
-          | { pxu: string; pxc: string; pxm: string; pxe: string }
-          | {
-              pxu: string
-              pxe: string
-              pxm: string
-              pxc: string
-              pxoi: string
-              pxot: string
-              pxps: string
-              pxbr: string
-              pxim: string
-              pxst: string
-              pxan: string
-              pxba: string
-              pxca: string
-              pxse: string
-              pxhw: string
-            }
+        Args: {
+          pxu: string
+          pxe: string
+          pxm: string
+          pxc: string
+          pxoi: string
+          pxot: string
+          pxps: string
+          pxbr: string
+          pxim: string
+          pxst: string
+          pxan: string
+          pxba: string
+          pxca: string
+          pxse: string
+          pxhw: string
+        }
         Returns: string
+      }
+      delete_auth_user: {
+        Args: { user_id: string }
+        Returns: undefined
       }
       is_admin: {
         Args: Record<PropertyKey, never>
@@ -367,6 +369,10 @@ export type Database = {
       verify_login_status: {
         Args: { loui: string; lohw: string; lova: string }
         Returns: Json
+      }
+      verify_otp: {
+        Args: { user_id: string; otp_code: string }
+        Returns: boolean
       }
     }
     Enums: {
