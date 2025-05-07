@@ -14,6 +14,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from '@/components/ui/sonner';
 import { generate2FASecret, verify2FAToken, disable2FA, saveQRCodeFile } from '@/integrations/supabase/client';
 import { Loading } from '@/components/ui/loading';
+import { supabase } from '@/integrations/supabase/client'; // Added missing import
 
 export default function TwoFactorAuth() {
   const navigate = useNavigate();
