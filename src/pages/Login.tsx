@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/hooks/auth/AuthContext";
+import { Eye, EyeOff, Key } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { supabase } from "@/integrations/supabase/client";
 import { Turnstile } from "@marsidev/react-turnstile";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,6 +26,11 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaError, setCaptchaError] = useState(false);
+  
+  // 2FA fields
+  const [showOTPDialog, setShowOTPDialog] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [tempSession, setTempSession] = useState<any>(null);
   
   // Updated with the actual production site key
   const TURNSTILE_SITE_KEY = "0x4AAAAAABaWWRRhV8b4zFQC"; 
@@ -80,7 +87,7 @@ export default function Login() {
       // First, check if email exists and if the user is blocked or has no credits
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('email, email_type, block, credits')
+        .select('email, email_type, block, credits, two_factor_enabled')
         .eq('email', email)
         .single();
 
@@ -111,10 +118,73 @@ export default function Login() {
         }
       }
 
-      // Proceed with normal login if all checks pass
+      // Attempt Supabase Auth login
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (authError) {
+        toast(t("loginFailed"), {
+          description: authError.message || t("unexpectedError")
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // If the user has 2FA enabled, show the OTP dialog
+      if (userData?.two_factor_enabled) {
+        setTempSession(authData.session);
+        setShowOTPDialog(true);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // If no 2FA, proceed with normal login
       await login(email, password);
     } catch (err) {
       console.error("Login validation error:", err);
+      toast(t("loginFailed"), {
+        description: err instanceof Error ? err.message : t("unexpectedError")
+      });
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOTPVerify = async () => {
+    if (otpCode.length !== 6 || !tempSession) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Verify the OTP code
+      const userId = tempSession.user.id;
+      const { data, error } = await supabase.rpc('verify_otp', { 
+        user_id: userId, 
+        otp_code: otpCode 
+      });
+      
+      if (error || !data) {
+        toast(t("invalidOTP"), {
+          description: t("invalidOTPDescription")
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // OTP verified, continue with login
+      toast(t("loginSuccess"), {
+        description: t("welcomeBack")
+      });
+      
+      navigate('/dashboard');
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      toast(t("verificationFailed"), {
+        description: error instanceof Error ? error.message : t("unexpectedError")
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -217,6 +287,63 @@ export default function Login() {
           </Button>
         </form>
       </div>
+      
+      {/* 2FA Dialog */}
+      <Dialog open={showOTPDialog} onOpenChange={(open) => {
+        // Prevent closing the dialog by clicking outside
+        if (!open && tempSession) {
+          // Only allow closing if no tempSession
+          return;
+        }
+        setShowOTPDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              <div className="flex items-center">
+                <Key className="mr-2 h-5 w-5" />
+                {t("twoFactorAuth")}
+              </div>
+            </DialogTitle>
+            <DialogDescription>{t("enterVerificationCode")}</DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center space-y-4 py-4">
+            <div className="w-full space-y-2">
+              <Label className="text-center block">{t("authenticationCode")}</Label>
+              <InputOTP 
+                maxLength={6} 
+                value={otpCode}
+                onChange={setOtpCode}
+                disabled={isSubmitting}
+                className="justify-center"
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              {t("useAuthenticatorApp")}
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              onClick={handleOTPVerify}
+              disabled={otpCode.length !== 6 || isSubmitting}
+              className="w-full"
+            >
+              {isSubmitting ? t("verifying") : t("verify")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
