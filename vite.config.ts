@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
       // Add Node.js compatibility
       stream: 'stream-browserify',
-      buffer: 'buffer',
+      crypto: 'crypto-js',
     },
   },
   optimizeDeps: {
@@ -37,3 +37,4 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
+
