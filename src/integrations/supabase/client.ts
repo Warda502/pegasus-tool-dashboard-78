@@ -13,7 +13,7 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // Configure otplib with browser-compatible settings
 authenticator.options = { 
-  window: 3, // Increasing time window for better user experience
+  window: 5, // Increasing time window for better user experience
   digits: 6,
   step: 30
 };
