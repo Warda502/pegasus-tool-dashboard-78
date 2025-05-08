@@ -261,7 +261,7 @@ export default function SupportedModels() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>{t("supportedModels") || "Supported Models"}</CardTitle>
-            <CardDescription className="mx-0 my-[2px]">
+            <CardDescription className="mx-0 my-[4px]">
               {t("supportedModelsDescription") || "Manage supported device models"}
             </CardDescription>
           </div>
