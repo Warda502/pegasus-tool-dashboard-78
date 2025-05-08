@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -6,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { Eye, EyeOff, Key } from "lucide-react";
+import { Eye, EyeOff, Key, ShieldCheck } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { supabase, validate2FAToken } from "@/integrations/supabase/client";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 // Add a type for error details
 type LoginError = {
@@ -32,10 +33,10 @@ export default function Login() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaError, setCaptchaError] = useState(false);
   
-  // 2FA fields
-  const [showOTPDialog, setShowOTPDialog] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  // Login stages
+  const [loginStage, setLoginStage] = useState<'credentials' | '2fa'>('credentials');
   const [tempSession, setTempSession] = useState<any>(null);
+  const [otpCode, setOtpCode] = useState("");
   
   // Updated with the actual production site key
   const TURNSTILE_SITE_KEY = "0x4AAAAAABaWWRRhV8b4zFQC"; 
@@ -132,10 +133,10 @@ export default function Login() {
         throw new Error(authError.message);
       }
       
-      // If the user has 2FA enabled, show the OTP dialog
+      // If the user has 2FA enabled, show 2FA input in the same card
       if (userData?.two_factor_enabled) {
         setTempSession(authData.session);
-        setShowOTPDialog(true);
+        setLoginStage('2fa');
         setIsSubmitting(false);
         return;
       }
@@ -158,7 +159,9 @@ export default function Login() {
     }
   };
 
-  const handleOTPVerify = async () => {
+  const handleOTPVerify = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
     if (otpCode.length !== 6 || !tempSession) {
       return;
     }
@@ -222,6 +225,12 @@ export default function Login() {
   const handleCaptchaExpired = () => {
     setCaptchaToken("");
   };
+  
+  const handleBack = () => {
+    setLoginStage('credentials');
+    setOtpCode('');
+    setTempSession(null);
+  };
 
   if (!sessionChecked || loading) {
     return <Loading text={t("checkingSession") || "جاري التحقق من حالة الجلسة..."} className="min-h-screen" />;
@@ -237,95 +246,86 @@ export default function Login() {
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">{t("login")}</h2>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="email">{t("email")}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                dir={isRTL ? "rtl" : "ltr"}
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">{t("password")}</Label>
-              <div className="relative">
+        
+        {loginStage === 'credentials' ? (
+          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">{t("email")}</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   dir={isRTL ? "rtl" : "ltr"}
-                  autoComplete="current-password"
+                  autoComplete="email"
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={togglePasswordVisibility}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-500" />
-                  )}
-                </button>
               </div>
+              <div>
+                <Label htmlFor="password">{t("password")}</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              {/* Only show captcha on production domain */}
+              {isProdDomain && (
+                <div className={`flex justify-center ${captchaError ? 'border border-red-500 rounded-md p-2' : ''}`}>
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={handleCaptchaSolved}
+                    onError={handleCaptchaError}
+                    onExpire={handleCaptchaExpired}
+                    options={{
+                      theme: 'light',
+                      language: isRTL ? 'ar' : 'en',
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            {/* Only show captcha on production domain */}
-            {isProdDomain && (
-              <div className={`flex justify-center ${captchaError ? 'border border-red-500 rounded-md p-2' : ''}`}>
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={handleCaptchaSolved}
-                  onError={handleCaptchaError}
-                  onExpire={handleCaptchaExpired}
-                  options={{
-                    theme: 'light',
-                    language: isRTL ? 'ar' : 'en',
-                  }}
-                />
-              </div>
-            )}
-          </div>
-          <Button
-            type="submit"
-            disabled={isSubmitting || loading || (isProdDomain && !captchaToken)}
-            className="w-full"
-          >
-            {isSubmitting ? t("loggingIn") : t("login")}
-          </Button>
-        </form>
-      </div>
-      
-      {/* 2FA Dialog */}
-      <Dialog open={showOTPDialog} onOpenChange={(open) => {
-        // Prevent closing the dialog by clicking outside
-        if (!open && tempSession) {
-          // Only allow closing if no tempSession
-          return;
-        }
-        setShowOTPDialog(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              <div className="flex items-center">
-                <Key className="mr-2 h-5 w-5" />
-                {t("twoFactorAuth") || "Two-Factor Authentication"}
-              </div>
-            </DialogTitle>
-            <DialogDescription>{t("enterVerificationCode") || "Enter the verification code from your authenticator app"}</DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center space-y-4 py-4">
-            <div className="w-full space-y-2">
-              <Label className="text-center block">{t("authenticationCode") || "Authentication Code"}</Label>
+            <Button
+              type="submit"
+              disabled={isSubmitting || loading || (isProdDomain && !captchaToken)}
+              className="w-full"
+            >
+              {isSubmitting ? t("loggingIn") : t("login")}
+            </Button>
+          </form>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleOTPVerify}>
+            <div className="flex items-center gap-2 mb-6">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">{t("twoFactorAuth") || "Two-Factor Authentication"}</h3>
+            </div>
+            
+            <Separator className="my-4" />
+            
+            <p className="text-sm text-gray-600">
+              {t("enterVerificationCode") || "Enter the verification code from your authenticator app"}
+            </p>
+            
+            <div className="flex flex-col items-center space-y-4">
               <InputOTP 
                 maxLength={6} 
                 value={otpCode}
@@ -342,23 +342,34 @@ export default function Login() {
                   <InputOTPSlot index={5} />
                 </InputOTPGroup>
               </InputOTP>
+              
+              <p className="text-sm text-muted-foreground text-center">
+                {t("useAuthenticatorApp") || "Use your authenticator app to get the code"}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground text-center">
-              {t("useAuthenticatorApp") || "Use your authenticator app to get the code"}
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              onClick={handleOTPVerify}
-              disabled={otpCode.length !== 6 || isSubmitting}
-              className="w-full"
-            >
-              {isSubmitting ? t("verifying") : t("verify") || "Verify"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            
+            <div className="pt-2 flex flex-col gap-2">
+              <Button 
+                type="submit"
+                disabled={otpCode.length !== 6 || isSubmitting}
+                className="w-full"
+              >
+                {isSubmitting ? t("verifying") || "جاري التحقق..." : t("verify") || "تحقق"}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleBack}
+                disabled={isSubmitting}
+              >
+                {t("back") || "رجوع"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
