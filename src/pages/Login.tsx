@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ export default function Login() {
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [tempSession, setTempSession] = useState<any>(null);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   
   // Updated with the actual production site key
   const TURNSTILE_SITE_KEY = "0x4AAAAAABaWWRRhV8b4zFQC"; 
@@ -177,29 +179,23 @@ export default function Login() {
       return;
     }
     
-    setIsSubmitting(true);
+    setVerifyingOtp(true);
     
     try {
-      // Verify the OTP code with improved error handling
+      // Get user ID from the session
       const userId = tempSession.user.id;
-      let isValid = false;
+      console.log("Verifying OTP for user:", userId);
+      console.log("OTP code:", otpCode);
       
-      try {
-        isValid = await validate2FAToken(userId, otpCode);
-      } catch (error) {
-        console.error("Error during OTP validation:", error);
-        toast(t("verificationFailed") || "Verification failed", {
-          description: "Error validating 2FA code. Please check your connection and try again."
-        });
-        setIsSubmitting(false);
-        return;
-      }
+      // Verify the OTP code with improved error handling
+      let isValid = await validate2FAToken(userId, otpCode);
+      console.log("OTP validation result:", isValid);
       
       if (!isValid) {
         toast(t("invalidOTP") || "Invalid verification code", {
           description: t("invalidOTPDescription") || "Please try again with the correct code"
         });
-        setIsSubmitting(false);
+        setVerifyingOtp(false);
         return;
       }
       
@@ -207,6 +203,8 @@ export default function Login() {
       toast(t("loginSuccess") || "Login successful", {
         description: t("welcomeBack") || "Welcome back"
       });
+      
+      setShowOTPDialog(false);
       
       // Check if there's a saved redirect path
       const redirectPath = sessionStorage.getItem("redirectAfterLogin");
@@ -223,7 +221,7 @@ export default function Login() {
         description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
     } finally {
-      setIsSubmitting(false);
+      setVerifyingOtp(false);
     }
   };
 
@@ -352,7 +350,7 @@ export default function Login() {
                 maxLength={6} 
                 value={otpCode}
                 onChange={setOtpCode}
-                disabled={isSubmitting}
+                disabled={verifyingOtp}
                 className="justify-center"
               >
                 <InputOTPGroup>
@@ -373,10 +371,10 @@ export default function Login() {
           <DialogFooter>
             <Button 
               onClick={handleOTPVerify}
-              disabled={otpCode.length !== 6 || isSubmitting}
+              disabled={otpCode.length !== 6 || verifyingOtp}
               className="w-full"
             >
-              {isSubmitting ? t("verifying") : t("verify") || "Verify"}
+              {verifyingOtp ? t("verifying") || "Verifying..." : t("verify") || "Verify"}
             </Button>
           </DialogFooter>
         </DialogContent>

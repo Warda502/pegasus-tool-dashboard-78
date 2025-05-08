@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,6 +166,7 @@ export default function TwoFactorAuth() {
     try {
       setIsProcessing(true);
       console.log("Verifying 2FA code for user:", user.id);
+      console.log("Verification code:", verificationCode);
       
       const isValid = await verify2FAToken(user.id, verificationCode);
       console.log("2FA verification result:", isValid);
