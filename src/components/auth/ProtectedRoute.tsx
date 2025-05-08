@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserRole } from "@/hooks/auth/types";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -16,9 +16,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { role, loading, isAuthenticated, sessionChecked } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useLanguage();
-  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   // Handle access control based on authentication and roles
   useEffect(() => {
@@ -26,33 +24,38 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
       return; // Wait until authentication is checked
     }
 
-    if (!hasCheckedAuth) {
-      setHasCheckedAuth(true);
+    let redirectTimer: number | null = null;
+
+    if (!isAuthenticated) {
+      console.log("ProtectedRoute: User not authenticated, redirecting to login");
       
-      if (!isAuthenticated) {
-        console.log("ProtectedRoute: User not authenticated, redirecting to login");
-        
-        // Save the current location so we can redirect back after login
-        const currentPath = location.pathname + location.search;
-        sessionStorage.setItem("redirectAfterLogin", currentPath);
-        
-        // Redirect to login page
-        navigate("/login", { replace: true });
-      } else if (allowedRoles && !allowedRoles.includes(role as UserRole)) {
-        console.log(`ProtectedRoute: User role ${role} not allowed for ${location.pathname}`);
-        
-        toast(t("accessDenied"), {
-          description: t("noPermission")
-        });
-        
-        // Redirect to dashboard if the user doesn't have the required role
-        navigate("/dashboard", { replace: true });
+      // Avoid redirecting when already on login page
+      if (window.location.pathname !== '/login') {
+        redirectTimer = window.setTimeout(() => {
+          navigate("/login");
+        }, 100);
       }
+    } else if (allowedRoles && !allowedRoles.includes(role as UserRole)) {
+      console.log(`ProtectedRoute: User role ${role} not allowed, redirecting to dashboard`);
+      
+      toast(t("accessDenied"), {
+        description: t("noPermission")
+      });
+      
+      redirectTimer = window.setTimeout(() => {
+        navigate("/dashboard");
+      }, 100);
     }
-  }, [role, loading, navigate, allowedRoles, t, isAuthenticated, sessionChecked, location, hasCheckedAuth]);
+    
+    return () => {
+      if (redirectTimer) {
+        window.clearTimeout(redirectTimer);
+      }
+    };
+  }, [role, loading, navigate, allowedRoles, t, isAuthenticated, sessionChecked]);
 
   // Show loading state during initial authentication check
-  if (loading || !sessionChecked || !hasCheckedAuth) {
+  if (loading || !sessionChecked) {
     return <Loading text={t("loading")} />;
   }
 

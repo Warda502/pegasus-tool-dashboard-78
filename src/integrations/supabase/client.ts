@@ -13,181 +13,22 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // Configure otplib with browser-compatible settings
 authenticator.options = { 
-  window: 5, // Increasing time window for better user experience
-  digits: 6,
-  step: 30
-};
-
-// Define a simple HMAC function using Web Crypto API
-async function browserHmacSha1(key: string, message: string): Promise<ArrayBuffer> {
-  try {
-    // Convert strings to ArrayBuffer
-    const keyData = new TextEncoder().encode(key);
-    const messageData = new TextEncoder().encode(message);
-    
-    // Import key
-    const cryptoKey = await window.crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-1' },
-      false,
-      ['sign']
-    );
-    
-    // Sign message
-    return await window.crypto.subtle.sign(
-      'HMAC',
-      cryptoKey,
-      messageData
-    );
-  } catch (error) {
-    console.error('Error in browser HMAC implementation:', error);
-    throw error;
-  }
-}
-
-// Convert ArrayBuffer to hex string
-function bufferToHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-// Function to prepare TOTP key from base32 string
-function decodeBase32(base32: string): Uint8Array {
-  const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const base32Upper = base32.toUpperCase().replace(/[^A-Z2-7]/g, '');
-  
-  let bits = 0;
-  let value = 0;
-  let output = new Uint8Array(Math.ceil(base32Upper.length * 5 / 8));
-  let outputIndex = 0;
-  
-  for (let i = 0; i < base32Upper.length; i++) {
-    const charValue = BASE32_CHARS.indexOf(base32Upper[i]);
-    if (charValue === -1) continue;
-    
-    value = (value << 5) | charValue;
-    bits += 5;
-    
-    if (bits >= 8) {
-      bits -= 8;
-      output[outputIndex++] = (value >> bits) & 0xff;
-    }
-  }
-  
-  return output.slice(0, outputIndex);
-}
-
-// Calculate TOTP value
-async function generateTOTP(secret: string, counter: number): Promise<string> {
-  try {
-    // Decode base32 secret
-    const keyData = decodeBase32(secret);
-    
-    // Prepare counter buffer (8 bytes, big endian)
-    const counterBuffer = new ArrayBuffer(8);
-    const view = new DataView(counterBuffer);
-    view.setBigUint64(0, BigInt(counter), false); // false = big endian
-    
-    // Generate HMAC-SHA1
-    const hmacResult = await browserHmacSha1(
-      String.fromCharCode(...new Uint8Array(keyData)),
-      String.fromCharCode(...new Uint8Array(counterBuffer))
-    );
-    
-    // Get offset and truncated hash
-    const hmacArray = new Uint8Array(hmacResult);
-    const offset = hmacArray[hmacArray.length - 1] & 0xf;
-    const binary = ((hmacArray[offset] & 0x7f) << 24) |
-                   ((hmacArray[offset + 1] & 0xff) << 16) |
-                   ((hmacArray[offset + 2] & 0xff) << 8) |
-                   (hmacArray[offset + 3] & 0xff);
-    
-    // Generate 6-digit code
-    const otp = (binary % 1000000).toString().padStart(6, '0');
-    return otp;
-    
-  } catch (error) {
-    console.error('Error generating browser TOTP:', error);
-    
-    // As a reliable fallback, use a deterministic approach
-    // This isn't cryptographically secure but will work consistently in browsers
-    const input = `${secret}-${counter}`;
-    let hashCode = 0;
-    
-    for (let i = 0; i < input.length; i++) {
-      const char = input.charCodeAt(i);
-      hashCode = ((hashCode << 5) - hashCode) + char;
-      hashCode |= 0;
-    }
-    
-    const otp = String(Math.abs(hashCode) % 1000000).padStart(6, '0');
-    return otp;
-  }
-}
-
-// Custom TOTP verification function for browser environment
-async function verifyTOTP(token: string, secret: string): Promise<boolean> {
-  try {
-    if (!token || !secret) {
-      console.error('Missing token or secret for verification');
-      return false;
-    }
-
-    if (token.length !== 6 || !/^\d+$/.test(token)) {
-      console.error('Token must be 6 digits');
-      return false;
-    }
-
-    // Generate a timestamp (seconds since epoch)
-    const now = Math.floor(Date.now() / 1000);
-    
-    // Check tokens in a wider window for better user experience
-    // (current time and 1 step before and after)
-    for (let i = -2; i <= 2; i++) {
-      const counter = Math.floor((now + i * 30) / 30);
-      console.log(`Checking counter ${counter} for time window ${i}`);
-      
-      try {
-        const expectedToken = await generateTOTP(secret, counter);
-        console.log(`Generated token: ${expectedToken} for counter ${counter}`);
-        
-        if (expectedToken === token) {
-          console.log('Token matched!');
-          return true;
+  window: 1,
+  // Use a custom crypto implementation that works in browsers
+  crypto: {
+    randomBytes: (size) => {
+      const array = new Uint8Array(size);
+      if (typeof window !== 'undefined' && window.crypto) {
+        window.crypto.getRandomValues(array);
+      } else {
+        // Fallback for non-browser environments
+        for (let i = 0; i < size; i++) {
+          array[i] = Math.floor(Math.random() * 256);
         }
-      } catch (innerError) {
-        console.error(`Error generating token for counter ${counter}:`, innerError);
       }
+      return Buffer.from(array);
     }
-
-    // No match found
-    console.log('No matching token found');
-    return false;
-  } catch (error) {
-    console.error('Error in TOTP verification:', error);
-    return false;
   }
-}
-
-// Fix: Change the implementation to match the expected type signature
-// This is a synchronous wrapper around our async verifyTOTP function
-// The original function signature in otplib expects a synchronous boolean return
-authenticator.verify = function({ token, secret }: { token: string; secret: string }): boolean {
-  console.log(`Verifying token ${token} with secret ${secret ? secret.substring(0, 3) + '...' : 'undefined'}`);
-  
-  // Start the verification process
-  verifyTOTP(token, secret).then(result => {
-    console.log(`Verification result: ${result}`);
-    // Store the result for later use if needed
-    (window as any).__lastTotpVerificationResult = result;
-  });
-  
-  // For immediate synchronous return, check if we have a previous result or return true by default
-  // This is a compromise since we can't make a synchronous function return an async result
-  // In practice, our actual verification will happen in validate2FAToken and verify2FAToken which use our async function directly
-  return true;
 };
 
 // Import the supabase client like this:
@@ -272,31 +113,13 @@ export async function getUserInfo(userId: string) {
  * @returns The secret and QR code data URL
  */
 function generateBase32Secret(length = 20) {
-  try {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32
-    let result = '';
-    
-    // Use browser's crypto API to generate random values
-    const randomValues = new Uint8Array(length);
-    window.crypto.getRandomValues(randomValues);
-    
-    for (let i = 0; i < length; i++) {
-      result += charset[randomValues[i] % charset.length];
-    }
-    
-    console.log('Successfully generated secure Base32 secret');
-    return result;
-  } catch (error) {
-    console.error('Error generating Base32 secret:', error);
-    // Fallback to a less secure but functional alternative
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let result = '';
-    for (let i = 0; i < 20; i++) {
-      result += charset[Math.floor(Math.random() * charset.length)];
-    }
-    console.log('Generated fallback Base32 secret');
-    return result;
-  }
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+
+  return Array.from(bytes)
+    .map(b => charset[b % charset.length])
+    .join('');
 }
 
 /**
@@ -307,32 +130,26 @@ function generateBase32Secret(length = 20) {
  */
 export async function generate2FASecret(userId: string, email: string) {
   try {
-    console.log("Generating 2FA secret for user:", userId);
-    
-    // Generate a browser-compatible secret
+    // 1. توليد سر متوافق مع المتصفح
     const secret = generateBase32Secret();
-    console.log("Generated secret successfully:", secret.substring(0, 3) + '...');
-    
-    // Generate TOTP URI
-    // Note: we're still using otplib's keyuri function which should be browser-safe
-    const appName = 'Pegasus Tools';
-    const otpauth = authenticator.keyuri(email, appName, secret);
-    
-    // Generate QR code
+
+    // 2. توليد URI بصيغة TOTP
+    const otpauth = authenticator.keyuri(email, 'MyApp', secret);
+
+    // 3. توليد QR Code من URI
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
-    console.log("Generated QR code successfully");
-    
-    // Save the secret to the database
+
+    // 4. حفظ السر في قاعدة البيانات
     const { error } = await supabase
       .from('users')
       .update({ otp_secret: secret })
       .eq('id', userId);
-    
+
     if (error) {
       console.error('Error saving OTP secret:', error);
       throw new Error('Failed to save secret');
     }
-    
+
     return {
       success: true,
       secret,
@@ -350,6 +167,74 @@ export async function generate2FASecret(userId: string, email: string) {
  * @param token The token entered by the user
  * @returns Whether the verification was successful
  */
+
+// Utility functions for TOTP verification without relying on otplib's internal crypto
+function base32Decode(encoded: string): Uint8Array {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  const paddingChar = '=';
+  encoded = encoded.replace(paddingChar, '').toUpperCase();
+
+  for (let i = 0; i < encoded.length; i++) {
+    const charIndex = alphabet.indexOf(encoded[i]);
+    if (charIndex === -1) throw new Error(`Invalid character in base32: ${encoded[i]}`);
+    bits += charIndex.toString(2).padStart(5, '0');
+  }
+
+  const bytes = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    const byteStr = bits.substring(i, i + 8);
+    if (byteStr.length < 8) break;
+    bytes.push(parseInt(byteStr, 2));
+  }
+
+  return new Uint8Array(bytes);
+}
+
+async function verifyTOTP(token: string, secret: string): Promise<boolean> {
+  const key = base32Decode(secret);
+  const timeStep = 30;
+  const window = 1;
+  const epoch = Math.floor(Date.now() / 1000);
+  const counter = Math.floor(epoch / timeStep);
+
+  for (let i = -window; i <= window; i++) {
+    const currentCounter = counter + i;
+    const buffer = new ArrayBuffer(8);
+    const view = new DataView(buffer);
+    view.setUint32(4, currentCounter, false); // Big-endian by default
+
+    const cryptoKey = await window.crypto.subtle.importKey(
+      "raw",
+      key.buffer,
+      { name: "HMAC", hash: "SHA-1" },
+      false,
+      ["sign"]
+    );
+
+    const signature = await window.crypto.subtle.sign("HMAC", cryptoKey, buffer);
+    const sigBytes = new Uint8Array(signature);
+    const code = truncate(sigBytes);
+
+    if (code === parseInt(token, 10)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function truncate(hmac: Uint8Array): number {
+  const offset = hmac[hmac.length - 1] & 0xf;
+  return (
+    ((hmac[offset] & 0x7f) << 24 |
+      (hmac[offset + 1] << 16) |
+      (hmac[offset + 2] << 8) |
+      hmac[offset + 3]) %
+    1_000_000
+  );
+}
+
 export async function verify2FAToken(userId: string, token: string) {
   try {
     console.log("Verifying 2FA token for user:", userId);
@@ -373,10 +258,10 @@ export async function verify2FAToken(userId: string, token: string) {
     
     console.log("Found OTP secret, verifying token");
     
-    // Use our async verification directly
+    // Use our custom TOTP verification instead of otplib's built-in one
     const isValid = await verifyTOTP(token, userData.otp_secret);
     
-    console.log("2FA Token verification result:", isValid);
+    console.log("Token verification result:", isValid);
     
     if (isValid) {
       // If valid, enable 2FA for the user
@@ -425,10 +310,11 @@ export async function validate2FAToken(userId: string, token: string) {
       return false;
     }
     
-    // Use our async verification directly
-    const result = await verifyTOTP(token, userData.otp_secret);
-    
-    return result;
+    // Verify the token
+    return authenticator.verify({ 
+      token, 
+      secret: userData.otp_secret 
+    });
   } catch (error) {
     console.error('Error validating 2FA token:', error);
     return false;

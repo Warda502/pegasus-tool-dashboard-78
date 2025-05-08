@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ type LoginError = {
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { t, isRTL } = useLanguage();
   const [email, setEmail] = useState("");
@@ -38,7 +36,6 @@ export default function Login() {
   const [showOTPDialog, setShowOTPDialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [tempSession, setTempSession] = useState<any>(null);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
   
   // Updated with the actual production site key
   const TURNSTILE_SITE_KEY = "0x4AAAAAABaWWRRhV8b4zFQC"; 
@@ -48,7 +45,6 @@ export default function Login() {
   const isProdDomain = window.location.origin === "https://panel.pegasus-tools.com";
   // If not on prod domain, we'll skip captcha validation
 
-  // Handle notifications and redirects
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
     
@@ -71,21 +67,10 @@ export default function Login() {
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
 
-  // Handle redirect if user is already authenticated
   useEffect(() => {
     if (sessionChecked && isAuthenticated) {
-      console.log("User is authenticated, checking redirect path");
-      
-      // Check if there's a saved redirect path
-      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
-      if (redirectPath) {
-        // Remove the saved path
-        console.log("Redirecting to saved path:", redirectPath);
-        sessionStorage.removeItem("redirectAfterLogin");
-        navigate(redirectPath);
-      } else {
-        navigate('/dashboard');
-      }
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate('/dashboard');
     }
   }, [isAuthenticated, navigate, sessionChecked]);
 
@@ -169,7 +154,6 @@ export default function Login() {
           description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
         });
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -179,49 +163,45 @@ export default function Login() {
       return;
     }
     
-    setVerifyingOtp(true);
+    setIsSubmitting(true);
     
     try {
-      // Get user ID from the session
-      const userId = tempSession.user.id;
-      console.log("Verifying OTP for user:", userId);
-      console.log("OTP code:", otpCode);
-      
       // Verify the OTP code with improved error handling
-      let isValid = await validate2FAToken(userId, otpCode);
-      console.log("OTP validation result:", isValid);
+      const userId = tempSession.user.id;
+      let isValid = false;
+      
+      try {
+        isValid = await validate2FAToken(userId, otpCode);
+      } catch (error) {
+        console.error("Error during OTP validation:", error);
+        toast(t("verificationFailed") || "Verification failed", {
+          description: "Error validating 2FA code. Please check your connection and try again."
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
       if (!isValid) {
         toast(t("invalidOTP") || "Invalid verification code", {
           description: t("invalidOTPDescription") || "Please try again with the correct code"
         });
-        setVerifyingOtp(false);
+        setIsSubmitting(false);
         return;
       }
       
-      // OTP verified, check for redirect path
+      // OTP verified, continue with login
       toast(t("loginSuccess") || "Login successful", {
         description: t("welcomeBack") || "Welcome back"
       });
       
-      setShowOTPDialog(false);
-      
-      // Check if there's a saved redirect path
-      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
-      if (redirectPath) {
-        // Remove the saved path
-        sessionStorage.removeItem("redirectAfterLogin");
-        navigate(redirectPath);
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     } catch (error) {
       console.error("OTP verification error:", error);
       toast(t("verificationFailed") || "Verification failed", {
         description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
     } finally {
-      setVerifyingOtp(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -350,7 +330,7 @@ export default function Login() {
                 maxLength={6} 
                 value={otpCode}
                 onChange={setOtpCode}
-                disabled={verifyingOtp}
+                disabled={isSubmitting}
                 className="justify-center"
               >
                 <InputOTPGroup>
@@ -371,10 +351,10 @@ export default function Login() {
           <DialogFooter>
             <Button 
               onClick={handleOTPVerify}
-              disabled={otpCode.length !== 6 || verifyingOtp}
+              disabled={otpCode.length !== 6 || isSubmitting}
               className="w-full"
             >
-              {verifyingOtp ? t("verifying") || "Verifying..." : t("verify") || "Verify"}
+              {isSubmitting ? t("verifying") : t("verify") || "Verify"}
             </Button>
           </DialogFooter>
         </DialogContent>
