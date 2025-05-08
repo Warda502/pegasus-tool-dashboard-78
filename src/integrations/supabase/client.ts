@@ -6,6 +6,7 @@ import { authenticator, totp } from 'otplib';
 import QRCode from 'qrcode';
 // Import Buffer explicitly
 import { Buffer } from 'buffer';
+(window as any).Buffer = Buffer;
 
 const SUPABASE_URL = "https://sxigocnatqgqgiedrgue.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4aWdvY25hdHFncWdpZWRyZ3VlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNTY1ODgsImV4cCI6MjA2MDgzMjU4OH0.JaRFyEuVOC9VXoPFc7ohO77F1qM_NwY_jOgNcSacfp4";
@@ -166,6 +167,74 @@ export async function generate2FASecret(userId: string, email: string) {
  * @param token The token entered by the user
  * @returns Whether the verification was successful
  */
+
+// Utility functions for TOTP verification without relying on otplib's internal crypto
+function base32Decode(encoded: string): Uint8Array {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  const paddingChar = '=';
+  encoded = encoded.replace(paddingChar, '').toUpperCase();
+
+  for (let i = 0; i < encoded.length; i++) {
+    const charIndex = alphabet.indexOf(encoded[i]);
+    if (charIndex === -1) throw new Error(`Invalid character in base32: ${encoded[i]}`);
+    bits += charIndex.toString(2).padStart(5, '0');
+  }
+
+  const bytes = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    const byteStr = bits.substring(i, i + 8);
+    if (byteStr.length < 8) break;
+    bytes.push(parseInt(byteStr, 2));
+  }
+
+  return new Uint8Array(bytes);
+}
+
+async function verifyTOTP(token: string, secret: string): Promise<boolean> {
+  const key = base32Decode(secret);
+  const timeStep = 30;
+  const window = 1;
+  const epoch = Math.floor(Date.now() / 1000);
+  const counter = Math.floor(epoch / timeStep);
+
+  for (let i = -window; i <= window; i++) {
+    const currentCounter = counter + i;
+    const buffer = new ArrayBuffer(8);
+    const view = new DataView(buffer);
+    view.setUint32(4, currentCounter, false); // Big-endian by default
+
+    const cryptoKey = await window.crypto.subtle.importKey(
+      "raw",
+      key.buffer,
+      { name: "HMAC", hash: "SHA-1" },
+      false,
+      ["sign"]
+    );
+
+    const signature = await window.crypto.subtle.sign("HMAC", cryptoKey, buffer);
+    const sigBytes = new Uint8Array(signature);
+    const code = truncate(sigBytes);
+
+    if (code === parseInt(token, 10)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function truncate(hmac: Uint8Array): number {
+  const offset = hmac[hmac.length - 1] & 0xf;
+  return (
+    ((hmac[offset] & 0x7f) << 24 |
+      (hmac[offset + 1] << 16) |
+      (hmac[offset + 2] << 8) |
+      hmac[offset + 3]) %
+    1_000_000
+  );
+}
+
 export async function verify2FAToken(userId: string, token: string) {
   try {
     console.log("Verifying 2FA token for user:", userId);
@@ -190,10 +259,7 @@ export async function verify2FAToken(userId: string, token: string) {
     console.log("Found OTP secret, verifying token");
     
     // Verify the token
-    const isValid = authenticator.verify({ 
-      token, 
-      secret: userData.otp_secret 
-    });
+    const isValid = await verifyTOTP(token, userData.otp_secret);
     
     console.log("Token verification result:", isValid);
     
