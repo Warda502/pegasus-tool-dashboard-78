@@ -111,43 +111,52 @@ export async function getUserInfo(userId: string) {
  * @param email The user's email (for identification in authenticator apps)
  * @returns The secret and QR code data URL
  */
+function generateBase32Secret(length = 20) {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+
+  return Array.from(bytes)
+    .map(b => charset[b % charset.length])
+    .join('');
+}
+
+/**
+ * Generate a new 2FA secret for a user
+ * @param userId The user ID
+ * @param email The user's email
+ * @returns The secret and QR code data URL
+ */
 export async function generate2FASecret(userId: string, email: string) {
   try {
-    console.log("Generating 2FA secret for user:", userId);
-    
-    // Generate a new secret
-    const secret = authenticator.generateSecret();
-    
-    // Create an otpauth URL
-    const appName = 'Pegasus Tools';
-    const otpauth = authenticator.keyuri(email, appName, secret);
-    
-    // Generate QR code as a data URL
+    // 1. توليد سر متوافق مع المتصفح
+    const secret = generateBase32Secret();
+
+    // 2. توليد URI بصيغة TOTP
+    const otpauth = authenticator.keyuri(email, 'MyApp', secret);
+
+    // 3. توليد QR Code من URI
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
-    console.log("QR code generated successfully");
-    
-    // Store the secret in the database for the user
+
+    // 4. حفظ السر في قاعدة البيانات
     const { error } = await supabase
       .from('users')
-      .update({ 
-        otp_secret: secret,
-        two_factor_enabled: false // Mark as not yet verified
-      })
+      .update({ otp_secret: secret })
       .eq('id', userId);
-    
+
     if (error) {
-      console.error('Error saving 2FA secret to database:', error);
-      throw new Error(`Failed to save 2FA secret: ${error.message}`);
+      console.error('Error saving OTP secret:', error);
+      throw new Error('Failed to save secret');
     }
-    
+
     return {
+      success: true,
       secret,
-      qrCodeDataUrl,
-      email
+      qrCodeDataUrl
     };
-  } catch (error) {
-    console.error('Error generating 2FA secret:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to generate 2FA secret');
+  } catch (err) {
+    console.error('Error generating 2FA secret:', err);
+    throw err;
   }
 }
 
