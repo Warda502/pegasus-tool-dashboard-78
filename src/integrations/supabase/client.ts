@@ -258,7 +258,7 @@ export async function verify2FAToken(userId: string, token: string) {
     
     console.log("Found OTP secret, verifying token");
     
-    // Verify the token
+    // Use our custom TOTP verification instead of otplib's built-in one
     const isValid = await verifyTOTP(token, userData.otp_secret);
     
     console.log("Token verification result:", isValid);
