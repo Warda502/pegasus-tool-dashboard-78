@@ -133,8 +133,11 @@ export default function Login() {
         throw new Error(authError.message);
       }
       
+      console.log("Login successful, checking for 2FA requirement");
+      
       // If the user has 2FA enabled, show 2FA input in the same card
       if (userData?.two_factor_enabled) {
+        console.log("User has 2FA enabled, showing 2FA input");
         setTempSession(authData.session);
         setLoginStage('2fa');
         setIsSubmitting(false);
@@ -142,6 +145,7 @@ export default function Login() {
       }
       
       // If no 2FA, proceed with normal login
+      console.log("No 2FA required, proceeding with normal login");
       await login(email, password);
     } catch (err) {
       console.error("Login validation error:", err);
@@ -167,6 +171,7 @@ export default function Login() {
     }
     
     setIsSubmitting(true);
+    console.log("Verifying 2FA code:", otpCode);
     
     try {
       // Verify the OTP code with improved error handling
@@ -174,7 +179,9 @@ export default function Login() {
       let isValid = false;
       
       try {
+        console.log("Validating 2FA token for user ID:", userId);
         isValid = await validate2FAToken(userId, otpCode);
+        console.log("2FA validation result:", isValid);
       } catch (error) {
         console.error("Error during OTP validation:", error);
         toast(t("verificationFailed") || "Verification failed", {
@@ -192,12 +199,38 @@ export default function Login() {
         return;
       }
       
-      // OTP verified, continue with login
-      toast(t("loginSuccess") || "Login successful", {
-        description: t("welcomeBack") || "Welcome back"
-      });
+      // OTP verified successfully, we need to complete the login process
+      // using the temporary session we already have
+      console.log("OTP verified successfully, completing login with temp session");
       
-      navigate('/dashboard');
+      try {
+        // Re-establish session using the existing session from 2FA first step
+        // This will ensure the session is properly stored and the auth state is updated
+        const { data, error } = await supabase.auth.setSession({
+          access_token: tempSession.access_token,
+          refresh_token: tempSession.refresh_token
+        });
+        
+        if (error) {
+          console.error("Error setting session after 2FA:", error);
+          throw error;
+        }
+        
+        console.log("Session established successfully after 2FA");
+        
+        // Show success message
+        toast(t("loginSuccess") || "Login successful", {
+          description: t("welcomeBack") || "Welcome back"
+        });
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        console.error("Error during final auth step after 2FA:", error);
+        toast(t("loginError") || "Login error", {
+          description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
+        });
+      }
     } catch (error) {
       console.error("OTP verification error:", error);
       toast(t("verificationFailed") || "Verification failed", {

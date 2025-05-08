@@ -117,9 +117,10 @@ export const useAuthState = (): AuthState => {
         console.log("Setting up auth listener");
         setLoading(true);
         
+        // Set up the auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event: AuthChangeEvent, session) => {
-            console.log("Auth state changed:", event);
+            console.log("Auth state changed:", event, "Session exists:", !!session);
             
             switch(event) {
               case 'SIGNED_OUT':
@@ -133,6 +134,7 @@ export const useAuthState = (): AuthState => {
               case 'USER_UPDATED':
               case 'INITIAL_SESSION':
                 if (session) {
+                  // Use setTimeout to avoid potential deadlocks with Supabase auth
                   setTimeout(() => {
                     handleSession(session);
                   }, 0);
@@ -146,11 +148,13 @@ export const useAuthState = (): AuthState => {
           subscription.unsubscribe();
         };
 
+        // Check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Error getting session:", sessionError);
         } else {
+          console.log("Initial session check:", session ? "Session exists" : "No session");
           await handleSession(session);
         }
         

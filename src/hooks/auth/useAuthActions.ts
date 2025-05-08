@@ -51,12 +51,18 @@ export const useAuthActions = (): AuthActions => {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("Attempting login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
+      
+      console.log("Login successful via useAuthActions");
       
       toast(t("loginSuccess"), {
         description: t("welcomeBack")
