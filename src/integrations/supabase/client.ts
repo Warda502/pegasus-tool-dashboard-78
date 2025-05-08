@@ -10,58 +10,6 @@ import { Buffer } from 'buffer';
 
 const SUPABASE_URL = "https://sxigocnatqgqgiedrgue.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4aWdvY25hdHFncWdpZWRyZ3VlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNTY1ODgsImV4cCI6MjA2MDgzMjU4OH0.JaRFyEuVOC9VXoPFc7ohO77F1qM_NwY_jOgNcSacfp4";
-// Polyfill for crypto.createHmac in the browser
-
-function createHmac(algorithm: string, key: string | Buffer): { update(data: any): any; digest(encoding?: string): string } {
-  const encoder = new TextEncoder();
-  const cryptoKey = typeof key === 'string' ? encoder.encode(key) : key;
-
-  return {
-    update(data: any) {
-      this.data = typeof data === 'string' ? encoder.encode(data) : data;
-      return this;
-    },
-    async digest(encoding: string = 'hex') {
-      // Import the key
-      const webKey = await window.crypto.subtle.importKey(
-        'raw',
-        cryptoKey.buffer,
-        { name: 'HMAC', hash: { name: algorithm === 'sha1' ? 'SHA-1' : 'SHA-256' } },
-        false,
-        ['sign']
-      );
-
-      // Sign the data
-      const signature = await window.crypto.subtle.sign('HMAC', webKey, this.data.buffer);
-
-      // Convert to hex or base32
-      const array = Array.from(new Uint8Array(signature));
-      const hex = array.map(b => b.toString(16).padStart(2, '0')).join('');
-      if (encoding === 'hex') return hex;
-      if (encoding === 'base32') return base32Encode(array);
-      return hex;
-    }
-  };
-}
-
-// Simple base32 encoding function
-function base32Encode(bytes: number[]): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let bits = '';
-  let value = '';
-  for (const byte of bytes) {
-    bits += byte.toString(2).padStart(8, '0');
-  }
-
-  while (bits.length >= 5) {
-    const code = parseInt(bits.substring(0, 5), 2);
-    bits = bits.substring(5);
-    value += alphabet[code];
-  }
-
-  const padding = bits.length > 0 ? alphabet.length - (bits.length % 5 || 5) : 0;
-  return value + '='.repeat(padding);
-}
 // Configure otplib with browser-compatible settings
 authenticator.options = { 
   window: 1,
@@ -77,7 +25,6 @@ authenticator.options = {
       }
       return Buffer.from(array);
     },
-    createHmac: createHmac // 👈 إضافة هذه السطر
   }
 };
 
@@ -242,7 +189,7 @@ export async function verify2FAToken(userId: string, token: string) {
     console.log("Found OTP secret, verifying token");
     
     // Use our custom TOTP verification instead of otplib's built-in one
-    const isValid = await authenticator.verify({ token, secret: userData.otp_secret });
+    const isValid = authenticator.verify({ token, secret: userData.otp_secret });
     
     console.log("Token verification result:", isValid);
     
