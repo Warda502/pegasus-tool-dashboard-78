@@ -1,49 +1,17 @@
-
 import { useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationEllipsis,
-  PaginationNext,
-  PaginationPrevious 
-} from "@/components/ui/pagination";
-
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationEllipsis, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 type SupportedModel = {
   id: string;
   brand: string;
@@ -52,11 +20,12 @@ type SupportedModel = {
   operation: string;
   security: string;
 };
-
 export default function SupportedModels() {
-  const { t, isRTL } = useLanguage();
+  const {
+    t,
+    isRTL
+  } = useLanguage();
   const queryClient = useQueryClient();
-  
   const [modelFilter, setModelFilter] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -71,26 +40,28 @@ export default function SupportedModels() {
     operation: '',
     security: ''
   });
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  
+
   // Fetch supported models
-  const { data: models = [], isLoading } = useQuery({
+  const {
+    data: models = [],
+    isLoading
+  } = useQuery({
     queryKey: ['supportedModels'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from('supported_models')
-          .select('*');
-        
+        const {
+          data,
+          error
+        } = await supabase.from('supported_models').select('*');
         if (error) {
           console.error("Error fetching models:", error);
           toast.error(t("fetchError") || "Error fetching models");
           throw error;
         }
-        
         return data as SupportedModel[];
       } catch (err) {
         console.error("Exception in fetch:", err);
@@ -105,15 +76,14 @@ export default function SupportedModels() {
     mutationFn: async (data: Omit<SupportedModel, 'id'>[]) => {
       try {
         console.log("Uploading data:", data);
-        const { data: result, error } = await supabase
-          .from('supported_models')
-          .insert(data);
-        
+        const {
+          data: result,
+          error
+        } = await supabase.from('supported_models').insert(data);
         if (error) {
           console.error("Upload error:", error);
           throw error;
         }
-        
         return result;
       } catch (err) {
         console.error("Exception in upload:", err);
@@ -121,12 +91,14 @@ export default function SupportedModels() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
+      queryClient.invalidateQueries({
+        queryKey: ['supportedModels']
+      });
       toast.success(t("uploadSuccess") || "Models uploaded successfully");
       setIsUploadDialogOpen(false);
       setJsonData("");
     },
-    onError: (error) => {
+    onError: error => {
       console.error("Error in mutation handler:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast.error(t("uploadError") || "Failed to upload models", {
@@ -137,20 +109,26 @@ export default function SupportedModels() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string, data: Omit<SupportedModel, 'id'> }) => {
-      const { error } = await supabase
-        .from('supported_models')
-        .update(data)
-        .eq('id', id);
-      
+    mutationFn: async ({
+      id,
+      data
+    }: {
+      id: string;
+      data: Omit<SupportedModel, 'id'>;
+    }) => {
+      const {
+        error
+      } = await supabase.from('supported_models').update(data).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
+      queryClient.invalidateQueries({
+        queryKey: ['supportedModels']
+      });
       toast.success(t("updateSuccess") || "Model updated successfully");
       setIsEditDialogOpen(false);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(t("updateError") || "Failed to update model", {
         description: error instanceof Error ? error.message : String(error)
       });
@@ -160,25 +138,24 @@ export default function SupportedModels() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('supported_models')
-        .delete()
-        .eq('id', id);
-      
+      const {
+        error
+      } = await supabase.from('supported_models').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supportedModels'] });
+      queryClient.invalidateQueries({
+        queryKey: ['supportedModels']
+      });
       toast.success(t("deleteSuccess") || "Model deleted successfully");
       setIsDeleteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(t("deleteError") || "Failed to delete model", {
         description: error instanceof Error ? error.message : String(error)
       });
     }
   });
-  
   const handleEditModel = (model: SupportedModel) => {
     setSelectedModel(model);
     setFormData({
@@ -190,15 +167,13 @@ export default function SupportedModels() {
     });
     setIsEditDialogOpen(true);
   };
-
   const handleDeleteModel = (model: SupportedModel) => {
     setSelectedModel(model);
     setIsDeleteDialogOpen(true);
   };
-
   const handleUpdateModel = () => {
     if (!selectedModel) return;
-    
+
     // Basic validation
     if (!formData.brand.trim() || !formData.model.trim()) {
       toast.error(t("validationError") || "Validation Error", {
@@ -206,23 +181,22 @@ export default function SupportedModels() {
       });
       return;
     }
-
     updateMutation.mutate({
       id: selectedModel.id,
       data: formData
     });
   };
-
   const confirmDelete = () => {
     if (selectedModel) {
       deleteMutation.mutate(selectedModel.id);
     }
   };
-
   const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
   const handleUploadData = () => {
     if (!jsonData.trim()) {
       toast.error(t("noDataError") || "No data provided", {
@@ -230,10 +204,8 @@ export default function SupportedModels() {
       });
       return;
     }
-
     try {
       const parsedData = JSON.parse(jsonData);
-      
       if (!Array.isArray(parsedData)) {
         toast.error(t("invalidFormat") || "Invalid format", {
           description: t("dataMustBeArray") || "Data must be an array of objects"
@@ -242,24 +214,19 @@ export default function SupportedModels() {
       }
 
       // Remove any id fields that might be in the input data to avoid conflicts
-      const validData = parsedData.filter(item => 
-        item && typeof item === 'object' && 
-        item.brand && item.model
-      ).map(item => ({
+      const validData = parsedData.filter(item => item && typeof item === 'object' && item.brand && item.model).map(item => ({
         brand: String(item.brand),
         model: String(item.model),
         carrier: item.carrier ? String(item.carrier) : '',
         operation: item.operation ? String(item.operation) : '',
         security: item.security ? String(item.security) : ''
       }));
-
       if (validData.length === 0) {
         toast.error(t("invalidData") || "Invalid data", {
           description: t("noValidModelsFound") || "No valid models found in the data"
         });
         return;
       }
-
       console.log("Prepared data for upload:", validData);
       uploadMutation.mutate(validData);
     } catch (error) {
@@ -272,33 +239,29 @@ export default function SupportedModels() {
 
   // Filter models based on search inputs
   const filteredModels = models.filter(model => {
-    const matchesModel = modelFilter === "" || 
-      model.model.toLowerCase().includes(modelFilter.toLowerCase());
-    const matchesBrand = brandFilter === "" || 
-      model.brand.toLowerCase().includes(brandFilter.toLowerCase());
+    const matchesModel = modelFilter === "" || model.model.toLowerCase().includes(modelFilter.toLowerCase());
+    const matchesBrand = brandFilter === "" || model.brand.toLowerCase().includes(brandFilter.toLowerCase());
     return matchesModel && matchesBrand;
   });
-  
+
   // Calculate pagination
   const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredModels.length);
   const currentPageData = filteredModels.slice(startIndex, endIndex);
-  
+
   // Go to specific page
   const goToPage = (page: number) => {
     if (page < 1) page = 1;
     if (page > totalPages) page = totalPages;
     setCurrentPage(page);
   };
-
-  return (
-    <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
+  return <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>{t("supportedModels") || "Supported Models"}</CardTitle>
-            <CardDescription>
+            <CardDescription className="mx-0 my-[2px]">
               {t("supportedModelsDescription") || "Manage supported device models"}
             </CardDescription>
           </div>
@@ -311,18 +274,10 @@ export default function SupportedModels() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1">
-                <Input
-                  placeholder={t("filterByBrand") || "Filter by brand..."}
-                  value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                />
+                <Input placeholder={t("filterByBrand") || "Filter by brand..."} value={brandFilter} onChange={e => setBrandFilter(e.target.value)} />
               </div>
               <div className="flex-1">
-                <Input
-                  placeholder={t("filterByModel") || "Filter by model..."}
-                  value={modelFilter}
-                  onChange={(e) => setModelFilter(e.target.value)}
-                />
+                <Input placeholder={t("filterByModel") || "Filter by model..."} value={modelFilter} onChange={e => setModelFilter(e.target.value)} />
               </div>
             </div>
 
@@ -339,25 +294,17 @@ export default function SupportedModels() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
+                  {isLoading ? <TableRow>
                       <TableCell colSpan={6} className="text-center py-10">
                         <div className="flex justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ) : currentPageData.length === 0 ? (
-                    <TableRow>
+                    </TableRow> : currentPageData.length === 0 ? <TableRow>
                       <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                        {modelFilter || brandFilter ? 
-                          (t("noModelsFound") || "No models matching your filter") :
-                          (t("noModels") || "No models available")}
+                        {modelFilter || brandFilter ? t("noModelsFound") || "No models matching your filter" : t("noModels") || "No models available"}
                       </TableCell>
-                    </TableRow>
-                  ) : (
-                    currentPageData.map((model) => (
-                      <TableRow key={model.id}>
+                    </TableRow> : currentPageData.map(model => <TableRow key={model.id}>
                         <TableCell className="font-medium">{model.brand}</TableCell>
                         <TableCell>{model.model}</TableCell>
                         <TableCell>{model.carrier || "-"}</TableCell>
@@ -365,92 +312,61 @@ export default function SupportedModels() {
                         <TableCell>{model.security || "-"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditModel(model)}
-                              className="h-8 w-8"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => handleEditModel(model)} className="h-8 w-8">
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteModel(model)}
-                              className="h-8 w-8 text-destructive"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteModel(model)} className="h-8 w-8 text-destructive">
                               <Trash className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                      </TableRow>)}
                 </TableBody>
               </Table>
             </div>
             
             {/* Pagination */}
-            {filteredModels.length > itemsPerPage && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+            {filteredModels.length > itemsPerPage && <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                 <div className="text-xs sm:text-sm text-muted-foreground">
                   {t("showingResults") || "Showing"} {startIndex + 1} - {endIndex} {t("of") || "of"} {filteredModels.length}
                 </div>
                 <Pagination className="mt-0">
                   <PaginationContent className="flex-wrap">
                     <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => goToPage(currentPage - 1)}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
+                      <PaginationPrevious onClick={() => goToPage(currentPage - 1)} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
                     </PaginationItem>
                     
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                      // Always show first page, current page, last page, and pages adjacent to current
-                      const shouldShow = 
-                        page === 1 || 
-                        page === totalPages || 
-                        Math.abs(page - currentPage) <= 1;
-                      
-                      // Show ellipsis where there are gaps
-                      const showLeftEllipsis = page === currentPage - 2 && currentPage > 3;
-                      const showRightEllipsis = page === currentPage + 2 && currentPage < totalPages - 2;
-                      
-                      if (showLeftEllipsis) {
-                        return <PaginationEllipsis key={`ellipsis-left-${page}`} />;
-                      }
-                      
-                      if (showRightEllipsis) {
-                        return <PaginationEllipsis key={`ellipsis-right-${page}`} />;
-                      }
-                      
-                      if (shouldShow) {
-                        return (
-                          <PaginationItem key={page}>
-                            <PaginationLink 
-                              onClick={() => goToPage(page)} 
-                              isActive={currentPage === page}
-                              className="cursor-pointer"
-                            >
+                    {Array.from({
+                  length: totalPages
+                }, (_, i) => i + 1).map(page => {
+                  // Always show first page, current page, last page, and pages adjacent to current
+                  const shouldShow = page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
+
+                  // Show ellipsis where there are gaps
+                  const showLeftEllipsis = page === currentPage - 2 && currentPage > 3;
+                  const showRightEllipsis = page === currentPage + 2 && currentPage < totalPages - 2;
+                  if (showLeftEllipsis) {
+                    return <PaginationEllipsis key={`ellipsis-left-${page}`} />;
+                  }
+                  if (showRightEllipsis) {
+                    return <PaginationEllipsis key={`ellipsis-right-${page}`} />;
+                  }
+                  if (shouldShow) {
+                    return <PaginationItem key={page}>
+                            <PaginationLink onClick={() => goToPage(page)} isActive={currentPage === page} className="cursor-pointer">
                               {page}
                             </PaginationLink>
-                          </PaginationItem>
-                        );
-                      }
-                      
-                      return null;
-                    })}
+                          </PaginationItem>;
+                  }
+                  return null;
+                })}
                     
                     <PaginationItem>
-                      <PaginationNext
-                        onClick={() => goToPage(currentPage + 1)}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
+                      <PaginationNext onClick={() => goToPage(currentPage + 1)} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
@@ -465,10 +381,7 @@ export default function SupportedModels() {
             <p className="text-sm text-muted-foreground">
               {t("uploadInstructions") || "Paste JSON data below to import models."}
             </p>
-            <Textarea
-              value={jsonData}
-              onChange={(e) => setJsonData(e.target.value)}
-              placeholder={`[
+            <Textarea value={jsonData} onChange={e => setJsonData(e.target.value)} placeholder={`[
   {
     "brand": "Samsung",
     "model": "SM-A136U",
@@ -476,10 +389,7 @@ export default function SupportedModels() {
     "security": "All",
     "operation": "Direct Unlock"
   }
-]`}
-              rows={10}
-              className="font-mono text-xs"
-            />
+]`} rows={10} className="font-mono text-xs" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
@@ -501,38 +411,23 @@ export default function SupportedModels() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("brand") || "Brand"}</label>
-              <Input
-                value={formData.brand}
-                onChange={(e) => handleInputChange("brand", e.target.value)}
-              />
+              <Input value={formData.brand} onChange={e => handleInputChange("brand", e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("model") || "Model"}</label>
-              <Input
-                value={formData.model}
-                onChange={(e) => handleInputChange("model", e.target.value)}
-              />
+              <Input value={formData.model} onChange={e => handleInputChange("model", e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("carrier") || "Carrier"}</label>
-              <Input
-                value={formData.carrier}
-                onChange={(e) => handleInputChange("carrier", e.target.value)}
-              />
+              <Input value={formData.carrier} onChange={e => handleInputChange("carrier", e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("operation") || "Operation"}</label>
-              <Input
-                value={formData.operation}
-                onChange={(e) => handleInputChange("operation", e.target.value)}
-              />
+              <Input value={formData.operation} onChange={e => handleInputChange("operation", e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("security") || "Security"}</label>
-              <Input
-                value={formData.security}
-                onChange={(e) => handleInputChange("security", e.target.value)}
-              />
+              <Input value={formData.security} onChange={e => handleInputChange("security", e.target.value)} />
             </div>
           </div>
           <DialogFooter>
@@ -552,8 +447,7 @@ export default function SupportedModels() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmDelete") || "Confirm Delete"}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("confirmDeleteModel") || 
-                `Are you sure you want to delete the ${selectedModel?.brand} ${selectedModel?.model} model?`}
+              {t("confirmDeleteModel") || `Are you sure you want to delete the ${selectedModel?.brand} ${selectedModel?.model} model?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -564,6 +458,5 @@ export default function SupportedModels() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 }
