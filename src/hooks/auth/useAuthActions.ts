@@ -62,7 +62,15 @@ export const useAuthActions = (): AuthActions => {
         description: t("welcomeBack")
       });
       
-      navigate('/dashboard');
+      // Check if there's a saved redirect path
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+      if (redirectPath) {
+        // Remove the saved path
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirectPath);
+      } else {
+        navigate('/dashboard');
+      }
       return true;
     } catch (error) {
       console.error("Login error:", error);

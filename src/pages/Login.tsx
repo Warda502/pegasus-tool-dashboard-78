@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ type LoginError = {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { t, isRTL } = useLanguage();
   const [email, setEmail] = useState("");
@@ -45,6 +46,7 @@ export default function Login() {
   const isProdDomain = window.location.origin === "https://panel.pegasus-tools.com";
   // If not on prod domain, we'll skip captcha validation
 
+  // Handle notifications and redirects
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
     
@@ -67,10 +69,21 @@ export default function Login() {
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
 
+  // Handle redirect if user is already authenticated
   useEffect(() => {
     if (sessionChecked && isAuthenticated) {
-      console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard');
+      console.log("User is authenticated, checking redirect path");
+      
+      // Check if there's a saved redirect path
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+      if (redirectPath) {
+        // Remove the saved path
+        console.log("Redirecting to saved path:", redirectPath);
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirectPath);
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [isAuthenticated, navigate, sessionChecked]);
 
@@ -154,6 +167,7 @@ export default function Login() {
           description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
         });
       }
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -189,12 +203,20 @@ export default function Login() {
         return;
       }
       
-      // OTP verified, continue with login
+      // OTP verified, check for redirect path
       toast(t("loginSuccess") || "Login successful", {
         description: t("welcomeBack") || "Welcome back"
       });
       
-      navigate('/dashboard');
+      // Check if there's a saved redirect path
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+      if (redirectPath) {
+        // Remove the saved path
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirectPath);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error("OTP verification error:", error);
       toast(t("verificationFailed") || "Verification failed", {
