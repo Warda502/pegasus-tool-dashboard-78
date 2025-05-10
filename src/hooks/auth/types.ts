@@ -1,22 +1,29 @@
 
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 
 export type UserRole = "admin" | "user";
 
 export interface AuthUser {
   id: string;
+  uid?: string;
   email: string;
   name?: string;
   role: UserRole;
+  credits?: string;
+  expiryTime?: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface AuthState {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
+  loading: boolean;
   user: AuthUser | null;
   role: UserRole | null;
-  loading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
   sessionChecked: boolean;
+  needsTwoFactor: boolean;
+  twoFactorVerified: boolean;
+  setTwoFactorComplete: () => void;
 }
 
 export interface AuthActions {
@@ -24,6 +31,7 @@ export interface AuthActions {
   logout: () => Promise<boolean>;
   checkSession: () => Promise<boolean>;
   handleSessionExpired: () => void;
+  verifyTwoFactor: (userId: string, token: string) => Promise<boolean>;
 }
 
-export type AuthContextType = AuthState & AuthActions;
+export interface AuthContextType extends AuthState, AuthActions {}

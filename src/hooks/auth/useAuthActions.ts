@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "../useLanguage";
 import { AuthActions } from "./types";
+import { validate2FAToken } from "@/integrations/supabase/client";
 
 export const useAuthActions = (): AuthActions => {
   const navigate = useNavigate();
@@ -64,16 +65,64 @@ export const useAuthActions = (): AuthActions => {
       
       console.log("Login successful via useAuthActions");
       
-      toast(t("loginSuccess"), {
-        description: t("welcomeBack")
-      });
+      // Initial auth is successful, but we need to check if 2FA is required
+      // The actual navigation to dashboard will happen after 2FA verification if needed
+      const { data: userData, error: userDataError } = await supabase
+        .from('users')
+        .select('email_type, block, credits, two_factor_enabled')
+        .eq('id', data.session.user.id)
+        .maybeSingle();
+
+      if (userDataError) {
+        console.error("Error fetching user data after login:", userDataError);
+        throw userDataError;
+      }
+
+      console.log("User data from database:", userData);
       
-      navigate('/dashboard');
+      // Only show success toast if 2FA is not required
+      if (!userData?.two_factor_enabled) {
+        toast(t("loginSuccess"), {
+          description: t("welcomeBack")
+        });
+        
+        navigate('/dashboard');
+      }
+      
       return true;
     } catch (error) {
       console.error("Login error:", error);
       toast(t("loginFailed"), {
         description: error instanceof Error ? error.message : t("unexpectedError")
+      });
+      return false;
+    }
+  };
+
+  const verifyTwoFactor = async (userId: string, token: string) => {
+    try {
+      console.log("Verifying 2FA token for user:", userId, "Token:", token);
+      
+      const isValid = await validate2FAToken(userId, token);
+      console.log("2FA validation result:", isValid);
+      
+      if (isValid) {
+        toast(t("loginSuccess") || "Login successful", {
+          description: t("welcomeBack") || "Welcome back"
+        });
+        
+        navigate('/dashboard');
+      } else {
+        toast(t("invalidOTP") || "Invalid verification code", {
+          description: t("invalidOTPDescription") || "Please try again with the correct code"
+        });
+      }
+      
+      return isValid;
+    } catch (error) {
+      console.error("2FA verification error:", error);
+      toast(t("verificationFailed") || "Verification failed", {
+        description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
       return false;
     }
@@ -111,6 +160,7 @@ export const useAuthActions = (): AuthActions => {
     login,
     logout,
     checkSession,
-    handleSessionExpired
+    handleSessionExpired,
+    verifyTwoFactor
   };
 };

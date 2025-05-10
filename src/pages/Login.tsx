@@ -27,7 +27,16 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { isAuthenticated, sessionChecked, loading, login } = useAuth();
+  const { 
+    isAuthenticated, 
+    sessionChecked, 
+    loading, 
+    login, 
+    verifyTwoFactor,
+    needsTwoFactor,
+    user,
+    setTwoFactorComplete
+  } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
@@ -35,7 +44,6 @@ export default function Login() {
   
   // Login stages
   const [loginStage, setLoginStage] = useState<'credentials' | '2fa'>('credentials');
-  const [tempSession, setTempSession] = useState<any>(null);
   const [otpCode, setOtpCode] = useState("");
   
   // Updated with the actual production site key
@@ -65,24 +73,34 @@ export default function Login() {
     
     const loggedOut = searchParams.get("loggedOut");
     if (loggedOut === "true") {
+      // No need for any message here
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
 
+  // Monitor needsTwoFactor state to show 2FA screen
   useEffect(() => {
-    if (sessionChecked && isAuthenticated) {
-      console.log("User is authenticated, redirecting to dashboard");
+    if (needsTwoFactor && loginStage === 'credentials') {
+      console.log("2FA required, showing 2FA input");
+      setLoginStage('2fa');
+    }
+  }, [needsTwoFactor, loginStage]);
+
+  useEffect(() => {
+    // Only redirect if user is fully authenticated (passed 2FA if needed)
+    if (sessionChecked && isAuthenticated && !needsTwoFactor) {
+      console.log("User is authenticated and 2FA verified (if needed), redirecting to dashboard");
       navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate, sessionChecked]);
+  }, [isAuthenticated, navigate, sessionChecked, needsTwoFactor]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Clear any previous errors
-    let loginError: LoginError | null = null;
-
     try {
+      // Clear any previous 2FA state
+      setOtpCode('');
+      
       // First, check if email exists and if the user is blocked or has no credits
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -92,20 +110,18 @@ export default function Login() {
 
       if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error("Error checking user:", userError);
-        // Continue with login attempt as normal
       } else if (userData) {
-        // Check if this is a regular user (not an admin)
-        if (userData.email_type && userData.email_type.toLowerCase() !== 'admin') {
-          // Check if user is blocked
-          if (userData.block === 'Blocked') {
-            toast(t("accountBlocked"), {
-              description: t("accountBlockedDescription")
-            });
-            setIsSubmitting(false);
-            return;
-          }
+        // Check if user is blocked
+        if (userData.block === 'Blocked') {
+          toast(t("accountBlocked"), {
+            description: t("accountBlockedDescription")
+          });
+          setIsSubmitting(false);
+          return;
+        }
 
-          // Check if user has no credits
+        // Check if user has no credits (for regular users)
+        if (userData.email_type && userData.email_type.toLowerCase() !== 'admin') {
           if (userData.credits) {
             const creditsValue = parseFloat(userData.credits.toString().replace(/"/g, ''));
             if (!isNaN(creditsValue) && creditsValue <= 0) {
@@ -119,46 +135,21 @@ export default function Login() {
         }
       }
 
-      // Attempt Supabase Auth login
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      console.log("Attempting login after pre-checks");
+      const result = await login(email, password);
       
-      if (authError) {
-        loginError = { 
-          message: t("loginFailed") || "Login failed", 
-          details: authError.message 
-        };
-        throw new Error(authError.message);
-      }
-      
-      console.log("Login successful, checking for 2FA requirement");
-      
-      // If the user has 2FA enabled, show 2FA input in the same card
-      if (userData?.two_factor_enabled) {
-        console.log("User has 2FA enabled, showing 2FA input");
-        setTempSession(authData.session);
-        setLoginStage('2fa');
+      if (result) {
+        // Login successful, but if 2FA is needed, loginStage will be changed by the useEffect
+        console.log("Login successful, waiting for 2FA check if needed");
+      } else {
+        // Login failed
         setIsSubmitting(false);
-        return;
       }
-      
-      // If no 2FA, proceed with normal login
-      console.log("No 2FA required, proceeding with normal login");
-      await login(email, password);
     } catch (err) {
       console.error("Login validation error:", err);
-      
-      if (loginError) {
-        toast(loginError.message, {
-          description: loginError.details || t("unexpectedError") || "An unexpected error occurred"
-        });
-      } else {
-        toast(t("loginFailed") || "Login failed", {
-          description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
-        });
-      }
+      toast(t("loginFailed") || "Login failed", {
+        description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
+      });
       setIsSubmitting(false);
     }
   };
@@ -166,7 +157,7 @@ export default function Login() {
   const handleOTPVerify = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    if (otpCode.length !== 6 || !tempSession) {
+    if (otpCode.length !== 6 || !user) {
       return;
     }
     
@@ -174,62 +165,15 @@ export default function Login() {
     console.log("Verifying 2FA code:", otpCode);
     
     try {
-      // Verify the OTP code with improved error handling
-      const userId = tempSession.user.id;
-      let isValid = false;
+      // Use the verifyTwoFactor method from our auth context
+      const isValid = await verifyTwoFactor(user.id, otpCode);
       
-      try {
-        console.log("Validating 2FA token for user ID:", userId);
-        isValid = await validate2FAToken(userId, otpCode);
-        console.log("2FA validation result:", isValid);
-      } catch (error) {
-        console.error("Error during OTP validation:", error);
-        toast(t("verificationFailed") || "Verification failed", {
-          description: "Error validating 2FA code. Please check your connection and try again."
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (!isValid) {
-        toast(t("invalidOTP") || "Invalid verification code", {
-          description: t("invalidOTPDescription") || "Please try again with the correct code"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // OTP verified successfully, we need to complete the login process
-      // using the temporary session we already have
-      console.log("OTP verified successfully, completing login with temp session");
-      
-      try {
-        // Re-establish session using the existing session from 2FA first step
-        // This will ensure the session is properly stored and the auth state is updated
-        const { data, error } = await supabase.auth.setSession({
-          access_token: tempSession.access_token,
-          refresh_token: tempSession.refresh_token
-        });
-        
-        if (error) {
-          console.error("Error setting session after 2FA:", error);
-          throw error;
-        }
-        
-        console.log("Session established successfully after 2FA");
-        
-        // Show success message
-        toast(t("loginSuccess") || "Login successful", {
-          description: t("welcomeBack") || "Welcome back"
-        });
-        
-        // Navigate to dashboard
-        navigate('/dashboard');
-      } catch (error) {
-        console.error("Error during final auth step after 2FA:", error);
-        toast(t("loginError") || "Login error", {
-          description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
-        });
+      if (isValid) {
+        // 2FA verification successful
+        setTwoFactorComplete();
+      } else {
+        // Invalid OTP - message is shown by verifyTwoFactor
+        setOtpCode('');
       }
     } catch (error) {
       console.error("OTP verification error:", error);
@@ -262,14 +206,14 @@ export default function Login() {
   const handleBack = () => {
     setLoginStage('credentials');
     setOtpCode('');
-    setTempSession(null);
   };
 
   if (!sessionChecked || loading) {
     return <Loading text={t("checkingSession") || "جاري التحقق من حالة الجلسة..."} className="min-h-screen" />;
   }
 
-  if (isAuthenticated) {
+  // Don't render anything if we're already authenticated and should be redirected
+  if (isAuthenticated && !needsTwoFactor) {
     return null;
   }
 

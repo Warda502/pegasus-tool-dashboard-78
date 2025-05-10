@@ -10,6 +10,8 @@ export const useAuthState = (): AuthState => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
+  const [twoFactorVerified, setTwoFactorVerified] = useState(true); // Default to true for non-2FA users
 
   const fetchUserData = useCallback(async (userId: string) => {
     try {
@@ -34,6 +36,15 @@ export const useAuthState = (): AuthState => {
           ? 'admin' as UserRole 
           : 'user' as UserRole;
         
+        // Check if user has 2FA enabled
+        if (userDataById.two_factor_enabled) {
+          setNeedsTwoFactor(true);
+          setTwoFactorVerified(false);
+        } else {
+          setNeedsTwoFactor(false);
+          setTwoFactorVerified(true);
+        }
+        
         return {
           id: userDataById.id,
           email: userDataById.email,
@@ -41,7 +52,8 @@ export const useAuthState = (): AuthState => {
           role: userRole,
           credits: userDataById.credits,
           expiryTime: userDataById.expiry_time,
-          uid: userDataById.uid
+          uid: userDataById.uid,
+          twoFactorEnabled: userDataById.two_factor_enabled || false
         };
       }
 
@@ -69,6 +81,15 @@ export const useAuthState = (): AuthState => {
         ? 'admin' as UserRole 
         : 'user' as UserRole;
       
+      // Check if user has 2FA enabled
+      if (userDataByUid.two_factor_enabled) {
+        setNeedsTwoFactor(true);
+        setTwoFactorVerified(false);
+      } else {
+        setNeedsTwoFactor(false);
+        setTwoFactorVerified(true);
+      }
+      
       return {
         id: userDataByUid.id,
         email: userDataByUid.email,
@@ -76,7 +97,8 @@ export const useAuthState = (): AuthState => {
         role: userRole,
         credits: userDataByUid.credits,
         expiryTime: userDataByUid.expiry_time,
-        uid: userDataByUid.uid
+        uid: userDataByUid.uid,
+        twoFactorEnabled: userDataByUid.two_factor_enabled || false
       };
     } catch (err) {
       console.error("Failed to fetch user data:", err);
@@ -90,11 +112,12 @@ export const useAuthState = (): AuthState => {
       setIsAuthenticated(false);
       setUser(null);
       setRole(null);
+      setNeedsTwoFactor(false);
+      setTwoFactorVerified(true);
       return;
     }
     
     console.log("Processing session for:", session.user.email);
-    setIsAuthenticated(true);
     
     // Fetch user data with a small delay to ensure DB is ready
     setTimeout(async () => {
@@ -103,11 +126,21 @@ export const useAuthState = (): AuthState => {
         console.log("Setting user data:", userData);
         setUser(userData as AuthUser);
         setRole(userData.role as UserRole);
+        
+        // User is authenticated if they have passed 2FA or don't need it
+        setIsAuthenticated(userData.twoFactorEnabled ? twoFactorVerified : true);
       } else {
         console.error("Failed to fetch user data after login");
       }
     }, 500);
-  }, [fetchUserData]);
+  }, [fetchUserData, twoFactorVerified]);
+
+  // Method to mark 2FA as verified
+  const setTwoFactorComplete = useCallback(() => {
+    console.log("Marking 2FA as verified");
+    setTwoFactorVerified(true);
+    setIsAuthenticated(true);
+  }, []);
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
@@ -127,6 +160,8 @@ export const useAuthState = (): AuthState => {
                 setRole(null);
                 setUser(null);
                 setIsAuthenticated(false);
+                setNeedsTwoFactor(false);
+                setTwoFactorVerified(true);
                 break;
               
               case 'SIGNED_IN':
@@ -179,6 +214,9 @@ export const useAuthState = (): AuthState => {
     user,
     isAuthenticated,
     isAdmin: role === 'admin',
-    sessionChecked
+    sessionChecked,
+    needsTwoFactor,
+    twoFactorVerified,
+    setTwoFactorComplete
   };
 };
