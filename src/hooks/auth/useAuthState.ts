@@ -13,6 +13,25 @@ export const useAuthState = (): AuthState => {
   const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
   const [twoFactorVerified, setTwoFactorVerified] = useState(false);
 
+  // Helper function to persist 2FA verification status
+  const persistTwoFactorState = useCallback((verified: boolean) => {
+    if (verified) {
+      // Store 2FA verification in localStorage
+      localStorage.setItem('2fa_verified', 'true');
+    } else {
+      localStorage.removeItem('2fa_verified');
+    }
+  }, []);
+
+  // Check if 2FA was previously verified
+  const checkStoredTwoFactorState = useCallback(() => {
+    const storedVerified = localStorage.getItem('2fa_verified') === 'true';
+    if (storedVerified) {
+      setTwoFactorVerified(true);
+    }
+    return storedVerified;
+  }, []);
+
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       console.log("Fetching complete user data for ID:", userId);
@@ -40,11 +59,20 @@ export const useAuthState = (): AuthState => {
         const hasTwoFactorEnabled = userDataById.two_factor_enabled || false;
         setNeedsTwoFactor(hasTwoFactorEnabled);
         
-        // If 2FA is enabled, set twoFactorVerified to false initially
+        // If 2FA is enabled, check if it was previously verified
+        const storedVerified = checkStoredTwoFactorState();
+        
         if (hasTwoFactorEnabled) {
-          setTwoFactorVerified(false);
+          if (!storedVerified) {
+            setTwoFactorVerified(false);
+            console.log("2FA required but not yet verified");
+          } else {
+            setTwoFactorVerified(true);
+            console.log("2FA required and previously verified");
+          }
         } else {
           setTwoFactorVerified(true); // No 2FA needed, so it's "verified" by default
+          console.log("No 2FA required, marking as verified by default");
         }
         
         return {
@@ -87,11 +115,20 @@ export const useAuthState = (): AuthState => {
       const hasTwoFactorEnabled = userDataByUid.two_factor_enabled || false;
       setNeedsTwoFactor(hasTwoFactorEnabled);
       
-      // If 2FA is enabled, set twoFactorVerified to false initially
+      // If 2FA is enabled, check if it was previously verified
+      const storedVerified = checkStoredTwoFactorState();
+      
       if (hasTwoFactorEnabled) {
-        setTwoFactorVerified(false);
+        if (!storedVerified) {
+          setTwoFactorVerified(false);
+          console.log("2FA required but not yet verified");
+        } else {
+          setTwoFactorVerified(true);
+          console.log("2FA required and previously verified");
+        }
       } else {
         setTwoFactorVerified(true); // No 2FA needed, so it's "verified" by default
+        console.log("No 2FA required, marking as verified by default");
       }
       
       return {
@@ -108,7 +145,7 @@ export const useAuthState = (): AuthState => {
       console.error("Failed to fetch user data:", err);
       return null;
     }
-  }, []);
+  }, [checkStoredTwoFactorState]);
 
   const handleSession = useCallback(async (session: Session | null) => {
     if (!session) {
@@ -117,7 +154,8 @@ export const useAuthState = (): AuthState => {
       setUser(null);
       setRole(null);
       setNeedsTwoFactor(false);
-      setTwoFactorVerified(true); // Reset to default for next login
+      setTwoFactorVerified(false);
+      persistTwoFactorState(false); // Clear 2FA verification status
       return;
     }
     
@@ -138,26 +176,35 @@ export const useAuthState = (): AuthState => {
         // 1. 2FA is not enabled, or
         // 2. 2FA is enabled AND it has been verified
         const requiresTwoFactor = userData.twoFactorEnabled || false;
+        const isVerified = requiresTwoFactor ? twoFactorVerified || checkStoredTwoFactorState() : true;
         
-        setIsAuthenticated(!requiresTwoFactor || twoFactorVerified);
+        setIsAuthenticated(!requiresTwoFactor || isVerified);
         console.log("Authentication state set:", {
-          isAuthenticated: !requiresTwoFactor || twoFactorVerified,
+          isAuthenticated: !requiresTwoFactor || isVerified,
           needsTwoFactor: requiresTwoFactor,
-          twoFactorVerified
+          twoFactorVerified: isVerified
         });
       } else {
         console.error("Failed to fetch user data after login");
         setIsAuthenticated(false);
       }
     }, 500);
-  }, [fetchUserData, twoFactorVerified]);
+  }, [fetchUserData, twoFactorVerified, persistTwoFactorState, checkStoredTwoFactorState]);
 
   // Method to mark 2FA as verified
   const setTwoFactorComplete = useCallback(() => {
     console.log("Marking 2FA as verified");
     setTwoFactorVerified(true);
     setIsAuthenticated(true);
-  }, []);
+    persistTwoFactorState(true); // Store the verification status
+  }, [persistTwoFactorState]);
+
+  // Handle logout - clear 2FA verification
+  const clearTwoFactorState = useCallback(() => {
+    console.log("Clearing 2FA verification state");
+    setTwoFactorVerified(false);
+    persistTwoFactorState(false);
+  }, [persistTwoFactorState]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
@@ -166,6 +213,9 @@ export const useAuthState = (): AuthState => {
       try {
         console.log("Setting up auth listener");
         setLoading(true);
+        
+        // Check if 2FA was previously verified
+        checkStoredTwoFactorState();
         
         // Set up the auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -178,7 +228,8 @@ export const useAuthState = (): AuthState => {
                 setUser(null);
                 setIsAuthenticated(false);
                 setNeedsTwoFactor(false);
-                setTwoFactorVerified(true); // Reset for next login
+                setTwoFactorVerified(false);
+                persistTwoFactorState(false); // Clear 2FA verification on logout
                 break;
               
               case 'SIGNED_IN':
@@ -223,7 +274,7 @@ export const useAuthState = (): AuthState => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [handleSession]);
+  }, [handleSession, checkStoredTwoFactorState, persistTwoFactorState]);
 
   // Sync isAuthenticated whenever 2FA status changes
   useEffect(() => {
@@ -247,6 +298,7 @@ export const useAuthState = (): AuthState => {
     sessionChecked,
     needsTwoFactor,
     twoFactorVerified,
-    setTwoFactorComplete
+    setTwoFactorComplete,
+    clearTwoFactorState
   };
 };

@@ -26,9 +26,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       sessionChecked,
       needsTwoFactor,
       twoFactorVerified,
-      canAccess: isAuthenticated && (!needsTwoFactor || twoFactorVerified)
+      canAccess: isAuthenticated && (!needsTwoFactor || twoFactorVerified),
+      currentPath: location.pathname
     });
-  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified]);
+  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified, location.pathname]);
 
   if (loading || !sessionChecked) {
     return <Loading text={t("loading") || "جاري التحميل..."} />;
@@ -36,6 +37,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   // If not authenticated, redirect to login page
   if (!isAuthenticated) {
+    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   

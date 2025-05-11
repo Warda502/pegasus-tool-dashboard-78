@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -29,7 +28,8 @@ export default function Login() {
     verifyTwoFactor,
     needsTwoFactor,
     user,
-    setTwoFactorComplete
+    setTwoFactorComplete,
+    clearTwoFactorState
   } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,6 +70,16 @@ export default function Login() {
       // No need for any message here
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
+
+  // Add this effect to debug auth status
+  useEffect(() => {
+    console.log("Login component - auth status:", { 
+      isAuthenticated, 
+      needsTwoFactor, 
+      sessionChecked,
+      user: !!user 
+    });
+  }, [isAuthenticated, needsTwoFactor, sessionChecked, user]);
 
   // Monitor needsTwoFactor state to show 2FA screen
   useEffect(() => {
@@ -168,6 +178,10 @@ export default function Login() {
         // 2FA verification successful
         setTwoFactorComplete();
         console.log("2FA verification successful, will redirect to dashboard");
+        // Add a small delay to ensure state updates
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
       } else {
         // Invalid OTP - message is shown by verifyTwoFactor
         setOtpCode('');
@@ -207,6 +221,7 @@ export default function Login() {
       setOtpCode('');
     } else {
       // If in auth flow with a user, log out and go back to credentials
+      clearTwoFactorState(); // Clear 2FA state
       supabase.auth.signOut().then(() => {
         setLoginStage('credentials');
         setOtpCode('');
