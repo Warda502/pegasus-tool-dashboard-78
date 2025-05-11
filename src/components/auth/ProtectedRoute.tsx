@@ -40,12 +40,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   // If 2FA is required but not verified, redirect to login page
-  // This is a safeguard even though isAuthenticated should already be false in this case
-  if (needsTwoFactor || !twoFactorVerified) {
-    console.log("2FA required but not verified, redirecting to login");
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  
   // If roles are specified, check if user has permission
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     console.log("Access denied: User role", role, "not in allowed roles:", allowedRoles);
