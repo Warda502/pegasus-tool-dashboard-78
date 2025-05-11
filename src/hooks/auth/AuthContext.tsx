@@ -15,6 +15,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const authContext = { ...authState, ...authActions };
   
   useEffect(() => {
+    // Log authentication state for debugging
+    console.log("Auth context state:", {
+      isAuthenticated: authState.isAuthenticated,
+      needsTwoFactor: authState.needsTwoFactor,
+      twoFactorVerified: authState.twoFactorVerified
+    });
+  }, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified]);
+  
+  useEffect(() => {
     // Handle cross-tab authentication sync
     const authChannel = new BroadcastChannel('auth_state_channel');
     

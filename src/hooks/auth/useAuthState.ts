@@ -11,7 +11,7 @@ export const useAuthState = (): AuthState => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
-  const [twoFactorVerified, setTwoFactorVerified] = useState(true); // Default to true for non-2FA users
+  const [twoFactorVerified, setTwoFactorVerified] = useState(false);
 
   const fetchUserData = useCallback(async (userId: string) => {
     try {
@@ -37,12 +37,14 @@ export const useAuthState = (): AuthState => {
           : 'user' as UserRole;
         
         // Check if user has 2FA enabled
-        if (userDataById.two_factor_enabled) {
-          setNeedsTwoFactor(true);
+        const hasTwoFactorEnabled = userDataById.two_factor_enabled || false;
+        setNeedsTwoFactor(hasTwoFactorEnabled);
+        
+        // If 2FA is enabled, set twoFactorVerified to false initially
+        if (hasTwoFactorEnabled) {
           setTwoFactorVerified(false);
         } else {
-          setNeedsTwoFactor(false);
-          setTwoFactorVerified(true);
+          setTwoFactorVerified(true); // No 2FA needed, so it's "verified" by default
         }
         
         return {
@@ -53,7 +55,7 @@ export const useAuthState = (): AuthState => {
           credits: userDataById.credits,
           expiryTime: userDataById.expiry_time,
           uid: userDataById.uid,
-          twoFactorEnabled: userDataById.two_factor_enabled || false
+          twoFactorEnabled: hasTwoFactorEnabled
         };
       }
 
@@ -82,12 +84,14 @@ export const useAuthState = (): AuthState => {
         : 'user' as UserRole;
       
       // Check if user has 2FA enabled
-      if (userDataByUid.two_factor_enabled) {
-        setNeedsTwoFactor(true);
+      const hasTwoFactorEnabled = userDataByUid.two_factor_enabled || false;
+      setNeedsTwoFactor(hasTwoFactorEnabled);
+      
+      // If 2FA is enabled, set twoFactorVerified to false initially
+      if (hasTwoFactorEnabled) {
         setTwoFactorVerified(false);
       } else {
-        setNeedsTwoFactor(false);
-        setTwoFactorVerified(true);
+        setTwoFactorVerified(true); // No 2FA needed, so it's "verified" by default
       }
       
       return {
@@ -98,7 +102,7 @@ export const useAuthState = (): AuthState => {
         credits: userDataByUid.credits,
         expiryTime: userDataByUid.expiry_time,
         uid: userDataByUid.uid,
-        twoFactorEnabled: userDataByUid.two_factor_enabled || false
+        twoFactorEnabled: hasTwoFactorEnabled
       };
     } catch (err) {
       console.error("Failed to fetch user data:", err);
@@ -113,24 +117,37 @@ export const useAuthState = (): AuthState => {
       setUser(null);
       setRole(null);
       setNeedsTwoFactor(false);
-      setTwoFactorVerified(true);
+      setTwoFactorVerified(true); // Reset to default for next login
       return;
     }
     
     console.log("Processing session for:", session.user.email);
     
+    // Important: Initially we don't know if 2FA is needed, so do NOT set isAuthenticated yet
+    // We'll set it after checking user data and 2FA requirements
+    
     // Fetch user data with a small delay to ensure DB is ready
     setTimeout(async () => {
       const userData = await fetchUserData(session.user.id);
       if (userData) {
-        console.log("Setting user data:", userData);
+        console.log("Setting user data:", userData, "2FA needed:", userData.twoFactorEnabled);
         setUser(userData as AuthUser);
         setRole(userData.role as UserRole);
         
-        // User is authenticated if they have passed 2FA or don't need it
-        setIsAuthenticated(userData.twoFactorEnabled ? twoFactorVerified : true);
+        // CRITICAL FIX: Only set isAuthenticated to true if either:
+        // 1. 2FA is not enabled, or
+        // 2. 2FA is enabled AND it has been verified
+        const requiresTwoFactor = userData.twoFactorEnabled || false;
+        
+        setIsAuthenticated(!requiresTwoFactor || twoFactorVerified);
+        console.log("Authentication state set:", {
+          isAuthenticated: !requiresTwoFactor || twoFactorVerified,
+          needsTwoFactor: requiresTwoFactor,
+          twoFactorVerified
+        });
       } else {
         console.error("Failed to fetch user data after login");
+        setIsAuthenticated(false);
       }
     }, 500);
   }, [fetchUserData, twoFactorVerified]);
@@ -161,7 +178,7 @@ export const useAuthState = (): AuthState => {
                 setUser(null);
                 setIsAuthenticated(false);
                 setNeedsTwoFactor(false);
-                setTwoFactorVerified(true);
+                setTwoFactorVerified(true); // Reset for next login
                 break;
               
               case 'SIGNED_IN':
@@ -207,6 +224,19 @@ export const useAuthState = (): AuthState => {
       if (unsubscribe) unsubscribe();
     };
   }, [handleSession]);
+
+  // Sync isAuthenticated whenever 2FA status changes
+  useEffect(() => {
+    if (user) {
+      const isFullyAuthenticated = !needsTwoFactor || twoFactorVerified;
+      console.log("Updating authentication state based on 2FA:", {
+        needsTwoFactor,
+        twoFactorVerified,
+        isFullyAuthenticated
+      });
+      setIsAuthenticated(isFullyAuthenticated);
+    }
+  }, [needsTwoFactor, twoFactorVerified, user]);
 
   return {
     loading,

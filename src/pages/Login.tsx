@@ -7,18 +7,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { Eye, EyeOff, Key, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Key, ShieldCheck, ArrowLeft } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
-import { supabase, validate2FAToken } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Separator } from "@/components/ui/separator";
-
-// Add a type for error details
-type LoginError = {
-  message: string;
-  details?: string;
-};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -79,6 +73,8 @@ export default function Login() {
 
   // Monitor needsTwoFactor state to show 2FA screen
   useEffect(() => {
+    console.log("2FA status changed - needs 2FA:", needsTwoFactor, "current stage:", loginStage);
+    
     if (needsTwoFactor && loginStage === 'credentials') {
       console.log("2FA required, showing 2FA input");
       setLoginStage('2fa');
@@ -87,11 +83,12 @@ export default function Login() {
 
   useEffect(() => {
     // Only redirect if user is fully authenticated (passed 2FA if needed)
-    if (sessionChecked && isAuthenticated && !needsTwoFactor) {
+    // Critical check: isAuthenticated will only be true if user has passed 2FA verification
+    if (sessionChecked && isAuthenticated) {
       console.log("User is authenticated and 2FA verified (if needed), redirecting to dashboard");
       navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate, sessionChecked, needsTwoFactor]);
+  }, [isAuthenticated, navigate, sessionChecked]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +136,6 @@ export default function Login() {
       const result = await login(email, password);
       
       if (result) {
-        // Login successful, but if 2FA is needed, loginStage will be changed by the useEffect
         console.log("Login successful, waiting for 2FA check if needed");
       } else {
         // Login failed
@@ -171,6 +167,7 @@ export default function Login() {
       if (isValid) {
         // 2FA verification successful
         setTwoFactorComplete();
+        console.log("2FA verification successful, will redirect to dashboard");
       } else {
         // Invalid OTP - message is shown by verifyTwoFactor
         setOtpCode('');
@@ -204,8 +201,17 @@ export default function Login() {
   };
   
   const handleBack = () => {
-    setLoginStage('credentials');
-    setOtpCode('');
+    // For 2FA screen: go back to credentials, but only if not in the middle of the auth flow
+    if (!user) {
+      setLoginStage('credentials');
+      setOtpCode('');
+    } else {
+      // If in auth flow with a user, log out and go back to credentials
+      supabase.auth.signOut().then(() => {
+        setLoginStage('credentials');
+        setOtpCode('');
+      });
+    }
   };
 
   if (!sessionChecked || loading) {
@@ -213,7 +219,7 @@ export default function Login() {
   }
 
   // Don't render anything if we're already authenticated and should be redirected
-  if (isAuthenticated && !needsTwoFactor) {
+  if (isAuthenticated) {
     return null;
   }
 
@@ -337,10 +343,11 @@ export default function Login() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full flex items-center justify-center gap-2"
                 onClick={handleBack}
                 disabled={isSubmitting}
               >
+                <ArrowLeft size={16} />
                 {t("back") || "رجوع"}
               </Button>
             </div>

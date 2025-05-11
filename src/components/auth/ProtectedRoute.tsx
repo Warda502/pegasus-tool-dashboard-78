@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   allowedRoles 
 }) => {
-  const { isAuthenticated, loading, role, sessionChecked, needsTwoFactor } = useAuth();
+  const { isAuthenticated, loading, role, sessionChecked, needsTwoFactor, twoFactorVerified } = useAuth();
   const location = useLocation();
   const { t } = useLanguage();
   
@@ -24,9 +24,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       role,
       loading,
       sessionChecked,
-      needsTwoFactor
+      needsTwoFactor,
+      twoFactorVerified,
+      canAccess: isAuthenticated && (!needsTwoFactor || twoFactorVerified)
     });
-  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor]);
+  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified]);
 
   if (loading || !sessionChecked) {
     return <Loading text={t("loading") || "جاري التحميل..."} />;
@@ -36,9 +38,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
-  // If 2FA is required but not completed, redirect to login page
-  if (needsTwoFactor) {
+  
+  // If 2FA is required but not verified, redirect to login page
+  // This is a safeguard even though isAuthenticated should already be false in this case
+  if (needsTwoFactor && !twoFactorVerified) {
+    console.log("2FA required but not verified, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
