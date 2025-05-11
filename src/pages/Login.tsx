@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -23,13 +24,14 @@ export default function Login() {
   const { 
     isAuthenticated, 
     sessionChecked, 
-    loading, 
+    loading: authLoading, 
     login, 
     verifyTwoFactor,
     needsTwoFactor,
     user,
     setTwoFactorComplete,
-    clearTwoFactorState
+    clearTwoFactorState,
+    twoFactorVerified
   } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,6 +49,17 @@ export default function Login() {
   // Check if the current domain is the production domain
   const isProdDomain = window.location.origin === "https://panel.pegasus-tools.com";
   // If not on prod domain, we'll skip captcha validation
+
+  // Debug auth state
+  useEffect(() => {
+    console.log("Login page - Auth state:", {
+      isAuthenticated, 
+      needsTwoFactor,
+      twoFactorVerified,
+      loginStage,
+      hasUser: !!user
+    });
+  }, [isAuthenticated, needsTwoFactor, twoFactorVerified, user, loginStage]);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -71,31 +84,19 @@ export default function Login() {
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
 
-  // Add this effect to debug auth status
+  // Critical fix: Monitor auth state changes to manage 2FA flow
   useEffect(() => {
-    console.log("Login component - auth status:", { 
-      isAuthenticated, 
-      needsTwoFactor, 
-      sessionChecked,
-      user: !!user 
-    });
-  }, [isAuthenticated, needsTwoFactor, sessionChecked, user]);
-
-  // Monitor needsTwoFactor state to show 2FA screen
-  useEffect(() => {
-    console.log("2FA status changed - needs 2FA:", needsTwoFactor, "current stage:", loginStage);
-    
-    if (needsTwoFactor && loginStage === 'credentials') {
-      console.log("2FA required, showing 2FA input");
+    // Only handle 2FA flow changes if we have a user (indicates successful initial auth)
+    if (user && needsTwoFactor && !twoFactorVerified && loginStage === 'credentials') {
+      console.log("Showing 2FA input screen because user needs 2FA verification");
       setLoginStage('2fa');
     }
-  }, [needsTwoFactor, loginStage]);
+  }, [user, needsTwoFactor, twoFactorVerified, loginStage]);
 
+  // Redirect to dashboard ONLY when fully authenticated (including 2FA if needed)
   useEffect(() => {
-    // Only redirect if user is fully authenticated (passed 2FA if needed)
-    // Critical check: isAuthenticated will only be true if user has passed 2FA verification
     if (sessionChecked && isAuthenticated) {
-      console.log("User is authenticated and 2FA verified (if needed), redirecting to dashboard");
+      console.log("User is fully authenticated (including 2FA if needed), redirecting to dashboard");
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate, sessionChecked]);
@@ -140,6 +141,9 @@ export default function Login() {
             }
           }
         }
+
+        // Debug info
+        console.log("Pre-login check - User 2FA status:", userData.two_factor_enabled);
       }
 
       console.log("Attempting login after pre-checks");
@@ -147,6 +151,8 @@ export default function Login() {
       
       if (result) {
         console.log("Login successful, waiting for 2FA check if needed");
+        // The login success already redirects if no 2FA is needed
+        // If 2FA is needed, the state will be updated in our useEffect
       } else {
         // Login failed
         setIsSubmitting(false);
@@ -168,7 +174,7 @@ export default function Login() {
     }
     
     setIsSubmitting(true);
-    console.log("Verifying 2FA code:", otpCode);
+    console.log("Verifying 2FA code:", otpCode, "for user:", user.id);
     
     try {
       // Use the verifyTwoFactor method from our auth context
@@ -176,8 +182,9 @@ export default function Login() {
       
       if (isValid) {
         // 2FA verification successful
+        console.log("2FA verification successful, setting 2FA complete");
         setTwoFactorComplete();
-        console.log("2FA verification successful, will redirect to dashboard");
+        
         // Add a small delay to ensure state updates
         setTimeout(() => {
           navigate('/dashboard');
@@ -225,16 +232,17 @@ export default function Login() {
       supabase.auth.signOut().then(() => {
         setLoginStage('credentials');
         setOtpCode('');
+        console.log("Logged out and returned to credentials screen");
       });
     }
   };
 
-  if (!sessionChecked || loading) {
+  if (!sessionChecked || authLoading) {
     return <Loading text={t("checkingSession") || "جاري التحقق من حالة الجلسة..."} className="min-h-screen" />;
   }
 
   // Don't render anything if we're already authenticated and should be redirected
-  if (isAuthenticated) {
+  if (isAuthenticated && !needsTwoFactor) {
     return null;
   }
 
@@ -304,7 +312,7 @@ export default function Login() {
             </div>
             <Button
               type="submit"
-              disabled={isSubmitting || loading || (isProdDomain && !captchaToken)}
+              disabled={isSubmitting || authLoading || (isProdDomain && !captchaToken)}
               className="w-full"
             >
               {isSubmitting ? t("loggingIn") : t("login")}
