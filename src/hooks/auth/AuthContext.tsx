@@ -14,16 +14,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Combine state and actions
   const authContext = { ...authState, ...authActions };
   
-useEffect(() => {
-  if (
-    authState.isAuthenticated &&
-    !authState.needsTwoFactor &&
-    authState.twoFactorVerified
-  ) {
-    // يمكنك هنا إرسال رسالة إلى علامات التبويب الأخرى أو تنفيذ منطق آخر
-    console.log("User is fully authenticated with 2FA.");
-  }
-}, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified]);
+  useEffect(() => {
+    // Log authentication state for debugging
+    console.log("Auth context state:", {
+      isAuthenticated: authState.isAuthenticated,
+      needsTwoFactor: authState.needsTwoFactor,
+      twoFactorVerified: authState.twoFactorVerified
+    });
+  }, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified]);
   
   useEffect(() => {
     // Handle cross-tab authentication sync

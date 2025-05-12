@@ -33,18 +33,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (loading || !sessionChecked) {
     return <Loading text={t("loading") || "جاري التحميل..."} />;
   }
-  // ProtectedRoute.tsx
-
-if (!isAuthenticated) {
-  return <Navigate to="/login" state={{ from: location }} replace />;
-}
-
-// ✅ التحقق من localStorage أيضًا
-const is2FAVerifiedLocally = localStorage.getItem('twoFactorVerified') === 'true';
-
-if (needsTwoFactor && !twoFactorVerified && !is2FAVerifiedLocally) {
-  return <Navigate to="/login" state={{ from: location }} replace />;
-}
+  
+  // If not authenticated, redirect to login page
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
   // If 2FA is required but not verified, redirect to login page
   // If roles are specified, check if user has permission
   if (allowedRoles && role && !allowedRoles.includes(role)) {
