@@ -134,7 +134,7 @@ const verifyTwoFactor = async (userId: string, token: string) => {
   const logout = async () => {
     try {
       const isSessionValid = await checkSession();
-      
+      localStorage.removeItem('twoFactorVerified');
       if (!isSessionValid) {
         console.log("No valid session found, cleaning up local state");
         navigate('/login?loggedOut=true');
