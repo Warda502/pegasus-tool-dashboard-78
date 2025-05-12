@@ -229,7 +229,6 @@ export default function Pricing() {
                         <span className="text-3xl font-bold">$</span>
                         <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
                         <span className="ml-1 text-sm font-medium text-muted-foreground">
-                          / 1 credit
                         </span>
                       </div>
                     </div>
