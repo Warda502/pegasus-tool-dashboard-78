@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { format, parseISO, startOfMonth, subMonths } from "date-fns";
 import { Operation } from "@/hooks/data/types";
@@ -13,10 +12,10 @@ interface MonthlyOperationsChartProps {
 
 export function MonthlyOperationsChart({ operations, className }: MonthlyOperationsChartProps) {
   const { t } = useLanguage();
-  
+
   const monthlyData = useMemo(() => {
     if (!operations || operations.length === 0) return [];
-    
+
     // Get the last 6 months
     const monthsToShow = 6;
     const today = new Date();
@@ -25,52 +24,51 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
       return {
         month: month,
         monthKey: format(month, "yyyy-MM"),
-        displayName: format(month, "MMM"),
+        displayName: format(month, "MMM"), // Use short month name
         count: 0
       };
     }).reverse();
-    
+
     // Custom date parser for format: yyyy/MM/dd hh:mm -tt
     const extractMonthYearKey = (timeStr: string): string | null => {
       if (!timeStr) return null;
-      
+
       try {
-        // Handle format like "2023/04/25 09:30 -AM" or similar variations
-        const regex = /(\d{4})\/(\d{2})\/\d{2}/;
+        const regex = /(\d{4})\/(\d{2})\//;
         const match = timeStr.match(regex);
-        
+
         if (match && match.length >= 3) {
           const year = match[1];
-          const month = match[2];
+          const month = match[2].padStart(2, '0');
           return `${year}-${month}`;
         }
-        
+
         return null;
       } catch (error) {
         console.error("Failed to parse date:", timeStr, error);
         return null;
       }
     };
-    
+
     // Count operations per month
     operations.forEach(op => {
       if (!op.Time) return;
-      
+
       const monthKey = extractMonthYearKey(op.Time);
       if (!monthKey) return;
-      
+
       const monthData = months.find(m => m.monthKey === monthKey);
       if (monthData) {
         monthData.count += 1;
       }
     });
-    
+
     return months.map(m => ({
       name: m.displayName,
       value: m.count
     }));
   }, [operations]);
-  
+
   const chartConfig = {
     operations: {
       label: t("operations") || "Operations",
@@ -80,7 +78,7 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
       }
     }
   };
-  
+
   if (monthlyData.length === 0) {
     return (
       <div className="flex items-center justify-center h-full w-full text-muted-foreground">
@@ -88,7 +86,11 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
       </div>
     );
   }
-  
+
+  const formatNumber = (number: number): string => {
+    return new Intl.NumberFormat().format(number);
+  };
+
   return (
     <div className={`w-full h-full ${className || ""}`}>
       <ChartContainer config={chartConfig} className="h-full w-full">
