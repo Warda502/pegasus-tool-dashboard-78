@@ -1369,6 +1369,22 @@ export const translations: Translations = {
   "verify": {
     "en": "Verify",
     "ar": "تحقق"
+  },
+  "back": {
+    "en": "Back",
+    "ar": "رجوع"
+  },
+  "twoFactorAuth": {
+    "en": "Two-Factor Authentication",
+    "ar": "المصادقة الثنائية"
+  },
+  "enterVerificationCode": {
+    "en": "Enter Verification Code",
+    "ar": "أدخل رمز التحقق"
+  },
+  "useAuthenticatorApp": {
+    "en": "Use Authenticator App",
+    "ar": "استخدم تطبيق المصادقة"
   }
 };
 
