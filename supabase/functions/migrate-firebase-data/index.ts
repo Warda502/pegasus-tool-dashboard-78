@@ -5,8 +5,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.2";
 
 // Your Firebase and Supabase configuration
-const FIREBASE_URL = Deno.env.get('FIREBASE_URL') || 'https://pegasus-tool-database-default-rtdb.firebaseio.com';
-const FIREBASE_API_KEY = Deno.env.get('FIREBASE_API_KEY') || 'AIzaSyAoZXmXFEvXAujyaI1ahFolBf06in5R4P4';
+const FIREBASE_URL = Deno.env.get('FIREBASE_URL') || '';
+const FIREBASE_API_KEY = Deno.env.get('FIREBASE_API_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || 'https://sxigocnatqgqgiedrgue.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
