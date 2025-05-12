@@ -91,30 +91,37 @@ export function OperationTypeChart({ operations, className }: OperationTypeChart
                   ]}
                 />
               }
-            />
-
-            {/* Legend with custom formatter to show color dot + translated name */}
-            <Legend
-              wrapperStyle={{ paddingTop: "16px" }}
-              align="center"
-              verticalAlign="bottom"
-              layout="horizontal"
-              formatter={(name) => {
-                const item = coloredTypeData.find(d => d.name === name);
-                return (
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ color: item?.color, marginRight: 4 }}>●</span>
-                    {name}
-                  </span>
-                );
-              }}
-              payload={coloredTypeData.map(item => ({
-                id: item.name,
-                value: item.name,
-                type: 'square' as const,
-                color: item.color,
-              }))}
-            />
+<Legend
+  wrapperStyle={{ paddingTop: "16px" }}
+  align="center"
+  verticalAlign="bottom"
+  layout="horizontal"
+  formatter={(name) => {
+    const item = coloredTypeData.find(d => d.name === name);
+    return (
+      <span key={name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span
+          style={{
+            color: item?.color,
+            fontSize: 12,
+            minWidth: '16px',
+            textAlign: 'center',
+            fontWeight: 600
+          }}
+        >
+          {item?.value}
+        </span>
+        {name}
+      </span>
+    );
+  }}
+  payload={coloredTypeData.map(item => ({
+    id: item.name,
+    value: item.name,
+    type: 'square' as const,
+    color: item.color,
+  }))}
+/>
           </PieChart>
         </ResponsiveContainer>
       </ChartContainer>
