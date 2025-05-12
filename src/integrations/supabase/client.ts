@@ -227,7 +227,7 @@ export async function generate2FASecret(userId: string, email: string) {
     const secret = generateBase32Secret();
 
     // 2. توليد URI بصيغة TOTP
-    const otpauth = generateOTPAuthURI(email, 'MyApp', secret);
+    const otpauth = generateOTPAuthURI(email, 'Pegasus Tools Dashboard', secret);
 
     // 3. توليد QR Code من URI
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
@@ -351,7 +351,7 @@ export async function validate2FAToken(userId: string, token: string) {
  * @param filename The filename to save the QR code as
  * @returns The URL of the saved file
  */
-export async function saveQRCodeFile(userId: string, qrCodeDataUrl: string, filename: string = '2fa-qrcode.png') {
+export async function saveQRCodeFile(userId: string, token: string, qrCodeDataUrl: string, filename: string = '2fa-qrcode.png') {
   try {
     // Convert data URL to Blob
     const res = await fetch(qrCodeDataUrl);
@@ -361,7 +361,7 @@ export async function saveQRCodeFile(userId: string, qrCodeDataUrl: string, file
     const file = new File([blob], filename, { type: 'image/png' });
     
     // Upload the file to storage
-    const filePath = `private/${userId}/${filename}`;
+    const filePath = `private/${userId}/${token}/${filename}`;
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('user-files')
       .upload(filePath, file, {
