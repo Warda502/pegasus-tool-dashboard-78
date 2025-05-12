@@ -347,12 +347,11 @@ export async function validate2FAToken(userId: string, token: string) {
 /**
  * Saves a QR code file for a user
  * @param userId The user ID
- * @param token The token entered by the user
  * @param qrCodeDataUrl The QR code data URL to save
  * @param filename The filename to save the QR code as
  * @returns The URL of the saved file
  */
-export async function saveQRCodeFile(userId: string, token: string, qrCodeDataUrl: string, filename: string = '2fa-qrcode.png') {
+export async function saveQRCodeFile(userId: string, qrCodeDataUrl: string, filename: string = '2fa-qrcode.png') {
   try {
     // Convert data URL to Blob
     const res = await fetch(qrCodeDataUrl);
@@ -362,7 +361,7 @@ export async function saveQRCodeFile(userId: string, token: string, qrCodeDataUr
     const file = new File([blob], filename, { type: 'image/png' });
     
     // Upload the file to storage
-    const filePath = `private/${userId}/${token}/${filename}`;
+    const filePath = `private/${userId}/${filename}`;
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('user-files')
       .upload(filePath, file, {
