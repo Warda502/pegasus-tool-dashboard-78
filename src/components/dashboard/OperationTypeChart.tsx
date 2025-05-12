@@ -87,8 +87,7 @@ export function OperationTypeChart({ operations, className }: OperationTypeChart
               content={
                 <ChartTooltipContent
                   formatter={(value, name) => [
-                    `${value} ${" "}`,
-                    name,
+                   `${value} ${" "}`, name
                   ]}
                 />
               }
