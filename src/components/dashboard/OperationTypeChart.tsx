@@ -56,7 +56,7 @@ export function OperationTypeChart({ operations, className }: OperationTypeChart
     }));
   }, [typeData]);
 
-  if (typeData.length === 0) {
+  if (coloredTypeData.length === 0) {
     return (
       <div className="flex items-center justify-center h-full w-full text-muted-foreground">
         {t("noOperationsFound") || "No operations data available"}
@@ -82,6 +82,7 @@ export function OperationTypeChart({ operations, className }: OperationTypeChart
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
+
             <ChartTooltip
               content={
                 <ChartTooltipContent
@@ -92,12 +93,28 @@ export function OperationTypeChart({ operations, className }: OperationTypeChart
                 />
               }
             />
+
+            {/* Legend with custom formatter to show color dot + translated name */}
             <Legend
-              content={<ChartLegendContent />}
-              layout="horizontal"
-              verticalAlign="bottom"
-              align="center"
               wrapperStyle={{ paddingTop: "16px" }}
+              align="center"
+              verticalAlign="bottom"
+              layout="horizontal"
+              formatter={(name) => {
+                const item = coloredTypeData.find(d => d.name === name);
+                return (
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ color: item?.color, marginRight: 4 }}>●</span>
+                    {name}
+                  </span>
+                );
+              }}
+              payload={coloredTypeData.map(item => ({
+                id: item.name,
+                value: item.name,
+                type: 'square' as const,
+                color: item.color,
+              }))}
             />
           </PieChart>
         </ResponsiveContainer>
