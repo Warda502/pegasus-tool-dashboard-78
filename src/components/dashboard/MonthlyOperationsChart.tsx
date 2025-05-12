@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { format, parseISO, startOfMonth, subMonths } from "date-fns";
 import { Operation } from "@/hooks/data/types";
@@ -87,8 +88,17 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
     );
   }
 
-  const formatNumber = (number: number): string => {
-    return new Intl.NumberFormat().format(number);
+  // This function ensures we're working with numbers
+  const formatNumber = (value: number | string): string => {
+    // Convert to number if it's a string
+    const numberValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    
+    // Check if it's a valid number
+    if (isNaN(numberValue)) {
+      return '0';
+    }
+    
+    return new Intl.NumberFormat().format(numberValue);
   };
 
   return (
@@ -113,7 +123,7 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
               content={
                 <ChartTooltipContent 
                   labelFormatter={(label) => `${label}`} // Show month like "Apr"
-                  formatter={(value) => [`${formatNumber(value)} ${t("operations") || "Operations"}`]} // Format number and add "Operations"
+                  formatter={(value: any) => [`${formatNumber(value)} ${t("operations") || "Operations"}`]} // Type safety fix
                 />
               }
             />
