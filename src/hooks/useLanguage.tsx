@@ -1362,9 +1362,13 @@ export const translations: Translations = {
     "en": "Disabling...",
     "ar": "جارٍ التعطيل..."
   },
-  "twoFactorAuth": {
+  "TwoFactorAuth": {
     "en": "Two-Factor Authentication",
     "ar": "المصادقة الثنائية"
+  },
+  "verify": {
+    "en": "Verify",
+    "ar": "تحقق"
   }
 };
 
