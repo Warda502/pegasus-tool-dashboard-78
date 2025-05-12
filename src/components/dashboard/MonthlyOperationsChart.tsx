@@ -110,9 +110,8 @@ export function MonthlyOperationsChart({ operations, className }: MonthlyOperati
             <ChartTooltip
               content={
                 <ChartTooltipContent 
-                  labelFormatter={(value) => 
-                    `${value} ${t("monthData") || "Data"}`
-                  }
+                  labelFormatter={(label) => `${label}`} // Show month like "Apr"
+                  formatter={(value) => [`${formatNumber(value)} ${t("operations") || "Operations"}`]} // Format number and add "Operations"
                 />
               }
             />
