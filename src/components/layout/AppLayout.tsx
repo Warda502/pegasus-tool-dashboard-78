@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -25,6 +25,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -149,22 +155,46 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="flex min-h-screen w-full bg-gray-100 dark:bg-gray-900" dir={isRTL ? "rtl" : "ltr"}>
+      {/* Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 h-14 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm flex items-center justify-between px-4 z-50">
+        <div className="flex items-center">
+          <h1 className="text-lg font-bold dark:text-white">{t("pegasusTool")}</h1>
+        </div>
+        
+        <div className="flex items-center">
+          <span className="text-sm text-muted-foreground dark:text-gray-300 mr-3 hidden sm:inline">
+            {t("welcome")}, {userName}
+          </span>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">{userName}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer">
+                <User className="h-4 w-4 mr-2" />
+                {t("editProfile")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500">
+                <LogOut className="h-4 w-4 mr-2" />
+                {t("logout")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      
+      <div className="flex min-h-screen w-full bg-gray-100 dark:bg-gray-900 pt-14" dir={isRTL ? "rtl" : "ltr"}>
         <Sidebar 
           side={isRTL ? "right" : "left"}
           variant={isMobile ? "floating" : "sidebar"}
         >
           <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b dark:border-gray-800">
             <h1 className="text-lg sm:text-xl font-bold dark:text-white">{t("pegasusTool")}</h1>
-            <div className="flex flex-col sm:flex-row items-center sm:justify-between w-full mt-2 gap-2">
-              <span className="text-xs sm:text-sm text-muted-foreground truncate dark:text-gray-400">
-                {t("welcome")}, {userName}
-              </span>
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs h-7 px-2">
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                <span>{t("logout")}</span>
-              </Button>
-            </div>
           </SidebarHeader>
           
           <SidebarContent>
