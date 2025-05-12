@@ -1151,7 +1151,7 @@ export const translations: Translations = {
     "ar": "لم يتم تعريف أي خطط تسعير بعد"
   },
   "addNewPlan": {
-    "en": "addNewPlan",
+    "en": "Add New Plan",
     "ar": "إضافة خطة جديدة"
   },
   "addPricingPlan": {
@@ -1261,6 +1261,110 @@ export const translations: Translations = {
     "webSettings": {
     "en": "Web Settings",
     "ar": "إعدادات الويب"
+  },
+    "failedToCheckStatus": {
+    "en": "Failed to check 2FA status",
+    "ar": "فشل التحقق من حالة المصادقة الثنائية"
+  },
+  "twoFactorSetupError": {
+    "en": "An error occurred during two-factor authentication setup. Please try again.",
+    "ar": "حدث خطأ أثناء إعداد المصادقة الثنائية. يرجى المحاولة مرة أخرى."
+  },
+  "qrCodeSaved": {
+    "en": "QR code saved successfully",
+    "ar": "تم حفظ رمز الاستجابة السريعة (QR) بنجاح"
+  },
+  "qrCodeSaveError": {
+    "en": "Failed to save QR code",
+    "ar": "فشل في حفظ رمز الاستجابة السريعة (QR)"
+  },
+  "invalidVerificationCode": {
+    "en": "Please enter a valid 6-digit verification code",
+    "ar": "يرجى إدخال رمز تحقق مكوّن من 6 أرقام صحيح"
+  },
+  "twoFactorEnabled": {
+    "en": "Two-factor authentication enabled successfully",
+    "ar": "تم تفعيل المصادقة الثنائية بنجاح"
+  },
+  "verificationError": {
+    "en": "Verification failed. Please try again.",
+    "ar": "فشل التحقق. يرجى المحاولة مرة أخرى."
+  },
+  "twoFactorDisabled": {
+    "en": "Two-factor authentication disabled",
+    "ar": "تم تعطيل المصادقة الثنائية"
+  },
+  "disableError": {
+    "en": "Failed to disable two-factor authentication",
+    "ar": "فشل تعطيل المصادقة الثنائية"
+  },
+  "twoFactorDescription": {
+    "en": "Enable two-factor authentication to add an extra layer of security to your account.",
+    "ar": "قم بتفعيل المصادقة الثنائية لإضافة طبقة إضافية من الأمان لحسابك."
+  },
+  "enable2FA": {
+    "en": "Enable Two-Factor Authentication",
+    "ar": "تفعيل المصادقة الثنائية"
+  },
+  "twoFactorEnabledDescription": {
+    "en": "Your account is protected with two-factor authentication.",
+    "ar": "حسابك محمي بالمصادقة الثنائية."
+  },
+  "twoFactorAuthentication": {
+    "en": "Two-Factor Authentication",
+    "ar": "المصادقة الثنائية"
+  },
+  "twoFactorSecurity": {
+    "en": "Two-Factor Security",
+    "ar": "الأمان الثنائي"
+  },
+  "twoFactorNotEnabled": {
+    "en": "Two-Factor Authentication Not Enabled",
+    "ar": "المصادقة الثنائية غير مفعلة"
+  },
+  "twoFactorNotEnabledDescription": {
+    "en": "Your account is not protected with two-factor authentication.",
+    "ar": "حسابك غير محمي بالمصادقة الثنائية."
+  },
+  "twoFactorNote": {
+    "en": "You'll need an authenticator app like Google Authenticator or Authy to use 2FA.",
+    "ar": "ستحتاج إلى تطبيق مصادقة مثل Google Authenticator أو Authy لاستخدام المصادقة الثنائية."
+  },
+  "setup2FA": {
+    "en": "Set Up Two-Factor Authentication",
+    "ar": "إعداد المصادقة الثنائية"
+  },
+  "setup2FADescription": {
+    "en": "Scan the QR code with your authenticator app and enter the verification code to enable 2FA.",
+    "ar": "امسح رمز الاستجابة السريعة (QR) باستخدام تطبيق المصادقة الخاص بك وأدخل رمز التحقق لتفعيل المصادقة الثنائية."
+  },
+  "saveQRCode": {
+    "en": "Save QR Code",
+    "ar": "حفظ رمز QR"
+  },
+  "verificationCode": {
+    "en": "Verification Code",
+    "ar": "رمز التحقق"
+  },
+  "disable2FADescription": {
+    "en": "Are you sure you want to disable two-factor authentication? This will make your account less secure.",
+    "ar": "هل أنت متأكد أنك تريد تعطيل المصادقة الثنائية؟ هذا سيجعل حسابك أقل أمانًا."
+  },
+  "disable2FAWarning": {
+    "en": "Disabling 2FA will reduce the security of your account. Are you sure you want to proceed?",
+    "ar": "تعطيل المصادقة الثنائية سيخفض من أمان حسابك. هل أنت متأكد أنك تريد المتابعة؟"
+  },
+  "warning": {
+    "en": "Warning",
+    "ar": "تحذير"
+  },
+  "disabling": {
+    "en": "Disabling...",
+    "ar": "جارٍ التعطيل..."
+  },
+  "twoFactorAuth": {
+    "en": "Two-Factor Authentication",
+    "ar": "المصادقة الثنائية"
   }
 };
 
