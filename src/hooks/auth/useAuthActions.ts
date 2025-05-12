@@ -99,34 +99,37 @@ export const useAuthActions = (): AuthActions => {
     }
   };
 
-  const verifyTwoFactor = async (userId: string, token: string) => {
-    try {
-      console.log("Verifying 2FA token for user:", userId, "Token:", token);
-      
-      const isValid = await validate2FAToken(userId, token);
-      console.log("2FA validation result:", isValid);
-      
-      if (isValid) {
-        toast(t("loginSuccess") || "Login successful", {
-          description: t("welcomeBack") || "Welcome back"
-        });
-        
-        navigate('/dashboard');
-      } else {
-        toast(t("invalidOTP") || "Invalid verification code", {
-          description: t("invalidOTPDescription") || "Please try again with the correct code"
-        });
-      }
-      
-      return isValid;
-    } catch (error) {
-      console.error("2FA verification error:", error);
-      toast(t("verificationFailed") || "Verification failed", {
-        description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
+const verifyTwoFactor = async (userId: string, token: string) => {
+  try {
+    console.log("Verifying 2FA token for user:", userId, "Token:", token);
+    
+    const isValid = await validate2FAToken(userId, token);
+    console.log("2FA validation result:", isValid);
+    
+    if (isValid) {
+      // ✅ حفظ الحالة في localStorage
+      localStorage.setItem('twoFactorVerified', 'true');
+
+      toast(t("loginSuccess") || "Login successful", {
+        description: t("welcomeBack") || "Welcome back"
       });
-      return false;
+      
+      navigate('/dashboard');
+    } else {
+      toast(t("invalidOTP") || "Invalid verification code", {
+        description: t("invalidOTPDescription") || "Please try again with the correct code"
+      });
     }
-  };
+    
+    return isValid;
+  } catch (error) {
+    console.error("2FA verification error:", error);
+    toast(t("verificationFailed") || "Verification failed", {
+      description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
+    });
+    return false;
+  }
+};
 
   const logout = async () => {
     try {
