@@ -1,7 +1,8 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSubButton, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown, Globe, CreditCard, ShieldCheck, Lock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -9,6 +10,7 @@ import { useSharedData } from "@/hooks/data/DataContext";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 export default function AppLayout({
   children
 }: {
@@ -95,7 +97,7 @@ export default function AppLayout({
   }, {
     title: t("TwoFactorAuth"),
     path: "/two-factor-auth",
-    icon: FileQuestion,
+    icon: ShieldCheck, // Changed to ShieldCheck icon for Two-Factor Auth
     show: true
   }, {
     title: t("settings"),
@@ -104,14 +106,17 @@ export default function AppLayout({
     show: true
   }].filter(item => item.show);
 
-  // Web Settings submenu items
+  // Web Settings submenu items with appropriate icons
   const webSettingsItems = [{
     title: t("supportedModels") || "Supported Models",
-    path: "/web-settings/supported-models"
+    path: "/web-settings/supported-models",
+    icon: Globe // Added Globe icon for Supported Models
   }, {
     title: t("pricing") || "Pricing",
-    path: "/web-settings/pricing"
+    path: "/web-settings/pricing",
+    icon: CreditCard // Added CreditCard icon for Pricing
   }];
+  
   const getCurrentPageTitle = () => {
     const currentPath = location.pathname;
     if (currentPath.includes('/web-settings')) {
@@ -120,32 +125,35 @@ export default function AppLayout({
     const menuItem = menuItems.find(item => item.path === currentPath);
     return menuItem ? menuItem.title : t("dashboard");
   };
+  
   return <SidebarProvider defaultOpen={!isMobile}>
-      {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm flex items-center justify-between px-4 z-50">
+      {/* Top Navigation Bar - Enhanced with glass effect */}
+      <div className="fixed top-0 left-0 right-0 h-14 backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border-b dark:border-gray-700 shadow-sm flex items-center justify-between px-4 z-50 transition-all duration-300">
         <div className="flex items-center">
-          <h1 className="text-lg font-bold dark:text-white">{t("pegasusTool")}</h1>
+          <h1 className="text-lg font-bold dark:text-white bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{t("pegasusTool")}</h1>
         </div>
         
         <div className="flex items-center">
-          <span className="text-sm text-muted-foreground dark:text-gray-300 mr-3 hidden sm:inline">
+          <span className="text-sm text-muted-foreground dark:text-gray-300 mr-3 hidden sm:inline animate-fade-in">
             {t("welcome")}, {userName}
           </span>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                <User className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="flex items-center gap-1 hover:bg-primary/10 transition-all duration-300">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
                 <span className="hidden sm:inline">{userName}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer">
+            <DropdownMenuContent align="end" className="w-48 animate-slide-in-from-bottom-5">
+              <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer hover:bg-primary/10 transition-colors">
                 <User className="h-4 w-4 mr-2" />
                 {t("editProfile")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500">
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
                 <LogOut className="h-4 w-4 mr-2" />
                 {t("logout")}
               </DropdownMenuItem>
@@ -154,40 +162,69 @@ export default function AppLayout({
         </div>
       </div>
       
-      <div className="flex min-h-screen w-full bg-gray-100 dark:bg-gray-900 pt-14" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900 pt-14" dir={isRTL ? "rtl" : "ltr"}>
         <Sidebar side={isRTL ? "right" : "left"} variant={isMobile ? "floating" : "sidebar"}>
           <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b dark:border-gray-800">
-            <h1 className="text-lg sm:text-xl font-bold dark:text-white">{t("pegasusTool")}</h1>
+            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{t("pegasusTool")}</h1>
           </SidebarHeader>
           
           <SidebarContent>
             <SidebarMenu>
               {menuItems.map(item => <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.title}>
-                    <button onClick={() => navigate(item.path)} className="w-full text-xs sm:text-sm relative">
-                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>{item.title}</span>
+                    <button 
+                      onClick={() => navigate(item.path)} 
+                      className="w-full text-xs sm:text-sm relative group transition-all duration-300 hover:translate-x-1"
+                    >
+                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
+                      <span className="group-hover:text-primary transition-colors">{item.title}</span>
+                      
+                      {/* Active indicator */}
+                      {location.pathname === item.path && (
+                        <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
+                      )}
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>)}
               
-              {/* Web Settings Accordion Menu - Admin Only */}
+              {/* Web Settings Accordion Menu - Improved with icons */}
               {isAdmin && <SidebarMenuItem>
                   <Accordion type="single" collapsible className="w-full" defaultValue={isWebSettingsActive ? "web-settings" : undefined}>
                     <AccordionItem value="web-settings" className="border-none">
-                      <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm">
-                        <div className="flex items-center gap-2">
-                          <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span>{t("webSettings") || "Web Settings"}</span>
+                      <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm group transition-all duration-300">
+                        <div className="flex items-center gap-2 group-hover:translate-x-1 transition-all">
+                          <Globe className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
+                          <span className="group-hover:text-primary transition-colors">{t("webSettings") || "Web Settings"}</span>
+                          
+                          {/* Active indicator for the parent menu */}
+                          {isWebSettingsActive && (
+                            <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
+                          )}
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="pt-1 pb-0">
+                      <AccordionContent className="pt-1 pb-0 animate-accordion-down">
                         <div className="flex flex-col space-y-1 pl-7">
-                          {webSettingsItems.map(subItem => <SidebarMenuButton key={subItem.path} asChild className="py-2" isActive={location.pathname.includes(subItem.path)}>
-                              <button onClick={() => navigate(subItem.path)} className={cn("text-xs sm:text-sm w-full text-left px-3 py-2 rounded-md", location.pathname.includes(subItem.path) ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800")}>
+                          {webSettingsItems.map(subItem => (
+                            <SidebarMenuButton 
+                              key={subItem.path} 
+                              asChild 
+                              className="py-2" 
+                              isActive={location.pathname.includes(subItem.path)}
+                            >
+                              <button 
+                                onClick={() => navigate(subItem.path)} 
+                                className={cn(
+                                  "text-xs sm:text-sm w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-all duration-300 hover:translate-x-1", 
+                                  location.pathname.includes(subItem.path) 
+                                    ? "bg-primary/10 text-primary font-medium" 
+                                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                                )}
+                              >
+                                <subItem.icon className="h-4 w-4 flex-shrink-0" />
                                 {subItem.title}
                               </button>
-                            </SidebarMenuButton>)}
+                            </SidebarMenuButton>
+                          ))}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -204,11 +241,15 @@ export default function AppLayout({
         <main className="flex-1 p-3 sm:p-6 overflow-auto dark:bg-gray-900 dark:text-white">
           <div className="flex items-center mb-4 sm:mb-6">
             <SidebarTrigger className="text-sm sm:text-base mr-2 rtl:mr-0 rtl:ml-2" />
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               {getCurrentPageTitle()}
             </h1>
           </div>
-          {children}
+          
+          {/* Add animation to the main content */}
+          <div className="animate-fade-in">
+            {children}
+          </div>
         </main>
       </div>
     </SidebarProvider>;

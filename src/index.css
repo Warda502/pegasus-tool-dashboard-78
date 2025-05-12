@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -96,6 +97,71 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
+}
+
+/* Enhanced card styles */
+.card {
+  @apply transition-all duration-300 hover:shadow-md;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .glass-effect {
+    @apply backdrop-blur-md bg-white/70 dark:bg-gray-800/70;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+  
+  .border-gradient {
+    @apply border-2 border-transparent bg-clip-border;
+    background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/50%));
+  }
+}
+
+/* Enhanced animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-effect {
+  background: linear-gradient(
+    90deg,
+    hsla(var(--background)),
+    hsla(var(--muted)),
+    hsla(var(--background))
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Button hover effects */
+button:not(.no-effects):hover {
+  transform: translateY(-2px);
+}
+
+/* Input focus effects */
+input:focus, textarea:focus {
+  box-shadow: 0 0 0 2px hsla(var(--primary)/30%);
+}
+
+/* Table hover effects */
+tr:hover td {
+  @apply bg-primary/5 transition-colors duration-200;
 }
