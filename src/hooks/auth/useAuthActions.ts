@@ -7,6 +7,10 @@ import { useLanguage } from "../useLanguage";
 import { AuthActions } from "./types";
 import { validate2FAToken } from "@/integrations/supabase/client";
 
+// Key for tracking login status
+const LOGIN_IN_PROGRESS_KEY = "login_in_progress";
+const TwoFactorVerifiedKey = "auth_2fa_verified";
+
 export const useAuthActions = (): AuthActions => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -41,6 +45,10 @@ export const useAuthActions = (): AuthActions => {
   const handleSessionExpired = useCallback(() => {
     console.log("Handling session expiration");
     
+    // Clear any 2FA verification state
+    localStorage.removeItem(TwoFactorVerifiedKey);
+    localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+    
     if (window.location.pathname !== '/login') {
       toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
         description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
@@ -53,6 +61,10 @@ export const useAuthActions = (): AuthActions => {
   const login = async (email: string, password: string) => {
     try {
       console.log("Attempting login for:", email);
+      
+      // Set login in progress
+      localStorage.setItem(LOGIN_IN_PROGRESS_KEY, 'true');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -60,6 +72,7 @@ export const useAuthActions = (): AuthActions => {
       
       if (error) {
         console.error("Login error:", error);
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
         throw error;
       }
       
@@ -75,6 +88,7 @@ export const useAuthActions = (): AuthActions => {
 
       if (userDataError) {
         console.error("Error fetching user data after login:", userDataError);
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
         throw userDataError;
       }
 
@@ -86,6 +100,8 @@ export const useAuthActions = (): AuthActions => {
           description: t("welcomeBack")
         });
         
+        // No 2FA needed, clear flag and redirect
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
         navigate('/dashboard');
       }
       
@@ -107,12 +123,20 @@ export const useAuthActions = (): AuthActions => {
       console.log("2FA validation result:", isValid);
       
       if (isValid) {
+        // Store 2FA verification in localStorage
+        localStorage.setItem(TwoFactorVerifiedKey, 'true');
+        
         toast(t("loginSuccess") || "Login successful", {
           description: t("welcomeBack") || "Welcome back"
         });
         
-        navigate('/dashboard');
+        // Navigate after small delay to allow state updates
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 200);
       } else {
+        localStorage.removeItem(TwoFactorVerifiedKey);
+        
         toast(t("invalidOTP") || "Invalid verification code", {
           description: t("invalidOTPDescription") || "Please try again with the correct code"
         });
@@ -121,6 +145,8 @@ export const useAuthActions = (): AuthActions => {
       return isValid;
     } catch (error) {
       console.error("2FA verification error:", error);
+      localStorage.removeItem(TwoFactorVerifiedKey);
+      
       toast(t("verificationFailed") || "Verification failed", {
         description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
@@ -134,12 +160,21 @@ export const useAuthActions = (): AuthActions => {
       
       if (!isSessionValid) {
         console.log("No valid session found, cleaning up local state");
+        
+        // Clear all authentication related storage
+        localStorage.removeItem(TwoFactorVerifiedKey);
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+        
         navigate('/login?loggedOut=true');
         return true;
       }
       
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear 2FA verification state on logout
+      localStorage.removeItem(TwoFactorVerifiedKey); 
+      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
       
       toast(t("logoutSuccess"), {
         description: t("comeBackSoon")

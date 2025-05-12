@@ -24,6 +24,7 @@ export interface AuthState {
   needsTwoFactor: boolean;
   twoFactorVerified: boolean;
   setTwoFactorComplete: () => void;
+  clearTwoFactorVerification: () => void;
 }
 
 export interface AuthActions {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Separator } from "@/components/ui/separator";
+
+// Key for tracking login status
+const LOGIN_IN_PROGRESS_KEY = "login_in_progress";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -29,7 +31,8 @@ export default function Login() {
     verifyTwoFactor,
     needsTwoFactor,
     user,
-    setTwoFactorComplete
+    setTwoFactorComplete,
+    clearTwoFactorVerification
   } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,6 +50,25 @@ export default function Login() {
   // Check if the current domain is the production domain
   const isProdDomain = window.location.origin === "https://panel.pegasus-tools.com";
   // If not on prod domain, we'll skip captcha validation
+
+  // Clear login tracking on component mount and if not in the middle of auth flow
+  useEffect(() => {
+    const loginInProgress = localStorage.getItem(LOGIN_IN_PROGRESS_KEY) === 'true';
+    
+    // Only clear if not in login flow
+    if (!needsTwoFactor && !loginInProgress) {
+      console.log("Clearing 2FA verification state on login page load");
+      clearTwoFactorVerification();
+    }
+    
+    // Clear login in progress flag when component unmounts
+    return () => {
+      // Only clear if not transitioning to dashboard
+      if (window.location.pathname !== '/dashboard') {
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+      }
+    };
+  }, [clearTwoFactorVerification, needsTwoFactor]);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -83,7 +105,6 @@ export default function Login() {
 
   useEffect(() => {
     // Only redirect if user is fully authenticated (passed 2FA if needed)
-    // Critical check: isAuthenticated will only be true if user has passed 2FA verification
     if (sessionChecked && isAuthenticated) {
       console.log("User is authenticated and 2FA verified (if needed), redirecting to dashboard");
       navigate('/dashboard');
@@ -93,9 +114,13 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    // Set login in progress flag
+    localStorage.setItem(LOGIN_IN_PROGRESS_KEY, 'true');
 
     try {
       // Clear any previous 2FA state
+      clearTwoFactorVerification();
       setOtpCode('');
       
       // First, check if email exists and if the user is blocked or has no credits
@@ -114,6 +139,7 @@ export default function Login() {
             description: t("accountBlockedDescription")
           });
           setIsSubmitting(false);
+          localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
           return;
         }
 
@@ -126,6 +152,7 @@ export default function Login() {
                 description: t("noCreditsLeftDescription")
               });
               setIsSubmitting(false);
+              localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
               return;
             }
           }
@@ -140,12 +167,16 @@ export default function Login() {
       } else {
         // Login failed
         setIsSubmitting(false);
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
       }
     } catch (err) {
       console.error("Login validation error:", err);
       toast(t("loginFailed") || "Login failed", {
         description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
       });
+      setIsSubmitting(false);
+      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -168,15 +199,18 @@ export default function Login() {
         // 2FA verification successful
         setTwoFactorComplete();
         console.log("2FA verification successful, will redirect to dashboard");
+        // Keep the login in progress flag so we know we're mid-auth flow
       } else {
         // Invalid OTP - message is shown by verifyTwoFactor
         setOtpCode('');
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
       }
     } catch (error) {
       console.error("OTP verification error:", error);
       toast(t("verificationFailed") || "Verification failed", {
         description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
+      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
     } finally {
       setIsSubmitting(false);
     }
@@ -205,11 +239,14 @@ export default function Login() {
     if (!user) {
       setLoginStage('credentials');
       setOtpCode('');
+      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
     } else {
       // If in auth flow with a user, log out and go back to credentials
       supabase.auth.signOut().then(() => {
         setLoginStage('credentials');
         setOtpCode('');
+        clearTwoFactorVerification();
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
       });
     }
   };
