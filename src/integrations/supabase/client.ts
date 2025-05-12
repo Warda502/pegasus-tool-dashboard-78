@@ -347,6 +347,7 @@ export async function validate2FAToken(userId: string, token: string) {
 /**
  * Saves a QR code file for a user
  * @param userId The user ID
+ * @param token The token entered by the user
  * @param qrCodeDataUrl The QR code data URL to save
  * @param filename The filename to save the QR code as
  * @returns The URL of the saved file
