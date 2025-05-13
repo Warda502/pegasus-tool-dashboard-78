@@ -1,256 +1,190 @@
-
-import { useNavigate, useLocation } from "react-router-dom";
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSubButton, SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown, Globe, CreditCard, ShieldCheck, Lock } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { ReactNode, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/auth/useAuthState";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useAuth } from "@/hooks/auth/AuthContext";
-import { useSharedData } from "@/hooks/data/DataContext";
-import { cn } from "@/lib/utils";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Bell, LogOut, Menu, Moon, Sun, User } from "lucide-react";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
-export default function AppLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui";
+
+import SidebarContent from "./Sidebar";
+
+interface AppLayoutProps {
+  children: ReactNode;
+}
+
+export default function AppLayout({ children }: AppLayoutProps) {
+  const { t, language, changeLanguage } = useLanguage();
+  const { user } = useAuth();
+  const { logout } = useAuthActions();
   const navigate = useNavigate();
-  const location = useLocation();
-  const isMobile = useIsMobile();
-  const {
-    t,
-    isRTL
-  } = useLanguage();
-  const {
-    role,
-    logout,
-    user,
-    isAdmin
-  } = useAuth();
-  const {
-    users
-  } = useSharedData();
-  const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(
+    () => (localStorage.getItem("theme") as "light" | "dark" | "system") || "system"
+  );
+
   const handleLogout = async () => {
     await logout();
+    navigate("/login");
   };
 
-  // Check if any sub-route of web-settings is active
-  const isWebSettingsActive = location.pathname.includes('/web-settings');
-  const menuItems = [{
-    title: t("dashboard"),
-    path: "/dashboard",
-    icon: Home,
-    show: true
-  }, {
-    title: t("editProfile"),
-    path: "/edit-profile",
-    icon: User,
-    show: !isAdmin
-  }, {
-    title: t("myCertFiles"),
-    path: "/my-cert-files",
-    icon: FileCheck,
-    show: !isAdmin
-  }, {
-    title: t("users"),
-    path: "/users-manager",
-    icon: Users,
-    show: role === "admin"
-  }, {
-    title: t("operations"),
-    path: "/operations",
-    icon: LineChart,
-    show: true
-  }, {
-    title: t("discounts"),
-    path: "/discounts",
-    icon: Tags,
-    show: role === "admin"
-  }, {
-    title: t("groupsManagement"),
-    path: "/groups-management",
-    icon: Group,
-    show: role === "admin"
-  }, {
-    title: t("toolUpdate"),
-    path: "/tool-update",
-    icon: Download,
-    show: role === "admin"
-  }, {
-    title: t("toolSettings"),
-    path: "/tool-settings",
-    icon: Sliders,
-    show: role === "admin"
-  }, {
-    title: t("serverApiData"),
-    path: "/server-api-data",
-    icon: Database,
-    show: role === "admin"
-  }, {
-    title: t("serverStorage"),
-    path: "/server-storage",
-    icon: FileQuestion,
-    show: role === "admin"
-  }, {
-    title: t("TwoFactorAuth"),
-    path: "/two-factor-auth",
-    icon: ShieldCheck, // Changed to ShieldCheck icon for Two-Factor Auth
-    show: true
-  }, {
-    title: t("settings"),
-    path: "/settings",
-    icon: Settings,
-    show: true
-  }].filter(item => item.show);
-
-  // Web Settings submenu items with appropriate icons
-  const webSettingsItems = [{
-    title: t("supportedModels") || "Supported Models",
-    path: "/web-settings/supported-models",
-    icon: Globe // Added Globe icon for Supported Models
-  }, {
-    title: t("pricing") || "Pricing",
-    path: "/web-settings/pricing",
-    icon: CreditCard // Added CreditCard icon for Pricing
-  }];
-  
-  const getCurrentPageTitle = () => {
-    const currentPath = location.pathname;
-    if (currentPath.includes('/web-settings')) {
-      return t("webSettings") || "Web Settings";
+  const getUserInitials = () => {
+    if (!user || !user.email) return "U";
+    if (user.name) {
+      return user.name
+        .split(" ")
+        .map((name) => name[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
     }
-    const menuItem = menuItems.find(item => item.path === currentPath);
-    return menuItem ? menuItem.title : t("dashboard");
+    return user.email.substring(0, 2).toUpperCase();
   };
-  
-  return <SidebarProvider defaultOpen={!isMobile}>
-      {/* Top Navigation Bar - Enhanced with glass effect */}
-      <div className="fixed top-0 left-0 right-0 h-14 backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border-b dark:border-gray-700 shadow-sm flex items-center justify-between px-4 z-50 transition-all duration-300">
-        <div className="flex items-center">
-          <h1 className="text-lg font-bold dark:text-white bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{t("pegasusTool")}</h1>
-        </div>
-        
-        <div className="flex items-center">
-          <span className="text-sm text-muted-foreground dark:text-gray-300 mr-3 hidden sm:inline animate-fade-in">
-            {t("welcome")}, {userName}
-          </span>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1 hover:bg-primary/10 transition-all duration-300">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-                <span className="hidden sm:inline">{userName}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 animate-slide-in-from-bottom-5">
-              <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer hover:bg-primary/10 transition-colors">
-                <User className="h-4 w-4 mr-2" />
-                {t("editProfile")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                <LogOut className="h-4 w-4 mr-2" />
-                {t("logout")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      
-      <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900 pt-14" dir={isRTL ? "rtl" : "ltr"}>
-        <Sidebar side={isRTL ? "right" : "left"} variant={isMobile ? "floating" : "sidebar"}>
-          <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b dark:border-gray-800">
-            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{t("pegasusTool")}</h1>
-          </SidebarHeader>
-          
-          <SidebarContent>
-            <SidebarMenu>
-              {menuItems.map(item => <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.title}>
-                    <button 
-                      onClick={() => navigate(item.path)} 
-                      className="w-full text-xs sm:text-sm relative group transition-all duration-300 hover:translate-x-1"
-                    >
-                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
-                      <span className="group-hover:text-primary transition-colors">{item.title}</span>
-                      
-                      {/* Active indicator */}
-                      {location.pathname === item.path && (
-                        <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>)}
-              
-              {/* Web Settings Accordion Menu - Improved with icons */}
-              {isAdmin && <SidebarMenuItem>
-                  <Accordion type="single" collapsible className="w-full" defaultValue={isWebSettingsActive ? "web-settings" : undefined}>
-                    <AccordionItem value="web-settings" className="border-none">
-                      <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm group transition-all duration-300">
-                        <div className="flex items-center gap-2 group-hover:translate-x-1 transition-all">
-                          <Globe className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
-                          <span className="group-hover:text-primary transition-colors">{t("webSettings") || "Web Settings"}</span>
-                          
-                          {/* Active indicator for the parent menu */}
-                          {isWebSettingsActive && (
-                            <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
-                          )}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-1 pb-0 animate-accordion-down">
-                        <div className="flex flex-col space-y-1 pl-7">
-                          {webSettingsItems.map(subItem => (
-                            <SidebarMenuButton 
-                              key={subItem.path} 
-                              asChild 
-                              className="py-2" 
-                              isActive={location.pathname.includes(subItem.path)}
-                            >
-                              <button 
-                                onClick={() => navigate(subItem.path)} 
-                                className={cn(
-                                  "text-xs sm:text-sm w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-all duration-300 hover:translate-x-1", 
-                                  location.pathname.includes(subItem.path) 
-                                    ? "bg-primary/10 text-primary font-medium" 
-                                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                                )}
-                              >
-                                <subItem.icon className="h-4 w-4 flex-shrink-0" />
-                                {subItem.title}
-                              </button>
-                            </SidebarMenuButton>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </SidebarMenuItem>}
-            </SidebarMenu>
-          </SidebarContent>
-          
-          <SidebarFooter className="p-2 sm:p-4 text-xs text-center text-muted-foreground dark:text-gray-500">
-            {t("allRightsReserved")}
-          </SidebarFooter>
-        </Sidebar>
 
-        <main className="flex-1 p-3 sm:p-6 overflow-auto dark:bg-gray-900 dark:text-white">
-          <div className="flex items-center mb-4 sm:mb-6">
-            <SidebarTrigger className="text-sm sm:text-base mr-2 rtl:mr-0 rtl:ml-2" />
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {getCurrentPageTitle()}
-            </h1>
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  const toggleLanguage = () => {
+    const newLanguage = language === "en" ? "ar" : "en";
+    changeLanguage(newLanguage);
+  };
+
+  return (
+    <SidebarProvider defaultOpen>
+      <Sidebar>
+        <SidebarHeader className="border-b">
+          <div className="flex items-center justify-between p-2">
+            <div className="flex items-center gap-2">
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className="h-6 w-6"
+              />
+              <span className="font-bold text-lg">Tool Admin</span>
+            </div>
+            <SidebarTrigger />
+          </div>
+        </SidebarHeader>
+        
+        <SidebarContent />
+        
+        <SidebarFooter className="border-t p-2">
+          <div className="flex justify-between items-center">
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={toggleLanguage}>
+              {language === "en" ? "العربية" : "English"}
+            </Button>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+
+      <SidebarInset>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+          <div className="md:hidden">
+            <SidebarTrigger />
           </div>
           
-          {/* Add animation to the main content */}
-          <div className="animate-fade-in">
-            {children}
+          <div className="flex-1" />
+          
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="sr-only">{t("notifications")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="flex items-center justify-between p-2">
+                  <span className="font-medium">{t("notifications")}</span>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  {t("noNewNotifications")}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 pl-2 pr-2 flex items-center">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline-flex ml-2">
+                    {user?.name || user?.email?.split('@')[0]}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-0.5">
+                    <p className="text-sm font-medium leading-none">
+                      {user?.name || user?.email?.split('@')[0]}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => navigate("/edit-profile")}
+                  className="cursor-pointer"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  {t("myProfile")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate("/two-factor-auth")}
+                  className="cursor-pointer"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  {t("twoFactorAuth")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {t("logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </main>
-      </div>
-    </SidebarProvider>;
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }

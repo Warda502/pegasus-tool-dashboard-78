@@ -26,7 +26,8 @@ import ToolSettings from "./pages/ToolSettings";
 import WebSettings from "./pages/WebSettings";
 import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
-import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
+import TwoFactorAuth from "./pages/TwoFactorAuth";
+import DistributorsManagement from "./pages/DistributorsManagement";
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -103,7 +104,6 @@ const App = () => {
                       <AppLayout><EditMyProfile /></AppLayout>
                     </ProtectedRoute>
                   } />
-                  {/* إضافة مسار المصادقة الثنائية */}
                   <Route path="/two-factor-auth" element={
                     <ProtectedRoute>
                       <AppLayout><TwoFactorAuth /></AppLayout>
@@ -132,6 +132,11 @@ const App = () => {
                   <Route path="/groups-management" element={
                     <ProtectedRoute allowedRoles={["admin"]}>
                       <AppLayout><GroupsManagement /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/distributors" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><DistributorsManagement /></AppLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/tool-update" element={

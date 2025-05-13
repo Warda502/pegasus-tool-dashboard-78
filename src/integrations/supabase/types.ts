@@ -75,6 +75,125 @@ export type Database = {
         }
         Relationships: []
       }
+      distributor_transactions: {
+        Row: {
+          admin_id: string
+          amount: number
+          created_at: string
+          distributor_id: string
+          id: string
+          new_balance: number
+          notes: string | null
+          previous_balance: number
+        }
+        Insert: {
+          admin_id: string
+          amount: number
+          created_at?: string
+          distributor_id: string
+          id?: string
+          new_balance: number
+          notes?: string | null
+          previous_balance: number
+        }
+        Update: {
+          admin_id?: string
+          amount?: number
+          created_at?: string
+          distributor_id?: string
+          id?: string
+          new_balance?: number
+          notes?: string | null
+          previous_balance?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributor_transactions_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distributor_users: {
+        Row: {
+          created_at: string
+          distributor_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          distributor_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          distributor_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributor_users_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distributor_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distributors: {
+        Row: {
+          commission_rate: number
+          country: string | null
+          created_at: string
+          created_by: string | null
+          credits_balance: number
+          email: string
+          id: string
+          max_credit_limit: number
+          name: string
+          phone: string | null
+          status: string
+        }
+        Insert: {
+          commission_rate?: number
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          credits_balance?: number
+          email: string
+          id?: string
+          max_credit_limit?: number
+          name: string
+          phone?: string | null
+          status?: string
+        }
+        Update: {
+          commission_rate?: number
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          credits_balance?: number
+          email?: string
+          id?: string
+          max_credit_limit?: number
+          name?: string
+          phone?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       groups: {
         Row: {
           inserted_at: string | null
@@ -177,18 +296,21 @@ export type Database = {
       settings: {
         Row: {
           key: string
+          numeric_value: number | null
           object_name: string
           title: string | null
           value: boolean | null
         }
         Insert: {
           key: string
+          numeric_value?: number | null
           object_name: string
           title?: string | null
           value?: boolean | null
         }
         Update: {
           key?: string
+          numeric_value?: number | null
           object_name?: string
           title?: string | null
           value?: boolean | null
@@ -250,6 +372,7 @@ export type Database = {
         Row: {
           changelog: string | null
           direct_download: boolean | null
+          download_count: number | null
           link: string | null
           name: string | null
           release_at: string | null
@@ -258,6 +381,7 @@ export type Database = {
         Insert: {
           changelog?: string | null
           direct_download?: boolean | null
+          download_count?: number | null
           link?: string | null
           name?: string | null
           release_at?: string | null
@@ -266,6 +390,7 @@ export type Database = {
         Update: {
           changelog?: string | null
           direct_download?: boolean | null
+          download_count?: number | null
           link?: string | null
           name?: string | null
           release_at?: string | null
@@ -279,6 +404,7 @@ export type Database = {
           block: string | null
           country: string | null
           credits: string | null
+          distributor_id: string | null
           email: string
           email_type: string | null
           expiry_time: string | null
@@ -298,6 +424,7 @@ export type Database = {
           block?: string | null
           country?: string | null
           credits?: string | null
+          distributor_id?: string | null
           email: string
           email_type?: string | null
           expiry_time?: string | null
@@ -317,6 +444,7 @@ export type Database = {
           block?: string | null
           country?: string | null
           credits?: string | null
+          distributor_id?: string | null
           email?: string
           email_type?: string | null
           expiry_time?: string | null
@@ -331,7 +459,15 @@ export type Database = {
           uid?: string
           user_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
