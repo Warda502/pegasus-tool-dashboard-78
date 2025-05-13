@@ -38,7 +38,9 @@ export * from "@/components/ui/sheet";
 export * from "@/components/ui/sidebar";
 export * from "@/components/ui/skeleton";
 export * from "@/components/ui/slider";
-export * from "@/components/ui/sonner";
+// Export Sonner with a specific name to avoid conflict
+export { toast } from "@/components/ui/sonner";
+export { Toaster as SonnerToaster } from "@/components/ui/sonner";
 export * from "@/components/ui/table";
 export * from "@/components/ui/tabs";
 export * from "@/components/ui/textarea";

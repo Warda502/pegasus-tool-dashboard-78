@@ -204,23 +204,31 @@ i18n
     },
   });
 
+// Define interface for the context
+interface LanguageContextType {
+  language: string;
+  t: (key: string, options?: any) => string;
+  changeLanguage: (lang: string) => void;
+  isRTL: boolean;
+}
+
 // Create a context for the language
-const LanguageContext = createContext({
+const LanguageContext = createContext<LanguageContextType>({
   language: 'en',
   t: (key: string, options?: any) => key,
   changeLanguage: (lang: string) => {},
-  isRTL: false, // Add the isRTL property
+  isRTL: false,
 });
 
 // Provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState(i18n.language || 'en');
-  const [isRTL, setIsRTL] = useState(language === 'ar'); // Add isRTL state
+  const [isRTL, setIsRTL] = useState(language === 'ar');
 
   const changeLanguage = (lang: string) => {
     i18n.changeLanguage(lang);
     setLanguage(lang);
-    setIsRTL(lang === 'ar'); // Update RTL state when language changes
+    setIsRTL(lang === 'ar');
     localStorage.setItem('i18nextLng', lang);
   };
 
@@ -229,8 +237,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
   }, [isRTL]);
 
-  const t = (key: string, options?: any) => {
-    return i18n.t(key, options);
+  // Ensure the t function always returns a string
+  const t = (key: string, options?: any): string => {
+    const translation = i18n.t(key, options);
+    return typeof translation === 'string' ? translation : String(translation);
   };
 
   return (
