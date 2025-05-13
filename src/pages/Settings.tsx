@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { toast } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
 
 export default function Settings() {
-  const { t, language, changeLanguage, isRTL } = useLanguage();
+  const { t, language, setLanguage, isRTL } = useLanguage();
   const [currentLanguage, setCurrentLanguage] = useState<string>(language);
   const [currentTheme, setCurrentTheme] = useState<string>(
     localStorage.getItem("theme") || "system"
@@ -43,7 +42,7 @@ export default function Settings() {
 
   // Save settings
   const saveSettings = () => {
-    changeLanguage(currentLanguage);
+    setLanguage(currentLanguage as "en" | "ar");
     handleThemeChange(currentTheme);
     toast.success(t("settingsUpdatedSuccessfully") || "Settings updated successfully");
   };

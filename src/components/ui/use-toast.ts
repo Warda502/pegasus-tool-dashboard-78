@@ -1,5 +1,5 @@
 
-// Re-export the hooks from the proper location
+// Import directly from React
 import { useToast as useToastHook, toast as toastFunction } from "@/hooks/use-toast";
 
 // Re-export the hooks

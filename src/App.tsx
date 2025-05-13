@@ -1,6 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import { SonnerToaster } from "@/components/ui/index";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -26,8 +26,7 @@ import ToolSettings from "./pages/ToolSettings";
 import WebSettings from "./pages/WebSettings";
 import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
-import TwoFactorAuth from "./pages/TwoFactorAuth";
-import DistributorsManagement from "./pages/DistributorsManagement";
+import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -104,6 +103,7 @@ const App = () => {
                       <AppLayout><EditMyProfile /></AppLayout>
                     </ProtectedRoute>
                   } />
+                  {/* إضافة مسار المصادقة الثنائية */}
                   <Route path="/two-factor-auth" element={
                     <ProtectedRoute>
                       <AppLayout><TwoFactorAuth /></AppLayout>
@@ -134,11 +134,6 @@ const App = () => {
                       <AppLayout><GroupsManagement /></AppLayout>
                     </ProtectedRoute>
                   } />
-                  <Route path="/distributors" element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><DistributorsManagement /></AppLayout>
-                    </ProtectedRoute>
-                  } />
                   <Route path="/tool-update" element={
                     <ProtectedRoute allowedRoles={["admin"]}>
                       <AppLayout><ToolUpdate /></AppLayout>
@@ -162,7 +157,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Toaster />
-                <SonnerToaster />
+                <Sonner />
               </TooltipProvider>
             </DataProvider>
           </AuthProvider>
