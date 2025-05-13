@@ -209,29 +209,32 @@ const LanguageContext = createContext({
   language: 'en',
   t: (key: string, options?: any) => key,
   changeLanguage: (lang: string) => {},
+  isRTL: false, // Add the isRTL property
 });
 
 // Provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState(i18n.language || 'en');
+  const [isRTL, setIsRTL] = useState(language === 'ar'); // Add isRTL state
 
   const changeLanguage = (lang: string) => {
     i18n.changeLanguage(lang);
     setLanguage(lang);
+    setIsRTL(lang === 'ar'); // Update RTL state when language changes
     localStorage.setItem('i18nextLng', lang);
   };
 
   useEffect(() => {
     // Set the language direction attribute on the document
-    document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
-  }, [language]);
+    document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+  }, [isRTL]);
 
   const t = (key: string, options?: any) => {
     return i18n.t(key, options);
   };
 
   return (
-    <LanguageContext.Provider value={{ language, changeLanguage, t }}>
+    <LanguageContext.Provider value={{ language, changeLanguage, t, isRTL }}>
       {children}
     </LanguageContext.Provider>
   );

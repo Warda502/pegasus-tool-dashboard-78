@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/auth/useAuthState";
+import { useAuth } from "@/hooks/auth/AuthContext"; // Fix the import path
 import { useLanguage } from "@/hooks/useLanguage";
 import {
   Building2,
@@ -20,20 +20,20 @@ import {
   TreePine,
   Users2,
   Wallet,
-  World,
+  Globe2, // Replace World with Globe2
 } from "lucide-react";
 
 import {
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
 export default function Sidebar() {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const location = useLocation();
   const { isAuthenticated, isAdmin, role } = useAuth();
   const [webSettingsOpen, setWebSettingsOpen] = useState(false);
@@ -54,8 +54,7 @@ export default function Sidebar() {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton
-          as={Link}
-          to="/dashboard"
+          onClick={() => location.pathname !== "/dashboard" && window.location.assign("/dashboard")}
           isActive={location.pathname === "/dashboard"}
           tooltip={t("dashboard")}
         >
@@ -66,8 +65,7 @@ export default function Sidebar() {
 
       <SidebarMenuItem>
         <SidebarMenuButton
-          as={Link}
-          to="/operations"
+          onClick={() => location.pathname !== "/operations" && window.location.assign("/operations")}
           isActive={location.pathname === "/operations"}
           tooltip={t("operations")}
         >
@@ -80,8 +78,7 @@ export default function Sidebar() {
         <>
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/users-manager"
+              onClick={() => location.pathname !== "/users-manager" && window.location.assign("/users-manager")}
               isActive={location.pathname === "/users-manager"}
               tooltip={t("usersManager")}
             >
@@ -92,8 +89,7 @@ export default function Sidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/distributors"
+              onClick={() => location.pathname !== "/distributors" && window.location.assign("/distributors")}
               isActive={location.pathname === "/distributors"}
               tooltip={t("distributorsManagement")}
             >
@@ -104,8 +100,7 @@ export default function Sidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/discounts"
+              onClick={() => location.pathname !== "/discounts" && window.location.assign("/discounts")}
               isActive={location.pathname === "/discounts"}
               tooltip={t("discounts")}
             >
@@ -116,8 +111,7 @@ export default function Sidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/groups-management"
+              onClick={() => location.pathname !== "/groups-management" && window.location.assign("/groups-management")}
               isActive={location.pathname === "/groups-management"}
               tooltip={t("groupsManagement")}
             >
@@ -130,8 +124,7 @@ export default function Sidebar() {
 
       <SidebarMenuItem>
         <SidebarMenuButton
-          as={Link}
-          to="/my-cert-files"
+          onClick={() => location.pathname !== "/my-cert-files" && window.location.assign("/my-cert-files")}
           isActive={location.pathname === "/my-cert-files"}
           tooltip={t("myCertFiles")}
         >
@@ -144,8 +137,7 @@ export default function Sidebar() {
         <>
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/server-api-data"
+              onClick={() => location.pathname !== "/server-api-data" && window.location.assign("/server-api-data")}
               isActive={location.pathname === "/server-api-data"}
               tooltip={t("serverApiData")}
             >
@@ -156,8 +148,7 @@ export default function Sidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/server-storage"
+              onClick={() => location.pathname !== "/server-storage" && window.location.assign("/server-storage")}
               isActive={location.pathname === "/server-storage"}
               tooltip={t("serverStorage")}
             >
@@ -168,20 +159,18 @@ export default function Sidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/tool-update"
+              onClick={() => location.pathname !== "/tool-update" && window.location.assign("/tool-update")}
               isActive={location.pathname === "/tool-update"}
               tooltip={t("toolUpdate")}
             >
-              <World />
+              <Globe2 />
               {t("toolUpdate")}
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton
-              as={Link}
-              to="/tool-settings"
+              onClick={() => location.pathname !== "/tool-settings" && window.location.assign("/tool-settings")}
               isActive={location.pathname === "/tool-settings"}
               tooltip={t("toolSettings")}
             >
@@ -209,11 +198,8 @@ export default function Sidebar() {
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
-                    as={Link}
-                    to="/web-settings/supported-models"
-                    isActive={
-                      location.pathname === "/web-settings/supported-models"
-                    }
+                    onClick={() => location.pathname !== "/web-settings/supported-models" && window.location.assign("/web-settings/supported-models")}
+                    isActive={location.pathname === "/web-settings/supported-models"}
                   >
                     <ShieldAlert className="h-4 w-4 mr-2" />
                     {t("supportedModels")}
@@ -222,8 +208,7 @@ export default function Sidebar() {
 
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
-                    as={Link}
-                    to="/web-settings/pricing"
+                    onClick={() => location.pathname !== "/web-settings/pricing" && window.location.assign("/web-settings/pricing")}
                     isActive={location.pathname === "/web-settings/pricing"}
                   >
                     <Store className="h-4 w-4 mr-2" />
@@ -238,8 +223,7 @@ export default function Sidebar() {
 
       <SidebarMenuItem>
         <SidebarMenuButton
-          as={Link}
-          to="/settings"
+          onClick={() => location.pathname !== "/settings" && window.location.assign("/settings")}
           isActive={location.pathname === "/settings"}
           tooltip={t("settings")}
         >

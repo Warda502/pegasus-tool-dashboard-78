@@ -1,6 +1,7 @@
+
 import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/auth/useAuthState";
+import { useAuth } from "@/hooks/auth/AuthContext"; // Fix the import path
 import { useLanguage } from "@/hooks/useLanguage";
 import { Bell, LogOut, Menu, Moon, Sun, User } from "lucide-react";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
@@ -27,14 +28,15 @@ import {
   AvatarImage,
 } from "@/components/ui";
 
-import SidebarContent from "./Sidebar";
+// Import the SidebarContent component with a different name to avoid the duplicate identifier
+import SidebarNavContent from "./Sidebar";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const { t, language, changeLanguage } = useLanguage();
+  const { t, language, changeLanguage, isRTL } = useLanguage();
   const { user } = useAuth();
   const { logout } = useAuthActions();
   const navigate = useNavigate();
@@ -94,7 +96,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </SidebarHeader>
         
-        <SidebarContent />
+        <SidebarContent>
+          <SidebarNavContent />
+        </SidebarContent>
         
         <SidebarFooter className="border-t p-2">
           <div className="flex justify-between items-center">
