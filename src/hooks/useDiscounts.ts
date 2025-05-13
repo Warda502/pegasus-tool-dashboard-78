@@ -35,3 +35,46 @@ export function useDiscounts() {
     enabled: !!user && isAdmin
   });
 }
+
+// Add hook for managing offers
+export function useOffers() {
+  const { t } = useLanguage();
+  const { user, isAdmin } = useAuth();
+  
+  return useQuery({
+    queryKey: ['offers'],
+    queryFn: async () => {
+      if (!user || !isAdmin) {
+        console.log("User is not admin or not authenticated");
+        return [];
+      }
+
+      console.log("Fetching offers data");
+      
+      const { data, error } = await supabase
+        .from('offers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching offers:', error);
+        toast.error(t("errorFetchingData") || "Error fetching data");
+        throw error;
+      }
+      
+      // Process offers to check for expired status
+      const currentDate = new Date();
+      const processedOffers = data?.map(offer => {
+        const isExpired = offer.expiry_at ? new Date(offer.expiry_at) < currentDate : false;
+        return {
+          ...offer,
+          status: isExpired ? "expired" : (offer.status || "active")
+        };
+      }) || [];
+
+      console.log(`Fetched ${processedOffers.length} offer records`);
+      return processedOffers;
+    },
+    enabled: !!user && isAdmin
+  });
+}

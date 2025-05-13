@@ -208,8 +208,8 @@ export default function Pricing() {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div> : pricingPlans.length === 0 ? <div className="text-center py-10 text-muted-foreground">
               {t("noPricingPlans") || "No pricing plans defined yet"}
-            </div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {pricingPlans.map(plan => <Card key={plan.id} className="overflow-hidden border border-muted shadow-lg relative group">
+            </div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6 place-items-center">
+              {pricingPlans.map(plan => <Card key={plan.id} className="overflow-hidden border border-muted shadow-lg relative group w-full max-w-xs">
                   {/* Edit and delete buttons (visible on hover) */}
                   <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" onClick={() => handleEditPlan(plan)} className="h-7 w-7 bg-background/80 backdrop-blur-sm">

@@ -218,21 +218,21 @@ export type Database = {
           expiry_at: string | null
           id: string
           percentage: string | null
-          period: string | null
+          status: string | null
         }
         Insert: {
           created_at?: string
           expiry_at?: string | null
           id?: string
           percentage?: string | null
-          period?: string | null
+          status?: string | null
         }
         Update: {
           created_at?: string
           expiry_at?: string | null
           id?: string
           percentage?: string | null
-          period?: string | null
+          status?: string | null
         }
         Relationships: []
       }
