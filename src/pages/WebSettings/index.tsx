@@ -22,6 +22,10 @@ export default function WebSettings() {
       return "supported-models";
     } else if (pathname.includes("pricing")) {
       return "pricing";
+    } else if (pathname.includes("payment-methods")) {
+      return "payment-methods";
+    } else if (pathname.includes("discount-offers")) {
+      return "discount-offers";
     }
     return "supported-models"; // Default tab
   };
@@ -45,6 +49,12 @@ export default function WebSettings() {
             <TabsTrigger value="pricing">
               {t("pricing") || "Pricing"}
             </TabsTrigger>
+            <TabsTrigger value="payment-methods">
+              {t("paymentMethods") || "Payment Methods"}
+            </TabsTrigger>
+            <TabsTrigger value="discount-offers">
+              {t("discountOffers") || "Discount Offers"}
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="supported-models" className="pt-4">
@@ -53,6 +63,14 @@ export default function WebSettings() {
           
           <TabsContent value="pricing" className="pt-4">
             {activeTab === "pricing" && <Outlet />}
+          </TabsContent>
+          
+          <TabsContent value="payment-methods" className="pt-4">
+            {activeTab === "payment-methods" && <Outlet />}
+          </TabsContent>
+          
+          <TabsContent value="discount-offers" className="pt-4">
+            {activeTab === "discount-offers" && <Outlet />}
           </TabsContent>
         </Tabs>
       </Card>

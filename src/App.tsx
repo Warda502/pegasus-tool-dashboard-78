@@ -26,6 +26,8 @@ import ToolSettings from "./pages/ToolSettings";
 import WebSettings from "./pages/WebSettings";
 import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
+import PaymentMethods from "./pages/WebSettings/PaymentMethods";
+import DiscountOffers from "./pages/WebSettings/DiscountOffers";
 import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
 import { useEffect } from "react";
 
@@ -153,6 +155,8 @@ const App = () => {
                     <Route path="" element={<Navigate to="/web-settings/supported-models" replace />} />
                     <Route path="supported-models" element={<SupportedModels />} />
                     <Route path="pricing" element={<Pricing />} />
+                    <Route path="payment-methods" element={<PaymentMethods />} />
+                    <Route path="discount-offers" element={<DiscountOffers />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

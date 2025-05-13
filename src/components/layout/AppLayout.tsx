@@ -2,7 +2,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSubButton, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown, Globe, CreditCard, ShieldCheck, Lock } from "lucide-react";
+import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown, Globe, CreditCard, ShieldCheck, Percent } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/auth/AuthContext";
@@ -97,7 +97,7 @@ export default function AppLayout({
   }, {
     title: t("TwoFactorAuth"),
     path: "/two-factor-auth",
-    icon: ShieldCheck, // Changed to ShieldCheck icon for Two-Factor Auth
+    icon: ShieldCheck,
     show: true
   }, {
     title: t("settings"),
@@ -107,15 +107,28 @@ export default function AppLayout({
   }].filter(item => item.show);
 
   // Web Settings submenu items with appropriate icons
-  const webSettingsItems = [{
-    title: t("supportedModels") || "Supported Models",
-    path: "/web-settings/supported-models",
-    icon: Globe // Added Globe icon for Supported Models
-  }, {
-    title: t("pricing") || "Pricing",
-    path: "/web-settings/pricing",
-    icon: CreditCard // Added CreditCard icon for Pricing
-  }];
+  const webSettingsItems = [
+    {
+      title: t("supportedModels") || "Supported Models",
+      path: "/web-settings/supported-models",
+      icon: Globe // Globe icon for Supported Models
+    }, 
+    {
+      title: t("pricing") || "Pricing",
+      path: "/web-settings/pricing",
+      icon: CreditCard // CreditCard icon for Pricing
+    },
+    {
+      title: t("paymentMethods") || "Payment Methods",
+      path: "/web-settings/payment-methods",
+      icon: CreditCard // CreditCard icon for Payment Methods
+    },
+    {
+      title: t("discountOffers") || "Discount Offers",
+      path: "/web-settings/discount-offers", 
+      icon: Percent // Percent icon for Discount Offers
+    }
+  ];
   
   const getCurrentPageTitle = () => {
     const currentPath = location.pathname;
@@ -125,6 +138,30 @@ export default function AppLayout({
     const menuItem = menuItems.find(item => item.path === currentPath);
     return menuItem ? menuItem.title : t("dashboard");
   };
+  
+  // Reorder menuItems to insert WebSettings before Settings
+  const getOrderedMenuItems = () => {
+    const orderMenuItems = [...menuItems];
+    // Find the index of the Settings item
+    const settingsIndex = orderMenuItems.findIndex(item => item.path === "/settings");
+    
+    if (settingsIndex !== -1 && isAdmin) {
+      // Create a WebSettings placeholder (just for display in the sidebar, not a real route)
+      const webSettingsItem = {
+        title: t("webSettings") || "Web Settings",
+        path: "#", // Not used for navigation, since we use Accordion
+        icon: Globe,
+        show: true
+      };
+      
+      // Insert WebSettings before Settings
+      orderMenuItems.splice(settingsIndex, 0, webSettingsItem);
+    }
+    
+    return orderMenuItems;
+  };
+  
+  const orderedMenuItems = getOrderedMenuItems();
   
   return <SidebarProvider defaultOpen={!isMobile}>
       {/* Top Navigation Bar - Enhanced with glass effect */}
@@ -170,66 +207,74 @@ export default function AppLayout({
           
           <SidebarContent>
             <SidebarMenu>
-              {menuItems.map(item => <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.title}>
-                    <button 
-                      onClick={() => navigate(item.path)} 
-                      className="w-full text-xs sm:text-sm relative group transition-all duration-300 hover:translate-x-1"
-                    >
-                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
-                      <span className="group-hover:text-primary transition-colors">{item.title}</span>
-                      
-                      {/* Active indicator */}
-                      {location.pathname === item.path && (
-                        <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>)}
-              
-              {/* Web Settings Accordion Menu - Improved with icons */}
-              {isAdmin && <SidebarMenuItem>
-                  <Accordion type="single" collapsible className="w-full" defaultValue={isWebSettingsActive ? "web-settings" : undefined}>
-                    <AccordionItem value="web-settings" className="border-none">
-                      <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm group transition-all duration-300">
-                        <div className="flex items-center gap-2 group-hover:translate-x-1 transition-all">
-                          <Globe className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
-                          <span className="group-hover:text-primary transition-colors">{t("webSettings") || "Web Settings"}</span>
-                          
-                          {/* Active indicator for the parent menu */}
-                          {isWebSettingsActive && (
-                            <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
-                          )}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pt-1 pb-0 animate-accordion-down">
-                        <div className="flex flex-col space-y-1 pl-7">
-                          {webSettingsItems.map(subItem => (
-                            <SidebarMenuButton 
-                              key={subItem.path} 
-                              asChild 
-                              className="py-2" 
-                              isActive={location.pathname.includes(subItem.path)}
-                            >
-                              <button 
-                                onClick={() => navigate(subItem.path)} 
-                                className={cn(
-                                  "text-xs sm:text-sm w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-all duration-300 hover:translate-x-1", 
-                                  location.pathname.includes(subItem.path) 
-                                    ? "bg-primary/10 text-primary font-medium" 
-                                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                                )}
-                              >
-                                <subItem.icon className="h-4 w-4 flex-shrink-0" />
-                                {subItem.title}
-                              </button>
-                            </SidebarMenuButton>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </SidebarMenuItem>}
+              {orderedMenuItems.map((item, index) => {
+                // Check if the current item is WebSettings (use the path to identify it)
+                if (item.path === "#" && isAdmin) {
+                  return (
+                    <SidebarMenuItem key="web-settings-section">
+                      <Accordion type="single" collapsible className="w-full" defaultValue={isWebSettingsActive ? "web-settings" : undefined}>
+                        <AccordionItem value="web-settings" className="border-none">
+                          <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm group transition-all duration-300">
+                            <div className="flex items-center gap-2 group-hover:translate-x-1 transition-all">
+                              <Globe className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
+                              <span className="group-hover:text-primary transition-colors">{t("webSettings") || "Web Settings"}</span>
+                              
+                              {/* Active indicator for the parent menu */}
+                              {isWebSettingsActive && (
+                                <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
+                              )}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-1 pb-0 animate-accordion-down">
+                            <div className="flex flex-col space-y-1 pl-7">
+                              {webSettingsItems.map(subItem => (
+                                <SidebarMenuButton 
+                                  key={subItem.path} 
+                                  asChild 
+                                  className="py-2" 
+                                  isActive={location.pathname.includes(subItem.path)}
+                                >
+                                  <button 
+                                    onClick={() => navigate(subItem.path)} 
+                                    className={cn(
+                                      "text-xs sm:text-sm w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-all duration-300 hover:translate-x-1", 
+                                      location.pathname.includes(subItem.path) 
+                                        ? "bg-primary/10 text-primary font-medium" 
+                                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    )}
+                                  >
+                                    <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                                    {subItem.title}
+                                  </button>
+                                </SidebarMenuButton>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </SidebarMenuItem>
+                  );
+                }
+                
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.title}>
+                      <button 
+                        onClick={() => navigate(item.path)} 
+                        className="w-full text-xs sm:text-sm relative group transition-all duration-300 hover:translate-x-1"
+                      >
+                        <item.icon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
+                        <span className="group-hover:text-primary transition-colors">{item.title}</span>
+                        
+                        {/* Active indicator */}
+                        {location.pathname === item.path && (
+                          <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
+                        )}
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarContent>
           
