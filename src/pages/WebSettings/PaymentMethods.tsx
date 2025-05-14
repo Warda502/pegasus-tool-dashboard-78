@@ -288,61 +288,70 @@ export default function PaymentMethods() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 place-items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : paymentMethods.length === 0 ? (
-          <Card className="col-span-full w-full max-w-md">
+          <Card className="col-span-full w-full max-w-md mx-auto">
             <CardContent className="p-6 text-center text-muted-foreground">
               {t("noPaymentMethodsFound") || "No payment methods found. Add your first payment method!"}
             </CardContent>
           </Card>
         ) : (
           paymentMethods.map((method) => (
-            <Card key={method.id} className="overflow-hidden w-full max-w-xs group relative hover:shadow-md transition-all duration-300">
-              <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleEditClick(method)}
-                  className="h-8 w-8 bg-background/80 backdrop-blur-sm"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteClick(method)}
-                  className="h-8 w-8 bg-background/80 backdrop-blur-sm text-destructive"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
+            <div key={method.id} className="flex justify-center">
+              <Card className="w-full max-w-sm hover:shadow-md transition-all duration-300 h-full">
+                <CardContent className="p-6 flex flex-col">
+                  <div className="mb-16 relative"> {/* Increased space for image area */}
+                    {/* Action buttons positioned at the top, outside the image area */}
+                    <div className="absolute top-0 right-0 flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(method)}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(method)}
+                        className="h-8 w-8 text-destructive"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
 
-              <CardContent className="p-6 flex flex-col h-full">
-                {method.image_url ? (
-                  <div className="mb-4">
-                    <AspectRatio ratio={16/9} className="bg-muted rounded-md overflow-hidden">
-                      <img 
-                        src={method.image_url} 
-                        alt={method.method} 
-                        className="h-full w-full object-contain"
-                      />
-                    </AspectRatio>
+                    {/* Image positioned below the buttons */}
+                    {method.image_url ? (
+                      <div className="mt-10">
+                        <AspectRatio ratio={16/9} className="bg-muted rounded-md overflow-hidden">
+                          <img 
+                            src={method.image_url} 
+                            alt={method.method} 
+                            className="h-full w-full object-contain"
+                          />
+                        </AspectRatio>
+                      </div>
+                    ) : (
+                      <div className="h-32 mt-10 flex items-center justify-center bg-muted rounded-md">
+                        <span className="text-muted-foreground">{t("noImage") || "No Image"}</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="h-24 mb-4 flex items-center justify-center bg-muted rounded-md">
-                    <span className="text-muted-foreground">{t("noImage") || "No Image"}</span>
+                  
+                  <div className="mt-auto">
+                    <h3 className="text-lg font-semibold mb-2">{method.method}</h3>
+                    {method.description && (
+                      <p className="text-sm text-muted-foreground">{method.description}</p>
+                    )}
                   </div>
-                )}
-                <h3 className="text-lg font-semibold mb-2">{method.method}</h3>
-                {method.description && (
-                  <p className="text-sm text-muted-foreground">{method.description}</p>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           ))
         )}
       </div>

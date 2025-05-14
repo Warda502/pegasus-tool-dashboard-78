@@ -285,73 +285,76 @@ export default function DiscountOffers() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 place-items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : discountOffers.length === 0 ? (
-          <Card className="col-span-full w-full max-w-md">
+          <Card className="col-span-full w-full max-w-md mx-auto">
             <CardContent className="p-6 text-center text-muted-foreground">
               {t("noDiscountOffersFound") || "No discount offers found. Create your first offer!"}
             </CardContent>
           </Card>
         ) : (
           discountOffers.map((offer) => (
-            <Card 
-              key={offer.id} 
-              className={`overflow-hidden w-full max-w-xs group relative ${
-                isOfferExpired(offer) ? "border-destructive/30 bg-destructive/5" : "hover:shadow-md"
-              } transition-all duration-300`}
-            >
-              <div className="absolute top-3 right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleEditClick(offer)}
-                  className="h-8 w-8 bg-background/80 backdrop-blur-sm"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteClick(offer)}
-                  className="h-8 w-8 bg-background/80 backdrop-blur-sm text-destructive"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
+            <div key={offer.id} className="flex justify-center">
+              <Card 
+                className={`w-full max-w-sm h-full ${
+                  isOfferExpired(offer) ? "border-destructive/30 bg-destructive/5" : "hover:shadow-md"
+                } transition-all duration-300`}
+              >
+                <CardContent className="p-6 flex flex-col h-full relative">
+                  {/* Action buttons positioned at the top right */}
+                  <div className="absolute top-2 right-2 flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(offer)}
+                      className="h-8 w-8 bg-background/80 backdrop-blur-sm"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(offer)}
+                      className="h-8 w-8 bg-background/80 backdrop-blur-sm text-destructive"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-              <CardContent className="p-6 flex flex-col h-full">
-                <div className="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary">
-                  <Percent className="h-8 w-8" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-primary">{offer.percentage}</h3>
-                  {offer.status && (
-                    <p className={`text-sm font-medium inline-flex px-2 py-1 rounded-full ${
-                      isOfferExpired(offer) ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
-                    }`}>
-                      {isOfferExpired(offer) ? t("expired") || "Expired" : offer.status}
+                  <div className="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mt-6">
+                    <Percent className="h-8 w-8" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-primary">{offer.percentage}</h3>
+                    {offer.status && (
+                      <p className={`text-sm font-medium inline-flex px-2 py-1 rounded-full ${
+                        isOfferExpired(offer) ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                      }`}>
+                        {isOfferExpired(offer) ? t("expired") || "Expired" : offer.status}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {offer.expiry_at && (
+                        <>
+                          <span className="font-medium">{t("expiresOn") || "Expires on"}:</span> {formatDate(offer.expiry_at)}
+                        </>
+                      )}
+                      {!offer.expiry_at && (
+                        <span>{t("noExpiryDate") || "No expiry date"}</span>
+                      )}
                     </p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    {offer.expiry_at && (
-                      <>
-                        <span className="font-medium">{t("expiresOn") || "Expires on"}:</span> {formatDate(offer.expiry_at)}
-                      </>
-                    )}
-                    {!offer.expiry_at && (
-                      <span>{t("noExpiryDate") || "No expiry date"}</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("createdOn") || "Created on"}: {format(new Date(offer.created_at), "PPP")}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                    <p className="text-xs text-muted-foreground">
+                      {t("createdOn") || "Created on"}: {format(new Date(offer.created_at), "PPP")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           ))
         )}
       </div>

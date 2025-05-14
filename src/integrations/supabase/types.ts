@@ -543,6 +543,14 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      increment_counter: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      increment_download_counter: {
+        Args: { version_id: string }
+        Returns: number
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

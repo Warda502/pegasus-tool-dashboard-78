@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -208,44 +209,46 @@ export default function Pricing() {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div> : pricingPlans.length === 0 ? <div className="text-center py-10 text-muted-foreground">
               {t("noPricingPlans") || "No pricing plans defined yet"}
-            </div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6 place-items-center">
-              {pricingPlans.map(plan => <Card key={plan.id} className="overflow-hidden border border-muted shadow-lg relative group w-full max-w-xs">
-                  {/* Edit and delete buttons (visible on hover) */}
-                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditPlan(plan)} className="h-7 w-7 bg-background/80 backdrop-blur-sm">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeletePlan(plan)} className="h-7 w-7 bg-background/80 backdrop-blur-sm text-destructive">
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pricingPlans.map(plan => <div key={plan.id} className="flex justify-center">
+                  <Card className="overflow-hidden border border-muted shadow-lg relative group hover:shadow-xl transition-all w-full max-w-xs h-full">
+                    {/* Edit and delete buttons (visible on hover) */}
+                    <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditPlan(plan)} className="h-7 w-7 bg-background/80 backdrop-blur-sm">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeletePlan(plan)} className="h-7 w-7 bg-background/80 backdrop-blur-sm text-destructive">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
 
-                  <div className="p-6 space-y-6">
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold tracking-tight uppercase">
-                        {plan.name_plan}
-                      </h3>
-                      <div className="mt-3 flex items-baseline justify-center">
-                        <span className="text-3xl font-bold">$</span>
-                        <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
-                        <span className="ml-1 text-sm font-medium text-muted-foreground">
-                        </span>
+                    <div className="p-6 space-y-6">
+                      <div className="text-center">
+                        <h3 className="text-lg font-semibold tracking-tight uppercase">
+                          {plan.name_plan}
+                        </h3>
+                        <div className="mt-3 flex items-baseline justify-center">
+                          <span className="text-3xl font-bold">$</span>
+                          <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
+                          <span className="ml-1 text-sm font-medium text-muted-foreground">
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {getFeaturesList(plan.features || '').map((feature, idx) => <div key={idx} className="flex items-center">
+                            <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
+                            <span>{feature}</span>
+                          </div>)}
+                        
+                        {plan.perks && getFeaturesList(plan.perks).map((perk, idx) => <div key={`perk-${idx}`} className="flex items-center">
+                            <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
+                            <span>{perk}</span>
+                          </div>)}
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      {getFeaturesList(plan.features || '').map((feature, idx) => <div key={idx} className="flex items-center">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
-                          <span>{feature}</span>
-                        </div>)}
-                      
-                      {plan.perks && getFeaturesList(plan.perks).map((perk, idx) => <div key={`perk-${idx}`} className="flex items-center">
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
-                          <span>{perk}</span>
-                        </div>)}
-                    </div>
-                  </div>
-                </Card>)}
+                  </Card>
+                </div>)}
             </div>}
         </CardContent>
       </Card>
