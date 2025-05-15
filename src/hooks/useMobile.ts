@@ -1,9 +1,27 @@
 
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useEffect } from "react";
 
-// This is a simple re-export to maintain backward compatibility
-// while using the correct hook name
-export function useMobile() {
-  const isMobile = useIsMobile();
+export const useMobile = () => {
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Initial check
+    checkIfMobile();
+
+    // Add event listener for window resize
+    window.addEventListener("resize", checkIfMobile);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", checkIfMobile);
+    };
+  }, []);
+
   return { isMobile };
-}
+};
+
+export default useMobile;

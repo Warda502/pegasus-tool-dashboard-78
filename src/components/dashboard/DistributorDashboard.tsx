@@ -78,7 +78,7 @@ export function DistributorDashboard() {
       
       <StatCard 
         title="Credits Allocated" 
-        value={loading ? "Loading..." : `${totalCredits.toFixed(2)}`} 
+        value={loading ? "Loading..." : totalCredits.toFixed(2).toString()} 
         icon={<CreditCard className="h-4 w-4" />} 
       />
 

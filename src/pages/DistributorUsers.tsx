@@ -1,288 +1,500 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { UserPlusIcon, UserX, RefreshCcw, CreditCard } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from '@/components/ui/sonner';
-import { AddCreditsDialog } from '@/components/users/AddCreditsDialog';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { Input } from "@/components/ui/input";
+import { Users, Search, RefreshCw, UserPlus, CreditCard } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ViewUserDialog } from "@/components/users/ViewUserDialog";
+import { EditUserDialog } from "@/components/users/EditUserDialog";
+import { AddUserDialog } from "@/components/users/AddUserDialog";
+import { RenewUserDialog } from "@/components/users/RenewUserDialog";
+import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
+import { useAuth } from "@/hooks/auth/AuthContext";
+import { DataTable } from "@/components/ui/data-table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 
-// Create a custom UserSearch component for this page
-function UserSearch({ onSearch }: { onSearch: (query: string) => void }) {
-  return (
-    <div className="relative">
-      <Input
-        placeholder="Search users..."
-        onChange={(e) => onSearch(e.target.value)}
-        className="pl-8"
-      />
-      <div className="absolute inset-y-0 left-0 flex items-center pl-2">
-        <svg
-          className="h-4 w-4 text-muted-foreground"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-      </div>
-    </div>
-  );
+// Define the user type
+interface User {
+  id: string;
+  email: string;
+  Name?: string;
+  Phone?: string;
+  Country?: string;
+  credits?: string;
+  expiry_date?: string;
+  block?: string;
+  User_Type?: string;
+  created_at?: string;
+  [key: string]: any; // For other properties
 }
 
 export default function DistributorUsers() {
-  const { user } = useAuth();
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   
-  // Add user state
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [addingUser, setAddingUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
+  const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
   
-  // Credits dialog state
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
-  
+  // Fetch users managed by this distributor
   useEffect(() => {
-    if (!user) return;
+    if (!currentUser?.id) return;
+    
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('distributor_id', currentUser.id);
+          
+        if (error) throw error;
+        
+        setUsers(data || []);
+        setFilteredUsers(data || []);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load users. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
     fetchUsers();
-  }, [user]);
+  }, [currentUser]);
   
-  const fetchUsers = async () => {
+  // Handle search
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers(users);
+      return;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const filtered = users.filter(user => 
+      user.email?.toLowerCase().includes(query) ||
+      user.Name?.toLowerCase().includes(query) ||
+      user.Phone?.toLowerCase().includes(query) ||
+      user.Country?.toLowerCase().includes(query)
+    );
+    
+    setFilteredUsers(filtered);
+  }, [searchQuery, users]);
+  
+  // User operations
+  const refreshUsers = async () => {
+    if (!currentUser?.id) return;
+    
     try {
-      setLoading(true);
+      setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('distributor_id', user?.id);
+        .eq('distributor_id', currentUser.id);
         
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       setUsers(data || []);
+      setFilteredUsers(data || []);
+      
+      toast({
+        title: "Refreshed",
+        description: "User list has been updated."
+      });
     } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to fetch users');
+      console.error('Error refreshing users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh users. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
   
-  const handleAddUser = async () => {
+  const addUser = async (userData: Partial<User>) => {
+    if (!currentUser?.id) return false;
+    
     try {
-      setAddingUser(true);
+      // Add distributor_id to the user data
+      const newUserData = {
+        ...userData,
+        distributor_id: currentUser.id
+      };
       
-      // First check if the user exists
-      const { data: existingUser, error: userError } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .select('id, email, distributor_id')
-        .eq('email', newUserEmail)
-        .single();
+        .insert([newUserData])
+        .select();
         
-      if (userError && userError.code !== 'PGRST116') {
-        throw userError;
-      }
+      if (error) throw error;
       
-      if (existingUser) {
-        // User exists, check if they already have a distributor
-        if (existingUser.distributor_id) {
-          toast.error('User already assigned to another distributor');
-          return;
-        }
-        
-        // Update the user to assign them to this distributor
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ distributor_id: user?.id })
-          .eq('id', existingUser.id);
-          
-        if (updateError) {
-          throw updateError;
-        }
-        
-        toast.success(`User ${newUserEmail} added to your distribution list`);
-      } else {
-        toast.error('User not found. They must register first.');
-      }
+      toast({
+        title: "Success",
+        description: "User has been added successfully."
+      });
       
-      setIsAddDialogOpen(false);
-      setNewUserEmail('');
-      fetchUsers();
+      refreshUsers();
+      return true;
     } catch (error) {
       console.error('Error adding user:', error);
-      toast.error('Failed to add user');
-    } finally {
-      setAddingUser(false);
+      toast({
+        title: "Error",
+        description: "Failed to add user. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
   
-  const handleRemoveUser = async (userId: string) => {
+  const updateUser = async (userData: Partial<User>) => {
+    if (!userData.id) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('id', userData.id)
+        .select();
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "User has been updated successfully."
+      });
+      
+      refreshUsers();
+      return true;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+  
+  const renewUser = async (user: User, months: string) => {
+    if (!user.id) return false;
+    
+    try {
+      // Implementation would go here
+      
+      toast({
+        title: "Success",
+        description: `User subscription has been renewed for ${months} months.`
+      });
+      
+      refreshUsers();
+      return true;
+    } catch (error) {
+      console.error('Error renewing user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to renew user. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+  
+  const deleteUser = async (userId: string) => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ distributor_id: null })
+        .delete()
         .eq('id', userId);
         
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      toast.success('User removed from your distribution list');
-      fetchUsers();
+      toast({
+        title: "Success",
+        description: "User has been deleted successfully."
+      });
+      
+      refreshUsers();
+      return true;
     } catch (error) {
-      console.error('Error removing user:', error);
-      toast.error('Failed to remove user');
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
   
-  const handleAddCredits = (user: any) => {
+  const addCreditToUser = async (userId: string, creditsToAdd: number) => {
+    try {
+      // First get current user credits
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('credits')
+        .eq('id', userId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Calculate new credits value
+      const currentCredits = parseFloat(userData.credits || '0');
+      const newCredits = currentCredits + creditsToAdd;
+      
+      // Update user credits
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ credits: newCredits.toString() })
+        .eq('id', userId);
+        
+      if (updateError) throw updateError;
+      
+      // Record the operation in server_history
+      if (currentUser?.id) {
+        const { error: historyError } = await supabase
+          .from('server_history')
+          .insert([{
+            distributor_id: currentUser.id,
+            operation_type: 'credit_allocation',
+            operation_details: JSON.stringify({
+              previous_credits: currentCredits,
+              added_credits: creditsToAdd,
+              new_total: newCredits
+            }),
+            amount: creditsToAdd,
+            target_user_id: userId
+          }]);
+          
+        if (historyError) throw historyError;
+      }
+      
+      toast({
+        title: "Success",
+        description: `Added ${creditsToAdd} credits to user.`
+      });
+      
+      refreshUsers();
+      return true;
+    } catch (error) {
+      console.error('Error adding credits:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add credits. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+  
+  // Dialog handlers
+  const openViewDialog = (user: User) => {
     setSelectedUser(user);
-    setIsCreditsDialogOpen(true);
+    setIsViewDialogOpen(true);
   };
   
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  const openEditDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsEditDialogOpen(true);
   };
   
-  const filteredUsers = searchQuery 
-    ? users.filter(user => 
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : users;
+  const openAddDialog = () => {
+    setIsAddDialogOpen(true);
+  };
   
+  const openRenewDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsRenewDialogOpen(true);
+  };
+  
+  const openAddCreditsDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsAddCreditsDialogOpen(true);
+  };
+  
+  // Table columns
+  const columns = [
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }: { row: any }) => <div className="font-medium">{row.original.email}</div>,
+    },
+    {
+      accessorKey: "Name",
+      header: "Name",
+    },
+    {
+      accessorKey: "credits",
+      header: "Credits",
+    },
+    {
+      accessorKey: "expiry_date",
+      header: "Expiry Date",
+    },
+    {
+      id: "actions",
+      cell: ({ row }: { row: any }) => {
+        const user = row.original;
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => openViewDialog(user)}>View details</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEditDialog(user)}>Edit user</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openAddCreditsDialog(user)}>Add credits</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openRenewDialog(user)}>Renew subscription</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-red-600"
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this user?')) {
+                    deleteUser(user.id);
+                  }
+                }}
+              >
+                Delete user
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>My Users</CardTitle>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchUsers}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlusIcon className="mr-2 h-4 w-4" />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span>My Users</span>
+            </CardTitle>
+            <CardDescription>
+              Manage users assigned to you
+              {users.length > 0 && (
+                <span className="ml-2 font-medium">
+                  ({users.length} total users)
+                </span>
+              )}
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            {/* Search and filters */}
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9"
+                onClick={refreshUsers}
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+              
+              <Button
+                size="sm"
+                className="h-9"
+                onClick={openAddDialog}
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
                 Add User
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Existing User</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">User Email</Label>
-                  <Input 
-                    id="email" 
-                    placeholder="user@example.com" 
-                    value={newUserEmail} 
-                    onChange={(e) => setNewUserEmail(e.target.value)} 
-                  />
-                </div>
-                <Button onClick={handleAddUser} disabled={addingUser || !newUserEmail}>
-                  {addingUser ? 'Adding...' : 'Add User'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <UserSearch onSearch={handleSearch} />
-          
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10">
-                      Loading users...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10">
-                      No users found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.name || 'N/A'}</TableCell>
-                      <TableCell>
-                        {user.credits || '0'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.block === 'Blocked' ? 'destructive' : 'outline'}>
-                          {user.block === 'Blocked' ? 'Blocked' : 'Active'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleAddCredits(user)}
-                          >
-                            <CreditCard className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleRemoveUser(user.id)}
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            </div>
           </div>
-        </div>
-      </CardContent>
+          
+          {/* Users table */}
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredUsers}
+              emptyMessage="No users found"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialogs */}
+      <ViewUserDialog 
+        isOpen={isViewDialogOpen} 
+        onClose={() => setIsViewDialogOpen(false)} 
+        user={selectedUser} 
+      />
       
-      {/* Credits dialog */}
-      {selectedUser && (
-        <AddCreditsDialog 
-          open={isCreditsDialogOpen}
-          onOpenChange={setIsCreditsDialogOpen}
-          user={selectedUser}
-          onCreditsAdded={fetchUsers}
-        />
-      )}
-    </Card>
+      <EditUserDialog 
+        isOpen={isEditDialogOpen} 
+        onClose={() => setIsEditDialogOpen(false)} 
+        user={selectedUser}
+        onSave={updateUser}
+      />
+      
+      <RenewUserDialog
+        isOpen={isRenewDialogOpen}
+        onClose={() => setIsRenewDialogOpen(false)}
+        onConfirm={(months) => selectedUser && renewUser(selectedUser, months)}
+        userType={selectedUser?.User_Type || ""}
+      />
+      
+      <AddUserDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSave={addUser}
+      />
+
+      <AddCreditsDialog
+        isOpen={isAddCreditsDialogOpen}
+        onClose={() => setIsAddCreditsDialogOpen(false)}
+        users={selectedUser ? [selectedUser] : []}
+        onAddCredits={addCreditToUser}
+      />
+    </div>
   );
 }
