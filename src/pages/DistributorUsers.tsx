@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
-import { Users, Search, RefreshCw, UserPlus, CreditCard } from "lucide-react";
+import { Users, Search, RefreshCw, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ViewUserDialog } from "@/components/users/ViewUserDialog";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
@@ -17,31 +17,34 @@ import { DataTable } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
+import { User } from "@/hooks/data/types";
 
-// Define the user type
-interface User {
+// Define our local user type to avoid conflicts with the imported User type
+interface DistributorUser {
   id: string;
   email: string;
-  Name?: string;
-  Phone?: string;
-  Country?: string;
+  name?: string;
+  phone?: string;
+  country?: string;
   credits?: string;
   expiry_date?: string;
   block?: string;
-  User_Type?: string;
+  user_type?: string;
   created_at?: string;
-  [key: string]: any; // For other properties
+  password?: string;
+  uid?: string;
+  [key: string]: any;
 }
 
 export default function DistributorUsers() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<DistributorUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<DistributorUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<DistributorUser | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -68,7 +71,6 @@ export default function DistributorUsers() {
       } catch (error) {
         console.error('Error fetching users:', error);
         toast({
-          title: "Error",
           description: "Failed to load users. Please try again.",
           variant: "destructive",
         });
@@ -90,9 +92,9 @@ export default function DistributorUsers() {
     const query = searchQuery.toLowerCase();
     const filtered = users.filter(user => 
       user.email?.toLowerCase().includes(query) ||
-      user.Name?.toLowerCase().includes(query) ||
-      user.Phone?.toLowerCase().includes(query) ||
-      user.Country?.toLowerCase().includes(query)
+      user.name?.toLowerCase().includes(query) ||
+      user.phone?.toLowerCase().includes(query) ||
+      user.country?.toLowerCase().includes(query)
     );
     
     setFilteredUsers(filtered);
@@ -116,13 +118,11 @@ export default function DistributorUsers() {
       setFilteredUsers(data || []);
       
       toast({
-        title: "Refreshed",
         description: "User list has been updated."
       });
     } catch (error) {
       console.error('Error refreshing users:', error);
       toast({
-        title: "Error",
         description: "Failed to refresh users. Please try again.",
         variant: "destructive",
       });
@@ -131,14 +131,18 @@ export default function DistributorUsers() {
     }
   };
   
-  const addUser = async (userData: Partial<User>) => {
+  const addUser = async (userData: Partial<DistributorUser>) => {
     if (!currentUser?.id) return false;
     
     try {
       // Add distributor_id to the user data
       const newUserData = {
         ...userData,
-        distributor_id: currentUser.id
+        distributor_id: currentUser.id,
+        email: userData.email || '',
+        password: userData.password || '',
+        uid: userData.id || '',
+        id: userData.id || ''
       };
       
       const { data, error } = await supabase
@@ -149,7 +153,6 @@ export default function DistributorUsers() {
       if (error) throw error;
       
       toast({
-        title: "Success",
         description: "User has been added successfully."
       });
       
@@ -158,7 +161,6 @@ export default function DistributorUsers() {
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
-        title: "Error",
         description: "Failed to add user. Please try again.",
         variant: "destructive",
       });
@@ -166,7 +168,7 @@ export default function DistributorUsers() {
     }
   };
   
-  const updateUser = async (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<DistributorUser>) => {
     if (!userData.id) return false;
     
     try {
@@ -179,7 +181,6 @@ export default function DistributorUsers() {
       if (error) throw error;
       
       toast({
-        title: "Success",
         description: "User has been updated successfully."
       });
       
@@ -188,7 +189,6 @@ export default function DistributorUsers() {
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
-        title: "Error",
         description: "Failed to update user. Please try again.",
         variant: "destructive",
       });
@@ -196,14 +196,13 @@ export default function DistributorUsers() {
     }
   };
   
-  const renewUser = async (user: User, months: string) => {
+  const renewUser = async (user: DistributorUser, months: string) => {
     if (!user.id) return false;
     
     try {
       // Implementation would go here
       
       toast({
-        title: "Success",
         description: `User subscription has been renewed for ${months} months.`
       });
       
@@ -212,7 +211,6 @@ export default function DistributorUsers() {
     } catch (error) {
       console.error('Error renewing user:', error);
       toast({
-        title: "Error",
         description: "Failed to renew user. Please try again.",
         variant: "destructive",
       });
@@ -230,7 +228,6 @@ export default function DistributorUsers() {
       if (error) throw error;
       
       toast({
-        title: "Success",
         description: "User has been deleted successfully."
       });
       
@@ -239,7 +236,6 @@ export default function DistributorUsers() {
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
-        title: "Error",
         description: "Failed to delete user. Please try again.",
         variant: "destructive",
       });
@@ -247,7 +243,7 @@ export default function DistributorUsers() {
     }
   };
   
-  const addCreditToUser = async (userId: string, creditsToAdd: number) => {
+  const addCreditToUser = async (userId: string, creditsToAdd: number): Promise<void> => {
     try {
       // First get current user credits
       const { data: userData, error: fetchError } = await supabase
@@ -290,30 +286,26 @@ export default function DistributorUsers() {
       }
       
       toast({
-        title: "Success",
         description: `Added ${creditsToAdd} credits to user.`
       });
       
       refreshUsers();
-      return true;
     } catch (error) {
       console.error('Error adding credits:', error);
       toast({
-        title: "Error",
         description: "Failed to add credits. Please try again.",
         variant: "destructive",
       });
-      return false;
     }
   };
   
   // Dialog handlers
-  const openViewDialog = (user: User) => {
+  const openViewDialog = (user: DistributorUser) => {
     setSelectedUser(user);
     setIsViewDialogOpen(true);
   };
   
-  const openEditDialog = (user: User) => {
+  const openEditDialog = (user: DistributorUser) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
@@ -322,12 +314,12 @@ export default function DistributorUsers() {
     setIsAddDialogOpen(true);
   };
   
-  const openRenewDialog = (user: User) => {
+  const openRenewDialog = (user: DistributorUser) => {
     setSelectedUser(user);
     setIsRenewDialogOpen(true);
   };
   
-  const openAddCreditsDialog = (user: User) => {
+  const openAddCreditsDialog = (user: DistributorUser) => {
     setSelectedUser(user);
     setIsAddCreditsDialogOpen(true);
   };
@@ -340,7 +332,7 @@ export default function DistributorUsers() {
       cell: ({ row }: { row: any }) => <div className="font-medium">{row.original.email}</div>,
     },
     {
-      accessorKey: "Name",
+      accessorKey: "name",
       header: "Name",
     },
     {
@@ -348,7 +340,7 @@ export default function DistributorUsers() {
       header: "Credits",
     },
     {
-      accessorKey: "expiry_date",
+      accessorKey: "expiry_time",
       header: "Expiry Date",
     },
     {
@@ -462,38 +454,38 @@ export default function DistributorUsers() {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
+      {/* Dialogs - converting the selectedUser to any to resolve type incompatibilities */}
       <ViewUserDialog 
         isOpen={isViewDialogOpen} 
         onClose={() => setIsViewDialogOpen(false)} 
-        user={selectedUser} 
+        user={selectedUser as any} 
       />
       
       <EditUserDialog 
         isOpen={isEditDialogOpen} 
         onClose={() => setIsEditDialogOpen(false)} 
-        user={selectedUser}
-        onSave={updateUser}
+        user={selectedUser as any}
+        onSave={updateUser as any}
       />
       
       <RenewUserDialog
         isOpen={isRenewDialogOpen}
         onClose={() => setIsRenewDialogOpen(false)}
         onConfirm={(months) => selectedUser && renewUser(selectedUser, months)}
-        userType={selectedUser?.User_Type || ""}
+        userType={selectedUser?.user_type || ""}
       />
       
       <AddUserDialog
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onSave={addUser}
+        onSave={addUser as any}
       />
 
       <AddCreditsDialog
         isOpen={isAddCreditsDialogOpen}
         onClose={() => setIsAddCreditsDialogOpen(false)}
-        users={selectedUser ? [selectedUser] : []}
-        onAddCredits={addCreditToUser}
+        users={selectedUser ? [selectedUser as any] : []}
+        onAddCredits={addCreditToUser as any}
       />
     </div>
   );
