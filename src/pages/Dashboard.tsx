@@ -1,32 +1,40 @@
 
 import { useEffect } from "react";
-import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
+import { useSharedData } from "@/hooks/data/DataContext";
 import { UserDashboard } from "@/components/dashboard/UserDashboard";
-import { DistributorDashboard } from "@/components/dashboard/DistributorDashboard";
+import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { useAuth } from "@/hooks/auth/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Loading } from "@/components/ui/loading";
+import { useLanguage } from "@/hooks/useLanguage";
+import { ErrorAlert } from "@/components/common/ErrorAlert";
 
 export default function Dashboard() {
-  const { isAuthenticated, isAdmin, isDistributor, role, sessionChecked } = useAuth();
-  const navigate = useNavigate();
+  const { isLoading, refreshData, isError, users, operations } = useSharedData();
+  const { isAdmin, user } = useAuth();
+  const { t } = useLanguage();
 
+  // Refresh data when dashboard mounts
   useEffect(() => {
-    if (sessionChecked && !isAuthenticated) {
-      navigate("/login");
-    }
-  }, [isAuthenticated, navigate, sessionChecked]);
+    console.log("Dashboard mounted, refreshing data");
+    refreshData();
+  }, [refreshData]);
 
-  if (!isAuthenticated) {
-    return null;
+  if (isLoading) {
+    return <Loading text={t("loadingDashboard") || "Loading dashboard..."} />;
   }
 
-  if (isAdmin) {
-    return <AdminDashboard />;
-  }
-  
-  if (isDistributor) {
-    return <DistributorDashboard />;
+  if (isError) {
+    return (
+      <ErrorAlert 
+        title={t("dataLoadError") || "Error Loading Data"}
+        description={t("dashboardDataError") || "Failed to load dashboard data. Please try refreshing the page."}
+      />
+    );
   }
 
-  return <UserDashboard />;
+  return (
+    <div className="space-y-6">
+      {isAdmin ? <AdminDashboard /> : <UserDashboard />}
+    </div>
+  );
 }

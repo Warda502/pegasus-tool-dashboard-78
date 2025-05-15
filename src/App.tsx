@@ -1,90 +1,174 @@
 
-import React from "react";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import "./App.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Operations from "./pages/Operations";
 import UsersManager from "./pages/UsersManager";
-import Index from "./pages/Index";
+import Operations from "./pages/Operations";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
+import { LanguageProvider } from "./hooks/useLanguage";
 import EditMyProfile from "./pages/EditMyProfile";
-import TwoFactorAuth from "./pages/TwoFactorAuth";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import Distributors from "./pages/Distributors";
-import DistributorUsers from "./pages/DistributorUsers";
-import DistributorOperations from "./pages/DistributorOperations";
 import { AuthProvider } from "./hooks/auth/AuthContext";
+import { DataProvider } from "./hooks/data/DataContext";
+import ServerApiData from "./pages/ServerApiData";
+import ServerStorage from "./pages/ServerStorage";
+import MyCertFiles from "./pages/MyCertFiles";
+import Discounts from "./pages/Discounts";
+import GroupsManagement from "./pages/GroupsManagement";
+import ToolUpdate from "./pages/ToolUpdate";
+import ToolSettings from "./pages/ToolSettings";
+import WebSettings from "./pages/WebSettings";
+import SupportedModels from "./pages/WebSettings/SupportedModels";
+import Pricing from "./pages/WebSettings/Pricing";
+import PaymentMethods from "./pages/WebSettings/PaymentMethods";
+import DiscountOffers from "./pages/WebSettings/DiscountOffers";
+import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
+import { useEffect } from "react";
 
-function App() {
+// Configure React Query with better defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+
+const App = () => {
+  // Initialize theme based on user preference
+  useEffect(() => {
+    const theme = localStorage.getItem("theme");
+    
+    if (theme === "dark" || 
+       (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    
+    // Listen for system preference changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (localStorage.getItem("theme") === "system") {
+        if (e.matches) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    };
+    
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+  
   return (
-    <div className="App">
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            
-            {/* Main layout routes */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Outlet />
-                </AppLayout>
-              </ProtectedRoute>
-            }>
-              {/* Dashboard */}
-              <Route path="/dashboard" element={<Dashboard />} />
-
-              {/* Operations */}
-              <Route path="/operations" element={<Operations />} />
-
-              {/* Admin Routes */}
-              <Route path="/users" element={
-                <ProtectedRoute requireAdmin>
-                  <UsersManager />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/distributors" element={
-                <ProtectedRoute requireAdmin>
-                  <Distributors />
-                </ProtectedRoute>
-              } />
-              
-              {/* Distributor Routes */}
-              <Route path="/distributor-users" element={
-                <ProtectedRoute requireDistributor>
-                  <DistributorUsers />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/distributor-operations" element={
-                <ProtectedRoute requireDistributor>
-                  <DistributorOperations />
-                </ProtectedRoute>
-              } />
-              
-              {/* User Routes */}
-              <Route path="/profile" element={<EditMyProfile />} />
-              <Route path="/2fa" element={<TwoFactorAuth />} />
-            </Route>
-
-            {/* Standalone 2FA page (outside main layout) */}
-            <Route path="/2fa-setup" element={
-              <ProtectedRoute>
-                <TwoFactorAuth />
-              </ProtectedRoute>
-            } />
-            
-            {/* Not Found */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <DataProvider>
+              <TooltipProvider>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <AppLayout><Dashboard /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users-manager" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><UsersManager /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/operations" element={
+                    <ProtectedRoute>
+                      <AppLayout><Operations /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <AppLayout><Settings /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/edit-profile" element={
+                    <ProtectedRoute>
+                      <AppLayout><EditMyProfile /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  {/* إضافة مسار المصادقة الثنائية */}
+                  <Route path="/two-factor-auth" element={
+                    <ProtectedRoute>
+                      <AppLayout><TwoFactorAuth /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/server-api-data" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ServerApiData /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/server-storage" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ServerStorage /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/my-cert-files" element={
+                    <ProtectedRoute>
+                      <AppLayout><MyCertFiles /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/discounts" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><Discounts /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/groups-management" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><GroupsManagement /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tool-update" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ToolUpdate /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tool-settings" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ToolSettings /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  {/* Web Settings Routes */}
+                  <Route path="/web-settings" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><WebSettings /></AppLayout>
+                    </ProtectedRoute>
+                  }>
+                    <Route path="" element={<Navigate to="/web-settings/supported-models" replace />} />
+                    <Route path="supported-models" element={<SupportedModels />} />
+                    <Route path="pricing" element={<Pricing />} />
+                    <Route path="payment-methods" element={<PaymentMethods />} />
+                    <Route path="discount-offers" element={<DiscountOffers />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <Toaster />
+                <Sonner />
+              </TooltipProvider>
+            </DataProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </LanguageProvider>
+    </QueryClientProvider>
   );
-}
+};
 
 export default App;

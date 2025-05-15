@@ -18,12 +18,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Log authentication state for debugging
     console.log("Auth context state:", {
       isAuthenticated: authState.isAuthenticated,
-      isAdmin: authState.isAdmin,
-      isDistributor: authState.isDistributor,
       needsTwoFactor: authState.needsTwoFactor,
       twoFactorVerified: authState.twoFactorVerified
     });
-  }, [authState.isAuthenticated, authState.isAdmin, authState.isDistributor, authState.needsTwoFactor, authState.twoFactorVerified]);
+  }, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified]);
   
   useEffect(() => {
     // Handle cross-tab authentication sync
@@ -33,15 +31,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (event.data === 'SIGNED_OUT' && authState.isAuthenticated) {
         console.log("Received logout event from another tab");
         
-        // Use authActions.logout instead of direct navigation
-        authActions.logout();
+        setTimeout(() => {
+          window.location.href = '/login?loggedOutInAnotherTab=true';
+        }, 100);
       }
     };
     
     return () => {
       authChannel.close();
     };
-  }, [authState.isAuthenticated, authActions]);
+  }, [authState.isAuthenticated]);
   
   return (
     <AuthContext.Provider value={authContext}>
