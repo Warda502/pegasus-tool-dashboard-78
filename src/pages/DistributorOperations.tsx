@@ -1,19 +1,16 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { toast } from "@/components/ui/sonner";
-import { Activity, RefreshCcw, AlertTriangle, Calendar, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/hooks/useLanguage";
-import { useAuth } from "@/hooks/useAuth";
-import { useDistributorOperations } from "@/hooks/useDistributorOperations";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ChevronDownIcon, SearchIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from '@/components/ui/sonner';
 
-interface ServerHistoryItem {
+type ServerHistoryItem = {
   id: string;
   distributor_id: string;
   operation_type: string;
@@ -21,254 +18,177 @@ interface ServerHistoryItem {
   amount: number;
   timestamp: string;
   status: string;
-  target_user_id: string | null;
-}
+  target_user_id: string;
+};
 
 export default function DistributorOperations() {
-  const { isRTL, t } = useLanguage();
-  const { isAuthenticated, isDistributor } = useAuth();
-  const { fetchServerHistory } = useDistributorOperations();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredOperations, setFilteredOperations] = useState<ServerHistoryItem[]>([]);
-  const [selectedOperation, setSelectedOperation] = useState<ServerHistoryItem | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const [operations, setOperations] = useState<ServerHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<keyof ServerHistoryItem>('timestamp');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const { data: operations = [], isLoading, refetch } = useQuery({
-    queryKey: ["server_history"],
-    queryFn: fetchServerHistory,
-    enabled: isAuthenticated && isDistributor,
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchOperations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('server_history')
+          .select('*')
+          .eq('distributor_id', user.id)
+          .order(sortField, { ascending: sortDirection === 'asc' });
+
+        if (error) {
+          throw error;
+        }
+
+        // Convert operation_details from Json to Record<string, any>
+        const typedData = data.map(item => ({
+          ...item,
+          operation_details: typeof item.operation_details === 'string' 
+            ? JSON.parse(item.operation_details) 
+            : item.operation_details
+        })) as ServerHistoryItem[];
+
+        setOperations(typedData);
+      } catch (error) {
+        console.error('Error fetching distributor operations:', error);
+        toast.error('Failed to fetch operations history');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOperations();
+  }, [user, sortField, sortDirection]);
+
+  const handleSort = (field: keyof ServerHistoryItem) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const filteredOperations = operations.filter(op => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      op.operation_type.toLowerCase().includes(searchLower) ||
+      op.status.toLowerCase().includes(searchLower) ||
+      op.target_user_id?.toLowerCase().includes(searchLower) ||
+      op.id.toLowerCase().includes(searchLower)
+    );
   });
 
-  const handleRefresh = () => {
-    refetch();
-  };
-
-  const handleViewOperation = (operation: ServerHistoryItem) => {
-    setSelectedOperation(operation);
-    setIsDetailsDialogOpen(true);
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    
-    // Filter operations based on search query
-    const filtered = operations.filter(op => {
-      return query.trim() === "" || 
-        op.operation_type.toLowerCase().includes(query.toLowerCase()) ||
-        op.status.toLowerCase().includes(query.toLowerCase());
-    });
-    
-    setFilteredOperations(filtered);
-  };
-
-  // Initialize filtered operations when operations change
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [operations, searchQuery]);
-
-  const formatTimestamp = (timestamp: string) => {
-    try {
-      return format(new Date(timestamp), "yyyy/MM/dd HH:mm");
-    } catch {
-      return timestamp;
-    }
-  };
-
-  const getOperationTypeDisplay = (type: string) => {
-    switch (type) {
-      case 'add_user':
-        return t('addUser') || 'Add User';
-      case 'delete_user':
-        return t('deleteUser') || 'Delete User';
-      case 'add_credits':
-        return t('addCredits') || 'Add Credits';
-      default:
-        return type;
-    }
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return 'success';
-      case 'failed':
-        return 'destructive';
-      case 'pending':
-        return 'warning';
-      default:
-        return 'secondary';
-    }
-  };
-
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              <span>{t("serverHistory") || "Server History"}</span>
-            </CardTitle>
-            <CardDescription>
-              {t("serverHistoryDescription") || "View your server operations history"}
-              {operations.length > 0 && (
-                <span className="ml-2 font-medium">
-                  ({operations.length} {t("totalOperations") || "total operations"})
-                </span>
-              )}
-            </CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle>Server Operations History</CardTitle>
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search operations..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="w-full md:w-80">
-              <Input
-                placeholder={t("searchOperations") || "Search operations..."}
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="flex items-center gap-1"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              {t("refresh") || "Refresh"}
-            </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <p>Loading operations...</p>
           </div>
-          
-          {isLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-16 bg-muted animate-pulse rounded-md"
-                />
-              ))}
-            </div>
-          ) : filteredOperations.length > 0 ? (
-            <div className="rounded-md border">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/50">
-                    <th className="p-2 text-start font-medium">{t("operationType") || "Operation Type"}</th>
-                    <th className="p-2 text-start font-medium">{t("timestamp") || "Timestamp"}</th>
-                    <th className="p-2 text-start font-medium">{t("status") || "Status"}</th>
-                    <th className="p-2 text-start font-medium">{t("actions") || "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOperations.map((op) => (
-                    <tr key={op.id} className="border-t">
-                      <td className="p-2">
-                        {getOperationTypeDisplay(op.operation_type)}
-                      </td>
-                      <td className="p-2">{formatTimestamp(op.timestamp)}</td>
-                      <td className="p-2">
-                        <Badge
-                          variant={
-                            op.status === 'completed'
-                              ? 'success'
-                              : op.status === 'failed'
-                              ? 'destructive'
-                              : 'secondary'
-                          }
-                        >
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('timestamp')}>
+                      Date
+                      {sortField === 'timestamp' && (
+                        <ChevronDownIcon className={`ml-2 h-4 w-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('operation_type')}>
+                      Operation
+                      {sortField === 'operation_type' && (
+                        <ChevronDownIcon className={`ml-2 h-4 w-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('target_user_id')}>
+                      Target User
+                      {sortField === 'target_user_id' && (
+                        <ChevronDownIcon className={`ml-2 h-4 w-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('amount')}>
+                      Amount
+                      {sortField === 'amount' && (
+                        <ChevronDownIcon className={`ml-2 h-4 w-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('status')}>
+                      Status
+                      {sortField === 'status' && (
+                        <ChevronDownIcon className={`ml-2 h-4 w-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </Button>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOperations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      No operations found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredOperations.map((op) => (
+                    <TableRow key={op.id}>
+                      <TableCell>
+                        {format(new Date(op.timestamp), 'PPP p')}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {op.operation_type.replace(/_/g, ' ')}
+                      </TableCell>
+                      <TableCell>
+                        {op.target_user_id ? op.target_user_id.substring(0, 8) + '...' : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {op.amount ? op.amount : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
+                          ${op.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                            op.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-red-100 text-red-800'}`}>
                           {op.status}
-                        </Badge>
-                      </td>
-                      <td className="p-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewOperation(op)}
-                        >
-                          {t("details") || "Details"}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="py-6 flex flex-col items-center justify-center text-center bg-muted/20 rounded-md">
-              <AlertTriangle className="h-8 w-8 text-muted-foreground mb-2" />
-              <h3 className="text-lg font-medium mb-1">
-                {t("noOperationsFound") || "No operations found"}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {searchQuery
-                  ? t("noOperationsMatchSearch") || "No operations match your search query"
-                  : t("noOperationsYet") || "You don't have any operations recorded yet"}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Operation details dialog */}
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("operationDetails") || "Operation Details"}</DialogTitle>
-            <DialogDescription>
-              {selectedOperation && getOperationTypeDisplay(selectedOperation.operation_type)}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedOperation && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-sm font-medium">{t("operationId") || "Operation ID"}:</p>
-                  <p className="text-sm text-muted-foreground truncate">{selectedOperation.id}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{t("status") || "Status"}:</p>
-                  <Badge variant={getStatusBadgeVariant(selectedOperation.status)}>
-                    {selectedOperation.status}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <p className="text-sm">{formatTimestamp(selectedOperation.timestamp)}</p>
-              </div>
-
-              {selectedOperation.target_user_id && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <p className="text-sm">
-                    {t("targetUser") || "Target User"}: {selectedOperation.target_user_id}
-                  </p>
-                </div>
-              )}
-
-              {selectedOperation.amount > 0 && (
-                <div>
-                  <p className="text-sm font-medium">{t("amount") || "Amount"}:</p>
-                  <p className="text-sm">{selectedOperation.amount}</p>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-medium">{t("details") || "Details"}:</p>
-                <div className="mt-1 p-2 rounded bg-muted/50 overflow-auto max-h-64">
-                  <pre className="text-xs whitespace-pre-wrap">
-                    {JSON.stringify(selectedOperation.operation_details, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

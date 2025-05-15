@@ -1,6 +1,5 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSubButton, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut, Home, Users, LineChart, Settings, User, Database, FileCheck, FileQuestion, Tags, Group, Download, Sliders, ChevronDown, Globe, CreditCard, ShieldCheck, Percent } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -10,6 +9,7 @@ import { useSharedData } from "@/hooks/data/DataContext";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sidebar } from "@/components/ui/sidebar";
 
 export default function AppLayout({
   children
@@ -32,7 +32,7 @@ export default function AppLayout({
   const {
     users
   } = useSharedData();
-  const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
+  const userName = user?.email?.split('@')[0] || t("guest");
   const handleLogout = async () => {
     await logout();
   };
@@ -163,139 +163,102 @@ export default function AppLayout({
   
   const orderedMenuItems = getOrderedMenuItems();
   
-  return <SidebarProvider defaultOpen={!isMobile}>
-      {/* Top Navigation Bar - Enhanced with glass effect */}
-      <div className="fixed top-0 left-0 right-0 h-14 backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border-b dark:border-gray-700 shadow-sm flex items-center justify-between px-4 z-50 transition-all duration-300">
-        <div className="flex items-center">
-          <h1 className="text-lg font-bold dark:text-white bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{t("pegasusTool")}</h1>
+  return (
+    <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900" dir={isRTL ? "rtl" : "ltr"}>
+      {/* Sidebar */}
+      <div className={cn(
+        "flex h-full min-w-[200px] flex-col border-r bg-background",
+        isMobile ? "fixed inset-y-0 left-0 z-50 hidden" : ""
+      )}>
+        <div className="flex flex-col gap-2 px-6 py-4">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Pegasus Tools
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("welcomeToPegasusTools") || "Welcome to Pegasus Tools"}
+          </p>
         </div>
-        
-        <div className="flex items-center">
-          <span className="text-sm text-muted-foreground dark:text-gray-300 mr-3 hidden sm:inline animate-fade-in">
-            {t("welcome")}, {userName}
-          </span>
-          
+
+        {/* Navigation Menu */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-3 py-2">
+            <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+              {t("menu") || "Menu"}
+            </h2>
+            <div className="space-y-1">
+              {orderedMenuItems.map((item, index) => (
+                <Button
+                  key={item.path}
+                  variant={location.pathname === item.path ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => item.path !== "#" && navigate(item.path)}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.title}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <div className="p-4">
+          <Button variant="outline" className="w-full" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            {t("logout") || "Logout"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col">
+        {/* Top Navigation Bar */}
+        <header className="flex h-14 items-center border-b px-4">
+          <Button variant="ghost" size="icon" className="mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-6 w-6"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M9 3v18" />
+            </svg>
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-lg font-medium">{getCurrentPageTitle()}</h1>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1 hover:bg-primary/10 transition-all duration-300">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-                <span className="hidden sm:inline">{userName}</span>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                <span>{userName}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 animate-slide-in-from-bottom-5">
-              <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer hover:bg-primary/10 transition-colors">
-                <User className="h-4 w-4 mr-2" />
-                {t("editProfile")}
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate("/profile")}>
+                Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                <LogOut className="h-4 w-4 mr-2" />
-                {t("logout")}
+              <DropdownMenuItem onClick={handleLogout}>
+                Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
-      
-      <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900 pt-14" dir={isRTL ? "rtl" : "ltr"}>
-        <Sidebar side={isRTL ? "right" : "left"} variant={isMobile ? "floating" : "sidebar"}>
-          <SidebarHeader className="flex flex-col items-center justify-center p-3 sm:p-4 border-b dark:border-gray-800">
-            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{t("pegasusTool")}</h1>
-          </SidebarHeader>
-          
-          <SidebarContent>
-            <SidebarMenu>
-              {orderedMenuItems.map((item, index) => {
-                // Check if the current item is WebSettings (use the path to identify it)
-                if (item.path === "#" && isAdmin) {
-                  return (
-                    <SidebarMenuItem key="web-settings-section">
-                      <Accordion type="single" collapsible className="w-full" defaultValue={isWebSettingsActive ? "web-settings" : undefined}>
-                        <AccordionItem value="web-settings" className="border-none">
-                          <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm group transition-all duration-300">
-                            <div className="flex items-center gap-2 group-hover:translate-x-1 transition-all">
-                              <Globe className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
-                              <span className="group-hover:text-primary transition-colors">{t("webSettings") || "Web Settings"}</span>
-                              
-                              {/* Active indicator for the parent menu */}
-                              {isWebSettingsActive && (
-                                <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
-                              )}
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="pt-1 pb-0 animate-accordion-down">
-                            <div className="flex flex-col space-y-1 pl-7">
-                              {webSettingsItems.map(subItem => (
-                                <SidebarMenuButton 
-                                  key={subItem.path} 
-                                  asChild 
-                                  className="py-2" 
-                                  isActive={location.pathname.includes(subItem.path)}
-                                >
-                                  <button 
-                                    onClick={() => navigate(subItem.path)} 
-                                    className={cn(
-                                      "text-xs sm:text-sm w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-all duration-300 hover:translate-x-1", 
-                                      location.pathname.includes(subItem.path) 
-                                        ? "bg-primary/10 text-primary font-medium" 
-                                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                                    )}
-                                  >
-                                    <subItem.icon className="h-4 w-4 flex-shrink-0" />
-                                    {subItem.title}
-                                  </button>
-                                </SidebarMenuButton>
-                              ))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    </SidebarMenuItem>
-                  );
-                }
-                
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.title}>
-                      <button 
-                        onClick={() => navigate(item.path)} 
-                        className="w-full text-xs sm:text-sm relative group transition-all duration-300 hover:translate-x-1"
-                      >
-                        <item.icon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
-                        <span className="group-hover:text-primary transition-colors">{item.title}</span>
-                        
-                        {/* Active indicator */}
-                        {location.pathname === item.path && (
-                          <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-full -ml-2"></span>
-                        )}
-                      </button>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarContent>
-          
-          <SidebarFooter className="p-2 sm:p-4 text-xs text-center text-muted-foreground dark:text-gray-500">
-            {t("allRightsReserved")}
-          </SidebarFooter>
-        </Sidebar>
+        </header>
 
-        <main className="flex-1 p-3 sm:p-6 overflow-auto dark:bg-gray-900 dark:text-white">
-          <div className="flex items-center mb-4 sm:mb-6">
-            <SidebarTrigger className="text-sm sm:text-base mr-2 rtl:mr-0 rtl:ml-2" />
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {getCurrentPageTitle()}
-            </h1>
-          </div>
-          
-          {/* Add animation to the main content */}
-          <div className="animate-fade-in">
-            {children}
-          </div>
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto p-6">
+          {children}
         </main>
       </div>
-    </SidebarProvider>;
+    </div>
+  );
 }

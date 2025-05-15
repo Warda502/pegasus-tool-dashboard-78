@@ -1,178 +1,288 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { toast } from "@/components/ui/sonner";
-import { Users, RefreshCcw, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/hooks/useLanguage";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { useDistributorOperations } from "@/hooks/useDistributorOperations";
-import { ViewUserDialog } from "@/components/users/ViewUserDialog";
-import { UserSearch } from "@/components/users/UserSearch";
-import { useQuery } from "@tanstack/react-query";
-import { User } from "@/hooks/useSharedData";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { UserPlusIcon, UserX, RefreshCcw, CreditCard } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/sonner';
+import { AddCreditsDialog } from '@/components/users/AddCreditsDialog';
+
+// Create a custom UserSearch component for this page
+function UserSearch({ onSearch }: { onSearch: (query: string) => void }) {
+  return (
+    <div className="relative">
+      <Input
+        placeholder="Search users..."
+        onChange={(e) => onSearch(e.target.value)}
+        className="pl-8"
+      />
+      <div className="absolute inset-y-0 left-0 flex items-center pl-2">
+        <svg
+          className="h-4 w-4 text-muted-foreground"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
+    </div>
+  );
+}
 
 export default function DistributorUsers() {
-  const { isRTL, t } = useLanguage();
-  const queryClient = useQueryClient();
-  const { isAuthenticated, isDistributor } = useAuth();
-  const { fetchDistributorUsers, deleteUser } = useDistributorOperations();
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-
-  const { data: users = [], isLoading, refetch } = useQuery({
-    queryKey: ["distributor_users"],
-    queryFn: fetchDistributorUsers,
-    enabled: isAuthenticated && isDistributor,
-  });
-
-  const handleRefresh = () => {
-    refetch();
-  };
-
-  const handleViewUser = (user: User) => {
-    setSelectedUser(user);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (confirm(t("confirmDelete") || "Are you sure you want to delete this user?")) {
-      try {
-        await deleteUser(userId);
-        handleRefresh();
-      } catch (error) {
-        console.error("Error deleting user:", error);
+  const { user } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Add user state
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [addingUser, setAddingUser] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  
+  // Credits dialog state
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
+  
+  useEffect(() => {
+    if (!user) return;
+    
+    fetchUsers();
+  }, [user]);
+  
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('distributor_id', user?.id);
+        
+      if (error) {
+        throw error;
       }
+      
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to fetch users');
+    } finally {
+      setLoading(false);
     }
   };
-
+  
+  const handleAddUser = async () => {
+    try {
+      setAddingUser(true);
+      
+      // First check if the user exists
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('id, email, distributor_id')
+        .eq('email', newUserEmail)
+        .single();
+        
+      if (userError && userError.code !== 'PGRST116') {
+        throw userError;
+      }
+      
+      if (existingUser) {
+        // User exists, check if they already have a distributor
+        if (existingUser.distributor_id) {
+          toast.error('User already assigned to another distributor');
+          return;
+        }
+        
+        // Update the user to assign them to this distributor
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ distributor_id: user?.id })
+          .eq('id', existingUser.id);
+          
+        if (updateError) {
+          throw updateError;
+        }
+        
+        toast.success(`User ${newUserEmail} added to your distribution list`);
+      } else {
+        toast.error('User not found. They must register first.');
+      }
+      
+      setIsAddDialogOpen(false);
+      setNewUserEmail('');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast.error('Failed to add user');
+    } finally {
+      setAddingUser(false);
+    }
+  };
+  
+  const handleRemoveUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ distributor_id: null })
+        .eq('id', userId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('User removed from your distribution list');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error removing user:', error);
+      toast.error('Failed to remove user');
+    }
+  };
+  
+  const handleAddCredits = (user: any) => {
+    setSelectedUser(user);
+    setIsCreditsDialogOpen(true);
+  };
+  
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
-    // Filter users based on search query
-    const filtered = users.filter(user => {
-      return query.trim() === "" || 
-        (user.Email?.toLowerCase().includes(query.toLowerCase())) ||
-        (user.Name?.toLowerCase().includes(query.toLowerCase())) ||
-        (user.Phone?.toLowerCase().includes(query.toLowerCase())) ||
-        (user.Country?.toLowerCase().includes(query.toLowerCase()));
-    });
-    
-    setFilteredUsers(filtered);
   };
-
-  // Initialize filtered users when users change
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [users, searchQuery]);
-
+  
+  const filteredUsers = searchQuery 
+    ? users.filter(user => 
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : users;
+  
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span>{t("distributorUsers") || "My Users"}</span>
-            </CardTitle>
-            <CardDescription>
-              {t("distributorUsersDescription") || "Manage users assigned to you"}
-              {users.length > 0 && (
-                <span className="ml-2 font-medium">
-                  ({users.length} {t("totalUsers") || "total users"})
-                </span>
-              )}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <UserSearch onSearch={handleSearch} />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="flex items-center gap-1"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              {t("refresh") || "Refresh"}
-            </Button>
-          </div>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>My Users</CardTitle>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchUsers}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlusIcon className="mr-2 h-4 w-4" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Existing User</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">User Email</Label>
+                  <Input 
+                    id="email" 
+                    placeholder="user@example.com" 
+                    value={newUserEmail} 
+                    onChange={(e) => setNewUserEmail(e.target.value)} 
+                  />
+                </div>
+                <Button onClick={handleAddUser} disabled={addingUser || !newUserEmail}>
+                  {addingUser ? 'Adding...' : 'Add User'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <UserSearch onSearch={handleSearch} />
           
-          {isLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-16 bg-muted animate-pulse rounded-md"
-                />
-              ))}
-            </div>
-          ) : filteredUsers.length > 0 ? (
-            <div className="rounded-md border">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/50">
-                    <th className="p-2 text-start font-medium">{t("name") || "Name"}</th>
-                    <th className="p-2 text-start font-medium">{t("email") || "Email"}</th>
-                    <th className="p-2 text-start font-medium">{t("country") || "Country"}</th>
-                    <th className="p-2 text-start font-medium">{t("actions") || "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-t">
-                      <td className="p-2">{user.Name || "—"}</td>
-                      <td className="p-2">{user.Email}</td>
-                      <td className="p-2">{user.Country || "—"}</td>
-                      <td className="p-2">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewUser(user)}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Credits</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10">
+                      Loading users...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.name || 'N/A'}</TableCell>
+                      <TableCell>
+                        {user.credits || '0'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.block === 'Blocked' ? 'destructive' : 'outline'}>
+                          {user.block === 'Blocked' ? 'Blocked' : 'Active'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleAddCredits(user)}
                           >
-                            {t("view") || "View"}
+                            <CreditCard className="h-4 w-4" />
                           </Button>
-                          <Button
+                          <Button 
+                            size="sm" 
                             variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleRemoveUser(user.id)}
                           >
-                            {t("delete") || "Delete"}
+                            <UserX className="h-4 w-4" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="py-6 flex flex-col items-center justify-center text-center bg-muted/20 rounded-md">
-              <AlertTriangle className="h-8 w-8 text-muted-foreground mb-2" />
-              <h3 className="text-lg font-medium mb-1">
-                {t("noUsersFound") || "No users found"}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {searchQuery
-                  ? t("noUsersMatchSearch") || "No users match your search query"
-                  : t("noUsersAssigned") || "You don't have any users assigned to you yet"}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <ViewUserDialog 
-        isOpen={isViewDialogOpen} 
-        onClose={() => setIsViewDialogOpen(false)} 
-        user={selectedUser} 
-      />
-    </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </CardContent>
+      
+      {/* Credits dialog */}
+      {selectedUser && (
+        <AddCreditsDialog 
+          open={isCreditsDialogOpen}
+          onOpenChange={setIsCreditsDialogOpen}
+          user={selectedUser}
+          onCreditsAdded={fetchUsers}
+        />
+      )}
+    </Card>
   );
 }

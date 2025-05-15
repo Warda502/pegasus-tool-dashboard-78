@@ -1,5 +1,6 @@
+
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -22,27 +23,20 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/2fa" element={
-            <ProtectedRoute>
-              <TwoFactorAuth />
-            </ProtectedRoute>
-          } />
           
           {/* Main layout routes */}
-          <Route element={<AppLayout />}>
+          <Route path="/" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Outlet />
+              </AppLayout>
+            </ProtectedRoute>
+          }>
             {/* Dashboard */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
+            <Route path="/dashboard" element={<Dashboard />} />
 
             {/* Operations */}
-            <Route path="/operations" element={
-              <ProtectedRoute>
-                <Operations />
-              </ProtectedRoute>
-            } />
+            <Route path="/operations" element={<Operations />} />
 
             {/* Admin Routes */}
             <Route path="/users" element={
@@ -58,28 +52,23 @@ function App() {
             } />
             
             {/* Distributor Routes */}
-            <Route path="/distributor-users" element={
-              <ProtectedRoute>
-                <DistributorUsers />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/distributor-operations" element={
-              <ProtectedRoute>
-                <DistributorOperations />
-              </ProtectedRoute>
-            } />
+            <Route path="/distributor-users" element={<DistributorUsers />} />
+            <Route path="/distributor-operations" element={<DistributorOperations />} />
             
             {/* User Routes */}
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <EditMyProfile />
-              </ProtectedRoute>
-            } />
-            
-            {/* Not Found */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="/profile" element={<EditMyProfile />} />
+            <Route path="/2fa" element={<TwoFactorAuth />} />
           </Route>
+
+          {/* Standalone 2FA page (outside main layout) */}
+          <Route path="/2fa-setup" element={
+            <ProtectedRoute>
+              <TwoFactorAuth />
+            </ProtectedRoute>
+          } />
+          
+          {/* Not Found */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </div>
