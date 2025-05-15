@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, UserRole, AuthState } from "./types";
@@ -38,17 +39,9 @@ export const useAuthState = (): AuthState => {
       if (userDataById) {
         console.log("User data found by ID:", userDataById);
         
-        // Updated to support the distributor role
-        let userRole: UserRole;
-        const emailType = (userDataById.email_type || '').toLowerCase();
-        
-        if (emailType === 'admin') {
-          userRole = 'admin';
-        } else if (emailType === 'distributor') {
-          userRole = 'distributor';
-        } else {
-          userRole = 'user';
-        }
+        const userRole = ((userDataById.email_type || '').toLowerCase() === 'admin') 
+          ? 'admin' as UserRole 
+          : 'user' as UserRole;
         
         // Check if user has 2FA enabled
         const hasTwoFactorEnabled = userDataById.two_factor_enabled || false;
@@ -99,17 +92,9 @@ export const useAuthState = (): AuthState => {
 
       console.log("User data found by UID:", userDataByUid);
       
-      // Updated to support the distributor role
-      let userRole: UserRole;
-      const emailType = (userDataByUid.email_type || '').toLowerCase();
-      
-      if (emailType === 'admin') {
-        userRole = 'admin';
-      } else if (emailType === 'distributor') {
-        userRole = 'distributor';
-      } else {
-        userRole = 'user';
-      }
+      const userRole = ((userDataByUid.email_type || '').toLowerCase() === 'admin') 
+        ? 'admin' as UserRole 
+        : 'user' as UserRole;
       
       // Check if user has 2FA enabled
       const hasTwoFactorEnabled = userDataByUid.two_factor_enabled || false;
@@ -293,7 +278,6 @@ export const useAuthState = (): AuthState => {
     user,
     isAuthenticated,
     isAdmin: role === 'admin',
-    isDistributor: role === 'distributor',
     sessionChecked,
     needsTwoFactor,
     twoFactorVerified,
