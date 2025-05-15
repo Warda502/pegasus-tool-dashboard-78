@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from "react";
 import { useAuthState } from "./useAuthState";
 import { useAuthActions } from "./useAuthActions";
@@ -18,10 +17,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Log authentication state for debugging
     console.log("Auth context state:", {
       isAuthenticated: authState.isAuthenticated,
+      isAdmin: authState.isAdmin,
+      isDistributor: authState.isDistributor,
       needsTwoFactor: authState.needsTwoFactor,
       twoFactorVerified: authState.twoFactorVerified
     });
-  }, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified]);
+  }, [authState.isAuthenticated, authState.isAdmin, authState.isDistributor, authState.needsTwoFactor, authState.twoFactorVerified]);
   
   useEffect(() => {
     // Handle cross-tab authentication sync
