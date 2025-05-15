@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from "react";
 import { useAuthState } from "./useAuthState";
 import { useAuthActions } from "./useAuthActions";
@@ -32,16 +33,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (event.data === 'SIGNED_OUT' && authState.isAuthenticated) {
         console.log("Received logout event from another tab");
         
-        setTimeout(() => {
-          window.location.href = '/login?loggedOutInAnotherTab=true';
-        }, 100);
+        // Use authActions.logout instead of direct navigation
+        authActions.logout();
       }
     };
     
     return () => {
       authChannel.close();
     };
-  }, [authState.isAuthenticated]);
+  }, [authState.isAuthenticated, authActions]);
   
   return (
     <AuthContext.Provider value={authContext}>
