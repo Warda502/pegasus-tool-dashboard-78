@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import UsersManager from "./pages/UsersManager";
 import Operations from "./pages/Operations";
+import DistributorUsers from "./pages/DistributorUsers";
+import DistributorOperations from "./pages/DistributorOperations";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
@@ -28,7 +30,8 @@ import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
 import PaymentMethods from "./pages/WebSettings/PaymentMethods";
 import DiscountOffers from "./pages/WebSettings/DiscountOffers";
-import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
+import TwoFactorAuth from "./pages/TwoFactorAuth";
+import Index from "./pages/Index";
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -78,7 +81,7 @@ const App = () => {
             <DataProvider>
               <TooltipProvider>
                 <Routes>
-                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
@@ -95,6 +98,17 @@ const App = () => {
                       <AppLayout><Operations /></AppLayout>
                     </ProtectedRoute>
                   } />
+                  {/* Distributor routes */}
+                  <Route path="/distributor-users" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorUsers /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/distributor-operations" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorOperations /></AppLayout>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/settings" element={
                     <ProtectedRoute>
                       <AppLayout><Settings /></AppLayout>
@@ -105,7 +119,6 @@ const App = () => {
                       <AppLayout><EditMyProfile /></AppLayout>
                     </ProtectedRoute>
                   } />
-                  {/* إضافة مسار المصادقة الثنائية */}
                   <Route path="/two-factor-auth" element={
                     <ProtectedRoute>
                       <AppLayout><TwoFactorAuth /></AppLayout>

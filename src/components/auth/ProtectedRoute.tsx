@@ -4,10 +4,11 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { Loading } from "@/components/ui/loading";
 import { useLanguage } from "@/hooks/useLanguage";
+import { UserRole } from "@/hooks/auth/types";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  allowedRoles?: UserRole[];
 };
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
