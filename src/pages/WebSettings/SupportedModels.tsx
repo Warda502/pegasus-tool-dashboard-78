@@ -265,8 +265,12 @@ export default function SupportedModels() {
               {t("supportedModelsDescription") || "Manage supported device models"}
             </CardDescription>
           </div>
-          <Button onClick={() => setIsUploadDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
+          <Button 
+            variant="outline"
+            className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
+            onClick={() => setIsUploadDialogOpen(true)}
+            >
+            <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
             {t("uploadModels") || "Upload Models"}
           </Button>
         </CardHeader>
