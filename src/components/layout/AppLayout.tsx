@@ -216,7 +216,7 @@ export default function AppLayout({
                         <AccordionItem value="web-settings" className="border-none">
                           <AccordionTrigger className="py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-xs sm:text-sm group transition-all duration-300">
                             <div className="flex items-center gap-2 group-hover:translate-x-1 transition-all">
-                              <Globe className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
+                              <item.icon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:text-primary transition-colors" />
                               <span className="group-hover:text-primary transition-colors">{t("webSettings") || "Web Settings"}</span>
                               
                               {/* Active indicator for the parent menu */}
