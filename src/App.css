@@ -17,17 +17,23 @@
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
-@keyframes draw-outline {
-  from {
+@keyframes draw-outline-loop {
+  0% {
     stroke-dashoffset: 1500;
   }
-  to {
-    stroke-dashoffset: 0;
+  100% {
+    stroke-dashoffset: -1500;
   }
 }
 
-.animate-vegas-outline {
-  animation: draw-outline 0.5s linear forwards;
+.animate-vegas-loop {
+  animation: draw-outline-loop 0.5s linear infinite;
+}
+
+/* تحريك توهج ضوئي */
+@keyframes glow-move {
+  0% { mask-position: 0% 50%; }
+  100% { mask-position: 100% 50%; }
 }
 @keyframes logo-spin {
   from {
