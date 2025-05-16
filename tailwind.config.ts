@@ -114,11 +114,6 @@ export default {
 						opacity: '1',
 						transform: 'scale(1)'
 					}
-				},
-				'vegas-outline': {
-					'0%': { strokeDashoffset: '1500', opacity: '0.2' },
-					'50%': { opacity: '1' },
-					'100%': { strokeDashoffset: '0', opacity: '0.2' }
 				}
 			},
 			animation: {
@@ -129,8 +124,7 @@ export default {
 				'slide-in-from-bottom': 'slide-in-from-bottom 0.3s ease-out',
 				'slide-in-from-bottom-5': 'slide-in-from-bottom-5 0.3s ease-out',
 				'bounce-in': 'bounce-in 0.5s ease-out',
-				'pulse-once': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) 1',
-				'vegas-outline': 'vegas-outline 4s linear infinite'
+				'pulse-once': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) 1'
 			}
 		}
 	},
