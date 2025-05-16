@@ -148,6 +148,33 @@
   }
 }
 
+/* Vegas outline animation */
+@keyframes vegas-outline {
+  0% {
+    stroke-dashoffset: 1500;
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.2;
+  }
+}
+
+.vegas-outline-container {
+  filter: drop-shadow(0 0 3px #ff9c01);
+}
+
+.vegas-outline {
+  filter: drop-shadow(0 0 2px #ff9c01);
+}
+
+.animate-vegas-outline {
+  animation: vegas-outline 4s linear infinite;
+}
+
 /* Enhanced animations */
 @keyframes shimmer {
   0% {
