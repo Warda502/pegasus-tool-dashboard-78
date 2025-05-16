@@ -196,11 +196,15 @@ export default function Pricing() {
               {t("pricingDescription") || "Take a look of our Pricing and select Your Choice"}
             </CardDescription>
           </div>
-          <Button onClick={() => {
+          <Button 
+          variant="outline"
+          className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
+          onClick={() => {
           resetForm();
           setIsAddDialogOpen(true);
-        }}>
-            <Plus className="mr-2 h-4 w-4" />
+          }}
+            >
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
             {t("addNewPlan") || "Add New Plan"}
           </Button>
         </CardHeader>
