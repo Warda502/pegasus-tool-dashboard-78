@@ -1385,6 +1385,118 @@ export const translations: Translations = {
   "useAuthenticatorApp": {
     "en": "Use Authenticator App",
     "ar": "استخدم تطبيق المصادقة"
+  },
+    "paymentMethodAdded": {
+    "en": "Payment method added successfully",
+    "ar": "تمت إضافة طريقة الدفع بنجاح"
+  },
+  "paymentMethodUpdated": {
+    "en": "Payment method updated successfully",
+    "ar": "تم تحديث طريقة الدفع بنجاح"
+  },
+  "paymentMethodDeleted": {
+    "en": "Payment method deleted successfully",
+    "ar": "تم حذف طريقة الدفع بنجاح"
+  },
+  "paymentMethods": {
+    "en": "Payment Methods",
+    "ar": "طرق الدفع"
+  },
+  "addNewMethodDescription": {
+    "en": "Add a new payment method to your system",
+    "ar": "أضف طريقة دفع جديدة إلى نظامك"
+  },
+  "addNewMethod": {
+    "en": "Add New Method",
+    "ar": "إضافة طريقة جديدة"
+  },
+  "methodName": {
+    "en": "Method Name",
+    "ar": "اسم الطريقة"
+  },
+  "description": {
+    "en": "Description",
+    "ar": "الوصف"
+  },
+  "imageURL": {
+    "en": "Image URL",
+    "ar": "رابط الصورة"
+  },
+  "noPaymentMethodsFound": {
+    "en": "No payment methods found. Add your first payment method!",
+    "ar": "لم يتم العثور على طرق دفع. أضف أول طريقة دفع!"
+  },
+  "noImage": {
+    "en": "No Image",
+    "ar": "لا توجد صورة"
+  },
+  "editMethod": {
+    "en": "Edit Payment Method",
+    "ar": "تعديل طريقة الدفع"
+  },
+  "editMethodDescription": {
+    "en": "Update the payment method details",
+    "ar": "قم بتحديث تفاصيل طريقة الدفع"
+  },
+  "deleteMethodConfirmation": {
+    "en": "Are you sure you want to delete this payment method? This action cannot be undone.",
+    "ar": "هل أنت متأكد أنك تريد حذف هذه طريقة الدفع؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  "discountOfferAdded": {
+    "en": "Discount offer added successfully",
+    "ar": "تمت إضافة عرض الخصم بنجاح"
+  },
+  "discountOfferUpdated": {
+    "en": "Discount offer updated successfully",
+    "ar": "تم تحديث عرض الخصم بنجاح"
+  },
+  "discountOfferDeleted": {
+    "en": "Discount offer deleted successfully",
+    "ar": "تم حذف عرض الخصم بنجاح"
+  },
+  "noExpiryDate": {
+    "en": "No expiry date",
+    "ar": "لا يوجد تاريخ انتهاء"
+  },
+  "discountOffers": {
+    "en": "Discount Offers",
+    "ar": "عروض الخصم"
+  },
+  "addNewOffer": {
+    "en": "Add New Offer",
+    "ar": "إضافة عرض جديد"
+  },
+  "addNewOfferDescription": {
+    "en": "Create a new discount offer for your customers",
+    "ar": "أنشئ عرض خصم جديد لعملائك"
+  },
+  "discountPercentage": {
+    "en": "Discount Percentage",
+    "ar": "نسبة الخصم"
+  },
+  "noDiscountOffersFound": {
+    "en": "No discount offers found. Create your first offer!",
+    "ar": "لم يتم العثور على عروض خصم. أنشئ أول عرض لك!"
+  },
+  "expiresOn": {
+    "en": "Expires on",
+    "ar": "ينتهي في"
+  },
+  "createdOn": {
+    "en": "Created on",
+    "ar": "تم الإنشاء في"
+  },
+  "editOffer": {
+    "en": "Edit Offer",
+    "ar": "تعديل العرض"
+  },
+  "editOfferDescription": {
+    "en": "Update the discount offer details",
+    "ar": "قم بتحديث تفاصيل عرض الخصم"
+  },
+  "deleteOfferConfirmation": {
+    "en": "Are you sure you want to delete this offer? This action cannot be undone.",
+    "ar": "هل أنت متأكد أنك تريد حذف هذا العرض؟ لا يمكن التراجع عن هذا الإجراء."
   }
 };
 
