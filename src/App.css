@@ -27,7 +27,7 @@
 }
 
 .animate-vegas-outline {
-  animation: draw-outline 3s linear forwards;
+  animation: draw-outline 0.5s linear forwards;
 }
 @keyframes logo-spin {
   from {
