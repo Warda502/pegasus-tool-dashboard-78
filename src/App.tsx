@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import UsersManager from "./pages/UsersManager";
+import ResellerManagement from "./pages/ResellerManagement";
 import Operations from "./pages/Operations";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -28,7 +29,7 @@ import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
 import PaymentMethods from "./pages/WebSettings/PaymentMethods";
 import DiscountOffers from "./pages/WebSettings/DiscountOffers";
-import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
+import TwoFactorAuth from "./pages/TwoFactorAuth";
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -90,6 +91,11 @@ const App = () => {
                       <AppLayout><UsersManager /></AppLayout>
                     </ProtectedRoute>
                   } />
+                  <Route path="/reseller-management" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><ResellerManagement /></AppLayout>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/operations" element={
                     <ProtectedRoute>
                       <AppLayout><Operations /></AppLayout>
@@ -105,7 +111,6 @@ const App = () => {
                       <AppLayout><EditMyProfile /></AppLayout>
                     </ProtectedRoute>
                   } />
-                  {/* إضافة مسار المصادقة الثنائية */}
                   <Route path="/two-factor-auth" element={
                     <ProtectedRoute>
                       <AppLayout><TwoFactorAuth /></AppLayout>
