@@ -18,23 +18,15 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
   
   try {
     let allOperations: any[] = [];
-    
-    // For admin users, use a more efficient pagination approach with smaller page size
-    const pageSize = isAdmin ? 100 : 1000; // Smaller page size for admins to prevent stack depth issues
     let page = 0;
+    const pageSize = 1000;
     let hasMore = true;
-    let maxPages = isAdmin ? 50 : 10; // Limit the maximum pages to prevent excessive requests
     
-    while (hasMore && page < maxPages) {
+    while (hasMore) {
       const from = page * pageSize;
       const to = from + pageSize - 1;
       
       console.log(`Fetching operations batch ${page + 1}, range: ${from}-${to}`);
-      
-      // Add a small delay between admin requests to prevent stack overflows
-      if (isAdmin && page > 0) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
       
       let query = supabase
         .from('operations')
@@ -51,12 +43,7 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
       
       if (error) {
         console.error(`Error fetching operations batch ${page + 1}:`, error);
-        // Don't throw error to prevent breaking the entire fetch - just log and continue
-        if (page > 0) {
-          hasMore = false; // Stop if we've fetched at least one batch
-        } else {
-          throw new Error("Failed to fetch operations");
-        }
+        throw new Error("Failed to fetch operations");
       }
       
       if (data && data.length > 0) {
@@ -73,7 +60,22 @@ export const fetchOperations = async (isAdmin: boolean, userId: string | undefin
 
     console.log(`Total operations fetched: ${allOperations.length}`);
     
-    // Map the operations after fetching all data
+    if (allOperations.length > 0) {
+      // Log status values to debug
+      const statuses = allOperations.map(op => op.status).filter(Boolean);
+      const statusCounts = statuses.reduce((acc: any, status: string) => {
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("Operation status counts:", statusCounts);
+      console.log("Sample operations:", allOperations.slice(0, 3).map(op => ({
+        id: op.operation_id,
+        status: op.status,
+        uid: op.uid
+      })));
+    }
+
     return allOperations.map(op => ({
       operation_id: op.operation_id,
       OprationID: op.operation_id,
@@ -117,8 +119,8 @@ export const useFetchOperations = () => {
     gcTime: CACHE_GC_TIME,
     refetchOnMount: true, 
     refetchOnWindowFocus: false,
-    enabled: isAuthenticated && !!user?.id, // Only run if user is authenticated and has ID
-    retry: isAdmin ? 1 : 2, // Fewer retries for admin to prevent stack issues
+    enabled: isAuthenticated,
+    retry: 2,
     meta: {
       onError: (error) => {
         console.error("Error loading operations:", error);
