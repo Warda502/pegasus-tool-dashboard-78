@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, UserRole, AuthState } from "./types";
@@ -27,7 +28,7 @@ export const useAuthState = (): AuthState => {
       console.log("Fetching complete user data for ID:", userId);
       
       // Protect against fetch errors by adding timeouts
-      const fetchPromise = new Promise(async (resolve, reject) => {
+      const fetchPromise = new Promise<AuthUser | null>(async (resolve, reject) => {
         try {
           // Try first with ID
           const { data: userDataById, error } = await supabase
@@ -154,7 +155,7 @@ export const useAuthState = (): AuthState => {
       });
       
       // Set a timeout to ensure we don't hang indefinitely
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<null>((_, reject) => {
         setTimeout(() => {
           reject(new Error("User data fetch timeout"));
         }, 5000); // 5 second timeout
