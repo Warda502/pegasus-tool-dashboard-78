@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -165,7 +164,7 @@ export default function Pricing() {
       price: plan.price,
       features: plan.features,
       perks: plan.perks,
-      duration_months: plan.duration_months || 1
+      duration_months: plan.duration_months || '1'
     });
     setIsEditDialogOpen(true);
   };

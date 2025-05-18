@@ -53,7 +53,7 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
           price: plan.price || '',
           features: plan.features,
           perks: plan.perks,
-          duration_months: plan.duration_months
+          duration_months: plan.duration_months ? plan.duration_months.toString() : '1' // Ensure it's a string
         })) : [];
         
         setPlans(transformedPlans);
