@@ -232,6 +232,7 @@ export type Database = {
       }
       pricing: {
         Row: {
+          duration_months: string | null
           features: string | null
           id: string
           name_plan: string
@@ -239,6 +240,7 @@ export type Database = {
           price: string | null
         }
         Insert: {
+          duration_months?: string | null
           features?: string | null
           id?: string
           name_plan: string
@@ -246,6 +248,7 @@ export type Database = {
           price?: string | null
         }
         Update: {
+          duration_months?: string | null
           features?: string | null
           id?: string
           name_plan?: string

@@ -53,7 +53,9 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
           price: plan.price || '',
           features: plan.features,
           perks: plan.perks,
-          duration_months: plan.duration_months || 1 // Default to 1 month if not specified
+          duration_months: typeof plan.duration_months === 'number' ? 
+                           plan.duration_months : 
+                           plan.duration_months ? parseInt(plan.duration_months.toString()) : 1
         })) : [];
         
         setPlans(transformedPlans);
