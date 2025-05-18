@@ -12,11 +12,11 @@ import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
-import { AddToPlanDialog } from "@/components/users/AddToPlanDialog"; // Import the new dialog
+import { AddToPlanDialog } from "@/components/users/AddToPlanDialog";
 import { UserFilters } from "@/components/users/UserFilters";
 import { UserHeaderActions } from "@/components/users/UserHeaderActions";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
-import { useUserOperations } from "@/hooks/useUserOperations";
+import { useUserOperations } from "@/hooks/data/useUserOperations";
 import { UsersTable } from "@/components/users/UsersTable";
 
 export default function UsersManager() {
