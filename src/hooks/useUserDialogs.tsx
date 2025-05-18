@@ -10,6 +10,7 @@ export const useUserDialogs = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRenewDialogOpen, setIsRenewDialogOpen] = useState(false);
   const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
+  const [isAddToPlanDialogOpen, setIsAddToPlanDialogOpen] = useState(false);
 
   const openViewDialog = (user: User) => {
     setSelectedUser(user);
@@ -33,6 +34,10 @@ export const useUserDialogs = () => {
   const openAddCreditsDialog = () => {
     setIsAddCreditsDialogOpen(true);
   };
+  
+  const openAddToPlanDialog = () => {
+    setIsAddToPlanDialogOpen(true);
+  };
 
   return {
     selectedUser,
@@ -41,15 +46,18 @@ export const useUserDialogs = () => {
     isAddDialogOpen,
     isRenewDialogOpen,
     isAddCreditsDialogOpen,
+    isAddToPlanDialogOpen,
     setIsViewDialogOpen,
     setIsEditDialogOpen,
     setIsAddDialogOpen,
     setIsRenewDialogOpen,
     setIsAddCreditsDialogOpen,
+    setIsAddToPlanDialogOpen,
     openViewDialog,
     openEditDialog,
     openRenewDialog,
     openAddDialog,
-    openAddCreditsDialog
+    openAddCreditsDialog,
+    openAddToPlanDialog
   };
 };

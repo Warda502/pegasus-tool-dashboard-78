@@ -12,6 +12,7 @@ import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { RenewUserDialog } from "@/components/users/RenewUserDialog";
 import { AddCreditsDialog } from "@/components/users/AddCreditsDialog";
+import { AddToPlanDialog } from "@/components/users/AddToPlanDialog"; // Import the new dialog
 import { UserFilters } from "@/components/users/UserFilters";
 import { UserHeaderActions } from "@/components/users/UserHeaderActions";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
@@ -43,7 +44,10 @@ export default function UsersManager() {
     openAddCreditsDialog
   } = useUserDialogs();
   
-  const { updateUser, addUser, renewUser, deleteUser } = useUserOperations();
+  // Add state for the new dialog
+  const [isAddToPlanDialogOpen, setIsAddToPlanDialogOpen] = useState(false);
+  
+  const { updateUser, addUser, renewUser, deleteUser, addPlanToUser } = useUserOperations();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState(users);
@@ -146,6 +150,26 @@ export default function UsersManager() {
     }
   };
 
+  // Handler for adding a plan to a user
+  const handleAddPlanToUser = async (userId: string, planName: string) => {
+    console.log(`UsersManager: Adding plan ${planName} to user ${userId}`);
+    try {
+      const success = await addPlanToUser(userId, planName);
+      if (success) {
+        console.log("UsersManager: Plan added successfully, refreshing data");
+        handleRefresh();
+      }
+      return success;
+    } catch (error) {
+      console.error("Error adding plan to user:", error);
+      return false;
+    }
+  };
+
+  const openAddToPlanDialog = () => {
+    setIsAddToPlanDialogOpen(true);
+  };
+
   // Initialize filtered users when users change
   useEffect(() => {
     console.log(`UsersManager: Users data changed, total: ${users.length}`);
@@ -179,6 +203,7 @@ export default function UsersManager() {
               onRefresh={handleRefresh}
               onAddCredits={openAddCreditsDialog}
               onAddUser={openAddDialog}
+              onAddToPlan={openAddToPlanDialog}
             />
           </div>
           
@@ -224,6 +249,14 @@ export default function UsersManager() {
         onClose={() => setIsAddCreditsDialogOpen(false)}
         users={users}
         onAddCredits={handleAddCreditsConfirm}
+      />
+      
+      {/* Add the new dialog */}
+      <AddToPlanDialog
+        isOpen={isAddToPlanDialogOpen}
+        onClose={() => setIsAddToPlanDialogOpen(false)}
+        users={users}
+        onAddPlan={handleAddPlanToUser}
       />
     </div>
   );

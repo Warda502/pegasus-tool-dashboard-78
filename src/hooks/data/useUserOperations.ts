@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -198,10 +197,69 @@ export const useUserOperations = () => {
     }
   };
 
+  const addPlanToUser = async (userId: string, planName: string) => {
+    if (!isAuthenticated) {
+      toast(t("sessionExpired") || "انتهت الجلسة", {
+        description: t("pleaseLogin") || "الرجاء تسجيل الدخول مرة أخرى"
+      });
+      return false;
+    }
+    
+    try {
+      console.log(`Adding plan ${planName} to user ${userId}`);
+      
+      // Get the current user plans
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('my_plans')
+        .eq('id', userId)
+        .single();
+      
+      if (fetchError) {
+        console.error("Error fetching user plans:", fetchError);
+        throw new Error("Failed to fetch user data");
+      }
+      
+      // Update the user's plan
+      let updatedPlans = planName;
+      
+      // If user already has plans, append the new one
+      if (userData.my_plans) {
+        const currentPlans = userData.my_plans.split(',').map(p => p.trim());
+        if (!currentPlans.includes(planName)) {
+          currentPlans.push(planName);
+          updatedPlans = currentPlans.join(', ');
+        } else {
+          // Plan already assigned
+          console.log(`Plan ${planName} is already assigned to user ${userId}`);
+          return true;
+        }
+      }
+      
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ my_plans: updatedPlans })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error("Error updating user plan:", updateError);
+        throw new Error("Failed to add plan to user");
+      }
+
+      console.log(`Successfully added plan ${planName} to user ${userId}`);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      return true;
+    } catch (error) {
+      console.error("Error adding plan to user:", error);
+      return false;
+    }
+  };
+
   return {
     deleteUser,
     updateUser,
     addUser,
-    renewUser
+    renewUser,
+    addPlanToUser
   };
 };

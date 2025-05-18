@@ -75,124 +75,40 @@ export type Database = {
         }
         Relationships: []
       }
-      distributor_transactions: {
+      distributors: {
         Row: {
-          admin_id: string
-          amount: number
-          created_at: string
-          distributor_id: string
+          commission_rate: string | null
+          facebook: string | null
           id: string
-          new_balance: number
-          notes: string | null
-          previous_balance: number
+          permissions: string | null
+          uid: string | null
+          website: string | null
         }
         Insert: {
-          admin_id: string
-          amount: number
-          created_at?: string
-          distributor_id: string
+          commission_rate?: string | null
+          facebook?: string | null
           id?: string
-          new_balance: number
-          notes?: string | null
-          previous_balance: number
+          permissions?: string | null
+          uid?: string | null
+          website?: string | null
         }
         Update: {
-          admin_id?: string
-          amount?: number
-          created_at?: string
-          distributor_id?: string
+          commission_rate?: string | null
+          facebook?: string | null
           id?: string
-          new_balance?: number
-          notes?: string | null
-          previous_balance?: number
+          permissions?: string | null
+          uid?: string | null
+          website?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "distributor_transactions_distributor_id_fkey"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "distributors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      distributor_users: {
-        Row: {
-          created_at: string
-          distributor_id: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          distributor_id: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          distributor_id?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "distributor_users_distributor_id_fkey"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "distributors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "distributor_users_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "distributors_uid_fkey"
+            columns: ["uid"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      distributors: {
-        Row: {
-          commission_rate: number
-          country: string | null
-          created_at: string
-          created_by: string | null
-          credits_balance: number
-          email: string
-          id: string
-          max_credit_limit: number
-          name: string
-          phone: string | null
-          status: string
-        }
-        Insert: {
-          commission_rate?: number
-          country?: string | null
-          created_at?: string
-          created_by?: string | null
-          credits_balance?: number
-          email: string
-          id?: string
-          max_credit_limit?: number
-          name: string
-          phone?: string | null
-          status?: string
-        }
-        Update: {
-          commission_rate?: number
-          country?: string | null
-          created_at?: string
-          created_by?: string | null
-          credits_balance?: number
-          email?: string
-          id?: string
-          max_credit_limit?: number
-          name?: string
-          phone?: string | null
-          status?: string
-        }
-        Relationships: []
       }
       groups: {
         Row: {
@@ -338,6 +254,54 @@ export type Database = {
         }
         Relationships: []
       }
+      server_history: {
+        Row: {
+          amount: number | null
+          distributor_id: string
+          id: string
+          operation_details: Json
+          operation_type: string
+          status: string
+          target_user_id: string | null
+          timestamp: string
+        }
+        Insert: {
+          amount?: number | null
+          distributor_id: string
+          id?: string
+          operation_details?: Json
+          operation_type: string
+          status?: string
+          target_user_id?: string | null
+          timestamp?: string
+        }
+        Update: {
+          amount?: number | null
+          distributor_id?: string
+          id?: string
+          operation_details?: Json
+          operation_type?: string
+          status?: string
+          target_user_id?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "server_history_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "server_history_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           key: string
@@ -455,6 +419,7 @@ export type Database = {
           expiry_time: string | null
           hwid: string | null
           id: string
+          my_plans: string | null
           name: string | null
           otp_secret: string | null
           password: string
@@ -475,6 +440,7 @@ export type Database = {
           expiry_time?: string | null
           hwid?: string | null
           id: string
+          my_plans?: string | null
           name?: string | null
           otp_secret?: string | null
           password: string
@@ -495,6 +461,7 @@ export type Database = {
           expiry_time?: string | null
           hwid?: string | null
           id?: string
+          my_plans?: string | null
           name?: string | null
           otp_secret?: string | null
           password?: string
@@ -504,15 +471,7 @@ export type Database = {
           uid?: string
           user_type?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_distributor_id_fkey"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "distributors"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -547,11 +506,11 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      increment_download_counter: {
-        Args: { version_id: string }
-        Returns: number
-      }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_distributor: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

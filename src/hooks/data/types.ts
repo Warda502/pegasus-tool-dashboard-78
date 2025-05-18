@@ -17,6 +17,7 @@ export interface User {
   start_date?: string;
   created_at?: string;
   updated_at?: string;
+  my_plans?: string;
   // Legacy properties (uppercase)
   Name?: string;
   Email?: string;
