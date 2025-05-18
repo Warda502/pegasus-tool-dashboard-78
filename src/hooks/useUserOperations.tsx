@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -225,10 +226,94 @@ export const useUserOperations = () => {
     }
   };
 
+  const addPlanToUser = async (userId: string, planName: string, duration: number) => {
+    if (!isAuthenticated) {
+      toast(t("sessionExpired") || "انتهت الجلسة", {
+        description: t("pleaseLogin") || "الرجاء تسجيل الدخول مرة أخرى"
+      });
+      return false;
+    }
+    
+    try {
+      console.log(`Adding plan ${planName} to user ${userId} for ${duration} months`);
+      
+      // Get the user's current information
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('expiry_time, my_plans')
+        .eq('id', userId)
+        .single();
+      
+      if (userError) {
+        console.error("Error fetching user data:", userError);
+        throw new Error("Failed to fetch user data");
+      }
+      
+      // Calculate the new expiry date
+      let newExpiryDate;
+      const currentDate = new Date();
+      
+      if (userData.expiry_time) {
+        // If there's an existing expiry date, check if it's in the future
+        const currentExpiryDate = new Date(userData.expiry_time);
+        if (currentExpiryDate > currentDate) {
+          // If the current expiry date is in the future, add the months to it
+          currentExpiryDate.setMonth(currentExpiryDate.getMonth() + duration);
+          newExpiryDate = currentExpiryDate.toISOString().split('T')[0];
+        } else {
+          // If the current expiry date is in the past, add months to today
+          currentDate.setMonth(currentDate.getMonth() + duration);
+          newExpiryDate = currentDate.toISOString().split('T')[0];
+        }
+      } else {
+        // If there's no expiry date, add months to today
+        currentDate.setMonth(currentDate.getMonth() + duration);
+        newExpiryDate = currentDate.toISOString().split('T')[0];
+      }
+      
+      // Add the new plan to the user's plans (if my_plans exists)
+      let updatedPlans = userData.my_plans ? userData.my_plans : '';
+      if (updatedPlans) {
+        updatedPlans += `, ${planName}`;
+      } else {
+        updatedPlans = planName;
+      }
+      
+      // Update the user with the new expiry date and plan
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          user_type: "Monthly License",
+          expiry_time: newExpiryDate,
+          my_plans: updatedPlans
+        })
+        .eq('id', userId);
+      
+      if (updateError) {
+        console.error("Error updating user with plan:", updateError);
+        throw new Error("Failed to add plan to user");
+      }
+      
+      toast(t("addPlanSuccess") || "Plan Added", {
+        description: t("addPlanDescription") || "Plan has been successfully added to the user"
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      return true;
+    } catch (error) {
+      console.error("Error adding plan to user:", error);
+      toast(t("error") || "Error", {
+        description: error instanceof Error ? error.message : "Failed to add plan to user"
+      });
+      return false;
+    }
+  };
+
   return {
     deleteUser,
     updateUser,
     addUser,
-    renewUser
+    renewUser,
+    addPlanToUser
   };
 };

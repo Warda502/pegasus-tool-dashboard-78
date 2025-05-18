@@ -16,7 +16,7 @@ interface PricingPlan {
   price: string;
   features: string | null;
   perks: string | null;
-  duration_months: number | null;
+  duration_months: string | null;
 }
 
 interface AddToPlanDialogProps {
@@ -53,9 +53,7 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
           price: plan.price || '',
           features: plan.features,
           perks: plan.perks,
-          duration_months: typeof plan.duration_months === 'number' ? 
-                           plan.duration_months : 
-                           plan.duration_months ? parseInt(plan.duration_months.toString()) : 1
+          duration_months: plan.duration_months
         })) : [];
         
         setPlans(transformedPlans);
@@ -79,7 +77,7 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
     if (selectedPlan) {
       const plan = plans.find(p => p.name_plan === selectedPlan);
       if (plan && plan.duration_months) {
-        setSelectedPlanDuration(plan.duration_months);
+        setSelectedPlanDuration(parseInt(plan.duration_months));
       } else {
         setSelectedPlanDuration(1); // Default to 1 month if not specified
       }
@@ -173,7 +171,7 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
                   {plans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.name_plan}>
                       {plan.name_plan} {plan.price ? `- ${plan.price}` : ''} 
-                      {plan.duration_months ? ` (${plan.duration_months} ${plan.duration_months === 1 ? 
+                      {plan.duration_months ? ` (${plan.duration_months} ${parseInt(plan.duration_months) === 1 ? 
                         (t("month") || "month") : 
                         (t("months") || "months")})` : ''}
                     </SelectItem>

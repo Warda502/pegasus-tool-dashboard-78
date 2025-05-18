@@ -18,7 +18,7 @@ type PricingPlan = {
   price: string;
   features: string;
   perks: string;
-  duration_months: number | null;
+  duration_months: string | null;
 };
 
 export default function Pricing() {
@@ -36,7 +36,7 @@ export default function Pricing() {
     price: '',
     features: '',
     perks: '',
-    duration_months: 1
+    duration_months: '1'
   });
 
   // Fetch pricing plans
@@ -137,14 +137,14 @@ export default function Pricing() {
       price: '',
       features: '',
       perks: '',
-      duration_months: 1
+      duration_months: '1'
     });
   };
 
   const handleInputChange = (field: keyof typeof formData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: field === 'duration_months' ? value.toString() : value
     }));
   };
 
@@ -252,7 +252,7 @@ export default function Pricing() {
                         {plan.duration_months && (
                           <div className="flex items-center justify-center mt-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-1" />
-                            <span>{plan.duration_months} {plan.duration_months === 1 ? (t("month") || "month") : (t("months") || "months")}</span>
+                            <span>{plan.duration_months} {parseInt(plan.duration_months) === 1 ? (t("month") || "month") : (t("months") || "months")}</span>
                           </div>
                         )}
                       </div>
@@ -295,8 +295,8 @@ export default function Pricing() {
               <Input 
                 type="number" 
                 min="1" 
-                value={formData.duration_months || 1} 
-                onChange={e => handleInputChange("duration_months", parseInt(e.target.value) || 1)} 
+                value={formData.duration_months || '1'} 
+                onChange={e => handleInputChange("duration_months", e.target.value)} 
                 placeholder="e.g., 3"
               />
             </div>
@@ -343,8 +343,8 @@ export default function Pricing() {
               <Input 
                 type="number" 
                 min="1" 
-                value={formData.duration_months || 1} 
-                onChange={e => handleInputChange("duration_months", parseInt(e.target.value) || 1)} 
+                value={formData.duration_months || '1'} 
+                onChange={e => handleInputChange("duration_months", e.target.value)} 
               />
             </div>
             <div className="space-y-2">
