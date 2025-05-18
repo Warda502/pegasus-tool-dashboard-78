@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSubButton, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -407,26 +408,5 @@ export default function AppLayout({
       const menuItem = menuItems.find(item => item.path === currentPath);
       return menuItem ? menuItem.title : t("dashboard");
     }
-    
-    // Reorder menuItems to insert WebSettings before Settings
-    function getOrderedMenuItems() {
-      const orderMenuItems = [...menuItems];
-      // Find the index of the Settings item
-      const settingsIndex = orderMenuItems.findIndex(item => item.path === "/settings");
-      
-      if (settingsIndex !== -1 && isAdmin) {
-        // Create a WebSettings placeholder (just for display in the sidebar, not a real route)
-        const webSettingsItem = {
-          title: t("webSettings") || "Web Settings",
-          path: "#", // Not used for navigation, since we use Accordion
-          icon: Globe,
-          show: true
-        };
-        
-        // Insert WebSettings before Settings
-        orderMenuItems.splice(settingsIndex, 0, webSettingsItem);
-      }
-      
-      return orderMenuItems;
-    }
 }
+
