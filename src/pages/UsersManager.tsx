@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSharedData, useLanguage } from "@/hooks/useSharedData";
@@ -151,10 +150,10 @@ export default function UsersManager() {
   };
 
   // Handler for adding a plan to a user
-  const handleAddPlanToUser = async (userId: string, planName: string) => {
-    console.log(`UsersManager: Adding plan ${planName} to user ${userId}`);
+  const handleAddPlanToUser = async (userId: string, planName: string, duration: number) => {
+    console.log(`UsersManager: Adding plan ${planName} with duration ${duration} months to user ${userId}`);
     try {
-      const success = await addPlanToUser(userId, planName);
+      const success = await addPlanToUser(userId, planName, duration);
       if (success) {
         console.log("UsersManager: Plan added successfully, refreshing data");
         handleRefresh();
@@ -251,7 +250,6 @@ export default function UsersManager() {
         onAddCredits={handleAddCreditsConfirm}
       />
       
-      {/* Add the new dialog */}
       <AddToPlanDialog
         isOpen={isAddToPlanDialogOpen}
         onClose={() => setIsAddToPlanDialogOpen(false)}

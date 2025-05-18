@@ -16,13 +16,14 @@ interface PricingPlan {
   price: string;
   features: string;
   perks: string;
+  duration_months: number | null;
 }
 
 interface AddToPlanDialogProps {
   isOpen: boolean;
   onClose: () => void;
   users: User[];
-  onAddPlan: (userId: string, planName: string) => Promise<boolean>;
+  onAddPlan: (userId: string, planName: string, duration: number) => Promise<boolean>;
 }
 
 export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlanDialogProps) {
@@ -32,6 +33,7 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [selectedPlanDuration, setSelectedPlanDuration] = useState<number>(1);
 
   // Fetch available plans
   useEffect(() => {
@@ -60,6 +62,18 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
     }
   }, [isOpen, t]);
 
+  // Update selected plan duration when plan changes
+  useEffect(() => {
+    if (selectedPlan) {
+      const plan = plans.find(p => p.name_plan === selectedPlan);
+      if (plan && plan.duration_months) {
+        setSelectedPlanDuration(plan.duration_months);
+      } else {
+        setSelectedPlanDuration(1); // Default to 1 month if not specified
+      }
+    }
+  }, [selectedPlan, plans]);
+
   const handleSubmit = async () => {
     if (!selectedUser || !selectedPlan) {
       toast(t("error") || "Error", {
@@ -70,7 +84,7 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
 
     setIsSaving(true);
     try {
-      const success = await onAddPlan(selectedUser, selectedPlan);
+      const success = await onAddPlan(selectedUser, selectedPlan, selectedPlanDuration);
       
       if (success) {
         toast(t("success") || "Success", {
@@ -146,7 +160,10 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
                 <SelectContent>
                   {plans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.name_plan}>
-                      {plan.name_plan} {plan.price ? `- ${plan.price}` : ''}
+                      {plan.name_plan} {plan.price ? `- ${plan.price}` : ''} 
+                      {plan.duration_months ? ` (${plan.duration_months} ${plan.duration_months === 1 ? 
+                        (t("month") || "month") : 
+                        (t("months") || "months")})` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

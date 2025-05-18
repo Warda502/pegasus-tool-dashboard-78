@@ -4,20 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash, Check } from "lucide-react";
+import { Plus, Pencil, Trash, Check, Calendar } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 type PricingPlan = {
   id: string;
   name_plan: string;
   price: string;
   features: string;
   perks: string;
+  duration_months: number | null;
 };
+
 export default function Pricing() {
   const {
     t,
@@ -32,7 +35,8 @@ export default function Pricing() {
     name_plan: '',
     price: '',
     features: '',
-    perks: ''
+    perks: '',
+    duration_months: 1
   });
 
   // Fetch pricing plans
@@ -126,20 +130,24 @@ export default function Pricing() {
       });
     }
   });
+
   const resetForm = () => {
     setFormData({
       name_plan: '',
       price: '',
       features: '',
-      perks: ''
+      perks: '',
+      duration_months: 1
     });
   };
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
+
+  const handleInputChange = (field: keyof typeof formData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
   const handleAddPlan = () => {
     if (!formData.name_plan.trim() || !formData.price.trim()) {
       toast.error(t("validationError") || "Validation Error", {
@@ -149,16 +157,19 @@ export default function Pricing() {
     }
     addMutation.mutate(formData);
   };
+
   const handleEditPlan = (plan: PricingPlan) => {
     setSelectedPlan(plan);
     setFormData({
       name_plan: plan.name_plan,
       price: plan.price,
       features: plan.features,
-      perks: plan.perks
+      perks: plan.perks,
+      duration_months: plan.duration_months || 1
     });
     setIsEditDialogOpen(true);
   };
+
   const handleUpdatePlan = () => {
     if (!selectedPlan) return;
     if (!formData.name_plan.trim() || !formData.price.trim()) {
@@ -172,10 +183,12 @@ export default function Pricing() {
       data: formData
     });
   };
+
   const handleDeletePlan = (plan: PricingPlan) => {
     setSelectedPlan(plan);
     setIsDeleteDialogOpen(true);
   };
+
   const confirmDelete = () => {
     if (selectedPlan) {
       deleteMutation.mutate(selectedPlan.id);
@@ -187,6 +200,7 @@ export default function Pricing() {
     if (!featuresStr) return [];
     return featuresStr.split('\n').filter(feature => feature.trim());
   };
+
   return <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -234,9 +248,13 @@ export default function Pricing() {
                         <div className="mt-3 flex items-baseline justify-center">
                           <span className="text-3xl font-bold">$</span>
                           <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
-                          <span className="ml-1 text-sm font-medium text-muted-foreground">
-                          </span>
                         </div>
+                        {plan.duration_months && (
+                          <div className="flex items-center justify-center mt-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            <span>{plan.duration_months} {plan.duration_months === 1 ? (t("month") || "month") : (t("months") || "months")}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -271,6 +289,16 @@ export default function Pricing() {
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("price") || "Price"}*</label>
               <Input value={formData.price} onChange={e => handleInputChange("price", e.target.value)} placeholder="e.g., 1" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("duration") || "Duration"} ({t("months") || "Months"})*</label>
+              <Input 
+                type="number" 
+                min="1" 
+                value={formData.duration_months || 1} 
+                onChange={e => handleInputChange("duration_months", parseInt(e.target.value) || 1)} 
+                placeholder="e.g., 3"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("features") || "Features"}</label>
@@ -309,6 +337,15 @@ export default function Pricing() {
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("price") || "Price"}*</label>
               <Input value={formData.price} onChange={e => handleInputChange("price", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("duration") || "Duration"} ({t("months") || "Months"})*</label>
+              <Input 
+                type="number" 
+                min="1" 
+                value={formData.duration_months || 1} 
+                onChange={e => handleInputChange("duration_months", parseInt(e.target.value) || 1)} 
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("features") || "Features"}</label>
