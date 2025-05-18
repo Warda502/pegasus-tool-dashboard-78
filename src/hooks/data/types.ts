@@ -1,3 +1,4 @@
+
 export interface User {
   id?: string;
   uid?: string;
@@ -92,14 +93,4 @@ export interface FileItem {
   path: string;
   type: 'file' | 'folder';
   content?: string;
-}
-
-export interface Distributor {
-  id: string;
-  uid?: string;
-  commission_rate?: string;
-  website?: string;
-  facebook?: string;
-  permissions?: string;
-  user?: User;
 }
