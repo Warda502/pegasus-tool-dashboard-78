@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -22,14 +21,32 @@ export const useUserOperations = () => {
     }
     
     try {
-      const { error } = await supabase
+      console.log("Deleting user with ID:", userId);
+      
+      // First delete the user from the users table
+      const { error: dbError } = await supabase
         .from('users')
         .delete()
         .eq('id', userId);
       
-      if (error) {
-        throw new Error(`Failed to delete user: ${error.message}`);
+      if (dbError) {
+        console.error("Failed to delete user from database:", dbError);
+        throw new Error(`Failed to delete user from database: ${dbError.message}`);
       }
+      
+      console.log("Successfully deleted user from database");
+      
+      // Now use the delete_auth_user function to remove the user from auth.users
+      const { error: authError } = await supabase
+        .rpc('delete_auth_user', { user_id: userId });
+      
+      if (authError) {
+        console.error("Failed to delete user from auth system:", authError);
+        console.warn("User was removed from the database but may remain in the auth system");
+        throw new Error(`Failed to delete user from auth system: ${authError.message}`);
+      }
+      
+      console.log("Successfully deleted user from auth system");
       
       toast(t("deleteSuccess"), {
         description: t("deleteUserSuccess")
@@ -38,9 +55,9 @@ export const useUserOperations = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       return true;
     } catch (error) {
-      console.error("Failed to delete user:", error);
+      console.error("Error during user deletion:", error);
       toast("Error", {
-        description: "Failed to delete user"
+        description: error instanceof Error ? error.message : "Failed to delete user"
       });
       return false;
     }

@@ -115,10 +115,14 @@ export const useUserOperations = () => {
     try {
       console.log("Attempting to create new user:", newUser.Email);
       
-      // First, create the auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // First, create the auth user - with emailConfirm set to false
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUser.Email,
-        password: newUser.Password
+        password: newUser.Password,
+        email_confirm: true, // This automatically confirms the email so verification is not needed
+        user_metadata: {
+          name: newUser.Name || ''
+        }
       });
       
       if (authError) {
