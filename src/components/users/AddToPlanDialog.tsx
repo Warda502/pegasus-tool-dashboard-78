@@ -14,8 +14,8 @@ interface PricingPlan {
   id: string;
   name_plan: string;
   price: string;
-  features: string;
-  perks: string;
+  features: string | null;
+  perks: string | null;
   duration_months: number | null;
 }
 
@@ -46,7 +46,17 @@ export function AddToPlanDialog({ isOpen, onClose, users, onAddPlan }: AddToPlan
 
         if (error) throw error;
         
-        setPlans(data || []);
+        // Transform the data to ensure it matches the PricingPlan interface
+        const transformedPlans: PricingPlan[] = data ? data.map(plan => ({
+          id: plan.id,
+          name_plan: plan.name_plan,
+          price: plan.price || '',
+          features: plan.features,
+          perks: plan.perks,
+          duration_months: plan.duration_months || 1 // Default to 1 month if not specified
+        })) : [];
+        
+        setPlans(transformedPlans);
       } catch (error) {
         console.error("Error fetching plans:", error);
         toast(t("error") || "Error", {
