@@ -225,7 +225,7 @@ export const useDistributorOperations = () => {
         throw new Error("Could not verify distributor balance");
       }
       
-      const currentBalance = parseFloat(distributorData.current_balance || "0");
+      const currentBalance = parseFloat(distributorData.current_balance?.toString() || "0");
       if (currentBalance < creditsToAdd) {
         throw new Error("Insufficient balance to add credits");
       }

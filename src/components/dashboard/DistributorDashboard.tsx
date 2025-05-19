@@ -158,7 +158,7 @@ export function DistributorDashboard() {
                 <div key={index} className="flex items-center">
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {operation.Username || operation.UserName}
+                      {operation.username || operation.UserName}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {operation.OprationTypes} - {operation.Model}
