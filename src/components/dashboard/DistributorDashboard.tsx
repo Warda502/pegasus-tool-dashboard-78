@@ -5,7 +5,7 @@ import { Users, CreditCard, Activity, Calendar } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { ChartCard } from "./ChartCard";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useSharedData } from "@/hooks/useSharedData";
+import { useSharedData } from "@/hooks/data/DataContext";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -138,7 +138,9 @@ export function DistributorDashboard() {
             <ChartCard 
               title={t("userOperations") || "عمليات المستخدمين"}
             >
-              {/* Add chart content here */}
+              <div className="flex items-center justify-center h-full text-gray-500">
+                {t("noChartData") || "لا توجد بيانات للعرض حاليًا"}
+              </div>
             </ChartCard>
           </CardContent>
         </Card>

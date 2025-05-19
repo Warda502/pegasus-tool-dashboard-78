@@ -256,7 +256,7 @@ export const useDistributorOperations = () => {
       const newBalance = currentBalance - creditsToAdd;
       const { error: updateDistributorError } = await supabase
         .from('distributors')
-        .update({ current_balance: newBalance })
+        .update({ current_balance: newBalance.toString() })
         .eq('id', distributorId);
       
       if (updateDistributorError) {

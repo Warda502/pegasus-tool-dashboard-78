@@ -47,108 +47,112 @@ export default function App() {
                 path="/"
                 element={
                   <ProtectedRoute>
-                    <AppLayout />
+                    <AppLayout>
+                      <Suspense fallback={<LoadingScreen />}>
+                        <Routes>
+                          <Route path="dashboard" element={<Dashboard />} />
+                          <Route path="operations" element={<Operations />} />
+                          <Route path="profile" element={<EditMyProfile />} />
+                          <Route path="my-files" element={<MyCertFiles />} />
+                          <Route path="settings" element={<Settings />} />
+                          
+                          {/* Admin-only routes */}
+                          <Route
+                            path="users"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <UsersManager />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="distributors"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <Distributors />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="server-api"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <ServerApiData />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="server-storage"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <ServerStorage />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="discounts"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <Discounts />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="groups"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <GroupsManagement />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="tool-settings"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <ToolSettings />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="tool-update"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <ToolUpdate />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="web-settings/*"
+                            element={
+                              <ProtectedRoute allowedRoles={["admin"]}>
+                                <WebSettings />
+                              </ProtectedRoute>
+                            }
+                          />
+                          
+                          {/* Distributor-only routes */}
+                          <Route
+                            path="distributor-users"
+                            element={
+                              <ProtectedRoute allowedRoles={["distributor"]}>
+                                <DistributorUsers />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="distributor-operations"
+                            element={
+                              <ProtectedRoute allowedRoles={["distributor"]}>
+                                <DistributorOperations />
+                              </ProtectedRoute>
+                            }
+                          />
+                        </Routes>
+                      </Suspense>
+                    </AppLayout>
                   </ProtectedRoute>
                 }
-              >
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="operations" element={<Operations />} />
-                <Route path="profile" element={<EditMyProfile />} />
-                <Route path="my-files" element={<MyCertFiles />} />
-                <Route path="settings" element={<Settings />} />
-                
-                {/* Admin-only routes */}
-                <Route
-                  path="users"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <UsersManager />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="distributors"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <Distributors />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="server-api"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <ServerApiData />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="server-storage"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <ServerStorage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="discounts"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <Discounts />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="groups"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <GroupsManagement />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="tool-settings"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <ToolSettings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="tool-update"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <ToolUpdate />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="web-settings/*"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <WebSettings />
-                    </ProtectedRoute>
-                  }
-                />
-                
-                {/* Distributor-only routes */}
-                <Route
-                  path="distributor-users"
-                  element={
-                    <ProtectedRoute allowedRoles={["distributor"]}>
-                      <DistributorUsers />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="distributor-operations"
-                  element={
-                    <ProtectedRoute allowedRoles={["distributor"]}>
-                      <DistributorOperations />
-                    </ProtectedRoute>
-                  }
-                />
-              </Route>
+              />
               
               {/* Not Found */}
               <Route path="*" element={<NotFound />} />
