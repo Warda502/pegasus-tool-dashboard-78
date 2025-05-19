@@ -384,12 +384,7 @@ export default function AppLayout({
         </Sidebar>
 
         <main className="flex-1 p-3 sm:p-6 overflow-auto dark:bg-gray-900 dark:text-white">
-          <div className="flex items-center mb-4 sm:mb-6">
-            <SidebarTrigger className="text-sm sm:text-base mr-2 rtl:mr-0 rtl:ml-2" />
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              {getCurrentPageTitle()}
-            </h1>
-          </div>
+          {/* تم حذف عنوان الصفحة وزر فتح الشريط الجانبي من هنا */}
           
           {/* Add animation to the main content */}
           <div className="animate-fade-in">
@@ -409,4 +404,3 @@ export default function AppLayout({
       return menuItem ? menuItem.title : t("dashboard");
     }
 }
-
