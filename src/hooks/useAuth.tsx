@@ -6,7 +6,7 @@ import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "./useLanguage";
 import { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
-export type UserRole = "admin" | "user";
+export type UserRole = "admin" | "user" | "distributor";
 
 export interface AuthUser {
   id: string;
@@ -36,7 +36,13 @@ export const useAuth = () => {
         return null;
       }
 
-      const userRole = ((userData?.email_type || '').toLowerCase() === 'admin') ? 'admin' as UserRole : 'user' as UserRole;
+      // Determine role based on email_type
+      let userRole: UserRole = 'user';
+      if ((userData?.email_type || '').toLowerCase() === 'admin') {
+        userRole = 'admin';
+      } else if ((userData?.email_type || '').toLowerCase() === 'distributor') {
+        userRole = 'distributor';
+      }
       
       return {
         id: userId,
@@ -280,6 +286,7 @@ export const useAuth = () => {
     handleSessionExpired,
     checkSession,
     isAdmin: role === 'admin',
+    isDistributor: role === 'distributor',
     isAuthenticated,
     sessionChecked
   };

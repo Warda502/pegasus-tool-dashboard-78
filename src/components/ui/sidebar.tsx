@@ -733,6 +733,163 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
+export const SidebarContent: React.FC<SidebarContentProps> = React.memo(
+  ({ onLinkClick, className }) => {
+    const { t } = useLanguage();
+    const { isAdmin, isDistributor } = useAuth();
+    const location = useLocation();
+
+    return (
+      <div className={cn("space-y-4", className)}>
+        <SidebarSection>
+          <SidebarLink
+            to="/dashboard"
+            onClick={onLinkClick}
+            icon={<DashboardIcon className="h-4 w-4" />}
+          >
+            {t("dashboard")}
+          </SidebarLink>
+
+          <SidebarLink
+            to="/operations"
+            onClick={onLinkClick}
+            icon={<OperationsIcon className="h-4 w-4" />}
+          >
+            {t("operations")}
+          </SidebarLink>
+        </SidebarSection>
+
+        {/* Distributor Links */}
+        {isDistributor && (
+          <SidebarSection title={t("distributorSection") || "قسم الموزع"}>
+            <SidebarLink
+              to="/distributor-users"
+              onClick={onLinkClick}
+              icon={<UsersIcon className="h-4 w-4" />}
+            >
+              {t("users") || "المستخدمين"}
+            </SidebarLink>
+            <SidebarLink
+              to="/distributor-operations"
+              onClick={onLinkClick}
+              icon={<OperationsIcon className="h-4 w-4" />}
+            >
+              {t("usersOperations") || "عمليات المستخدمين"}
+            </SidebarLink>
+          </SidebarSection>
+        )}
+
+        {/* Admin Links */}
+        {isAdmin && (
+          <SidebarSection title={t("admin") || "الإدارة"}>
+            <SidebarLink
+              to="/users"
+              onClick={onLinkClick}
+              icon={<UsersIcon className="h-4 w-4" />}
+            >
+              {t("users")}
+            </SidebarLink>
+            
+            <SidebarLink
+              to="/distributors"
+              onClick={onLinkClick}
+              icon={<UsersIcon className="h-4 w-4" />}
+            >
+              {t("distributors") || "الموزعون"}
+            </SidebarLink>
+            
+            {/* Keep existing admin links */}
+            <SidebarLink
+              to="/server-api"
+              onClick={onLinkClick}
+              icon={<ServerIcon className="h-4 w-4" />}
+            >
+              {t("serverApiData")}
+            </SidebarLink>
+
+            <SidebarLink
+              to="/server-storage"
+              onClick={onLinkClick}
+              icon={<FilesIcon className="h-4 w-4" />}
+            >
+              {t("serverStorage")}
+            </SidebarLink>
+
+            <SidebarLink
+              to="/discounts"
+              onClick={onLinkClick}
+              icon={<DiscountIcon className="h-4 w-4" />}
+            >
+              {t("discounts")}
+            </SidebarLink>
+
+            <SidebarLink
+              to="/groups"
+              onClick={onLinkClick}
+              icon={<GroupsIcon className="h-4 w-4" />}
+            >
+              {t("groups")}
+            </SidebarLink>
+
+            <SidebarLink
+              to="/tool-settings"
+              onClick={onLinkClick}
+              icon={<SettingsIcon className="h-4 w-4" />}
+            >
+              {t("toolSettings")}
+            </SidebarLink>
+
+            <SidebarLink
+              to="/tool-update"
+              onClick={onLinkClick}
+              icon={<UpdateIcon className="h-4 w-4" />}
+            >
+              {t("toolUpdate")}
+            </SidebarLink>
+          </SidebarSection>
+        )}
+
+        {/* Keep existing settings section */}
+        <SidebarSection title={t("settings") || "الإعدادات"}>
+          <SidebarLink
+            to="/profile"
+            onClick={onLinkClick}
+            icon={<ProfileIcon className="h-4 w-4" />}
+          >
+            {t("editProfile")}
+          </SidebarLink>
+
+          <SidebarLink
+            to="/my-files"
+            onClick={onLinkClick}
+            icon={<CertificateIcon className="h-4 w-4" />}
+          >
+            {t("myCertFiles")}
+          </SidebarLink>
+
+          <SidebarLink
+            to="/settings"
+            onClick={onLinkClick}
+            icon={<SettingsIcon className="h-4 w-4" />}
+          >
+            {t("appearance")}
+          </SidebarLink>
+
+          {isAdmin && (
+            <SidebarLink
+              to="/web-settings"
+              onClick={onLinkClick}
+              icon={<WebIcon className="h-4 w-4" />}
+            >
+              {t("webSettings")}
+            </SidebarLink>
+          )}
+        </SidebarSection>
+      </div>
+    );
+  }
+);
+
 export {
   Sidebar,
   SidebarContent,

@@ -19,9 +19,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("Auth context state:", {
       isAuthenticated: authState.isAuthenticated,
       needsTwoFactor: authState.needsTwoFactor,
-      twoFactorVerified: authState.twoFactorVerified
+      twoFactorVerified: authState.twoFactorVerified,
+      role: authState.role
     });
-  }, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified]);
+  }, [authState.isAuthenticated, authState.needsTwoFactor, authState.twoFactorVerified, authState.role]);
   
   useEffect(() => {
     // Handle cross-tab authentication sync

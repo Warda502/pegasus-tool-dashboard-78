@@ -1,174 +1,161 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import UsersManager from "./pages/UsersManager";
-import Operations from "./pages/Operations";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import AppLayout from "./components/layout/AppLayout";
-import { LanguageProvider } from "./hooks/useLanguage";
-import EditMyProfile from "./pages/EditMyProfile";
-import { AuthProvider } from "./hooks/auth/AuthContext";
-import { DataProvider } from "./hooks/data/DataContext";
-import ServerApiData from "./pages/ServerApiData";
-import ServerStorage from "./pages/ServerStorage";
-import MyCertFiles from "./pages/MyCertFiles";
-import Discounts from "./pages/Discounts";
-import GroupsManagement from "./pages/GroupsManagement";
-import ToolUpdate from "./pages/ToolUpdate";
-import ToolSettings from "./pages/ToolSettings";
-import WebSettings from "./pages/WebSettings";
-import SupportedModels from "./pages/WebSettings/SupportedModels";
-import Pricing from "./pages/WebSettings/Pricing";
-import PaymentMethods from "./pages/WebSettings/PaymentMethods";
-import DiscountOffers from "./pages/WebSettings/DiscountOffers";
-import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
-import { useEffect } from "react";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { useLanguage } from "./hooks/useLanguage";
+import { LoadingScreen } from "./components/ui/loading";
 
-// Configure React Query with better defaults
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
+// Lazy-loaded pages
+const AppLayout = React.lazy(() => import("./components/layout/AppLayout"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const UsersManager = React.lazy(() => import("./pages/UsersManager"));
+const Operations = React.lazy(() => import("./pages/Operations"));
+const DistributorUsers = React.lazy(() => import("./pages/DistributorUsers"));
+const DistributorOperations = React.lazy(() => import("./pages/DistributorOperations"));
+const Distributors = React.lazy(() => import("./pages/Distributors"));
+const Login = React.lazy(() => import("./pages/Login"));
+const TwoFactorAuth = React.lazy(() => import("./pages/TwoFactorAuth"));
+const ServerApiData = React.lazy(() => import("./pages/ServerApiData"));
+const ServerStorage = React.lazy(() => import("./pages/ServerStorage"));
+const Discounts = React.lazy(() => import("./pages/Discounts"));
+const GroupsManagement = React.lazy(() => import("./pages/GroupsManagement"));
+const ToolSettings = React.lazy(() => import("./pages/ToolSettings"));
+const ToolUpdate = React.lazy(() => import("./pages/ToolUpdate"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const Settings = React.lazy(() => import("./pages/Settings"));
+const WebSettings = React.lazy(() => import("./pages/WebSettings"));
+const EditMyProfile = React.lazy(() => import("./pages/EditMyProfile"));
+const MyCertFiles = React.lazy(() => import("./pages/MyCertFiles"));
 
-const App = () => {
-  // Initialize theme based on user preference
-  useEffect(() => {
-    const theme = localStorage.getItem("theme");
-    
-    if (theme === "dark" || 
-       (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    
-    // Listen for system preference changes
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (localStorage.getItem("theme") === "system") {
-        if (e.matches) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-    };
-    
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-  
+export default function App() {
+  const { isRTL } = useLanguage();
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background dark:bg-gray-950">
+      <ErrorBoundary>
         <BrowserRouter>
-          <AuthProvider>
-            <DataProvider>
-              <TooltipProvider>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/login" replace />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <AppLayout><Dashboard /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/users-manager" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/two-factor" element={<TwoFactorAuth />} />
+              
+              {/* Protected routes - accessible by any authenticated user */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="operations" element={<Operations />} />
+                <Route path="profile" element={<EditMyProfile />} />
+                <Route path="my-files" element={<MyCertFiles />} />
+                <Route path="settings" element={<Settings />} />
+                
+                {/* Admin-only routes */}
+                <Route
+                  path="users"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><UsersManager /></AppLayout>
+                      <UsersManager />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/operations" element={
-                    <ProtectedRoute>
-                      <AppLayout><Operations /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/settings" element={
-                    <ProtectedRoute>
-                      <AppLayout><Settings /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/edit-profile" element={
-                    <ProtectedRoute>
-                      <AppLayout><EditMyProfile /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  {/* إضافة مسار المصادقة الثنائية */}
-                  <Route path="/two-factor-auth" element={
-                    <ProtectedRoute>
-                      <AppLayout><TwoFactorAuth /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/server-api-data" element={
+                  }
+                />
+                <Route
+                  path="distributors"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><ServerApiData /></AppLayout>
+                      <Distributors />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/server-storage" element={
+                  }
+                />
+                <Route
+                  path="server-api"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><ServerStorage /></AppLayout>
+                      <ServerApiData />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/my-cert-files" element={
-                    <ProtectedRoute>
-                      <AppLayout><MyCertFiles /></AppLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/discounts" element={
+                  }
+                />
+                <Route
+                  path="server-storage"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><Discounts /></AppLayout>
+                      <ServerStorage />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/groups-management" element={
+                  }
+                />
+                <Route
+                  path="discounts"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><GroupsManagement /></AppLayout>
+                      <Discounts />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/tool-update" element={
+                  }
+                />
+                <Route
+                  path="groups"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><ToolUpdate /></AppLayout>
+                      <GroupsManagement />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/tool-settings" element={
+                  }
+                />
+                <Route
+                  path="tool-settings"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><ToolSettings /></AppLayout>
+                      <ToolSettings />
                     </ProtectedRoute>
-                  } />
-                  {/* Web Settings Routes */}
-                  <Route path="/web-settings" element={
+                  }
+                />
+                <Route
+                  path="tool-update"
+                  element={
                     <ProtectedRoute allowedRoles={["admin"]}>
-                      <AppLayout><WebSettings /></AppLayout>
+                      <ToolUpdate />
                     </ProtectedRoute>
-                  }>
-                    <Route path="" element={<Navigate to="/web-settings/supported-models" replace />} />
-                    <Route path="supported-models" element={<SupportedModels />} />
-                    <Route path="pricing" element={<Pricing />} />
-                    <Route path="payment-methods" element={<PaymentMethods />} />
-                    <Route path="discount-offers" element={<DiscountOffers />} />
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Toaster />
-                <Sonner />
-              </TooltipProvider>
-            </DataProvider>
-          </AuthProvider>
+                  }
+                />
+                <Route
+                  path="web-settings/*"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <WebSettings />
+                    </ProtectedRoute>
+                  }
+                />
+                
+                {/* Distributor-only routes */}
+                <Route
+                  path="distributor-users"
+                  element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <DistributorUsers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="distributor-operations"
+                  element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <DistributorOperations />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+              
+              {/* Not Found */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
-      </LanguageProvider>
-    </QueryClientProvider>
+      </ErrorBoundary>
+    </div>
   );
-};
-
-export default App;
+}
