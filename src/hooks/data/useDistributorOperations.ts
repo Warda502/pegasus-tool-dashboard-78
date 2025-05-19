@@ -240,10 +240,12 @@ export const useDistributorOperations = () => {
       
       const newCredit = currentCredit + creditsToAdd;
       
-      // First update the user's credits
+      // First update the user's credits - Fix here: ensure it's a string
+      const newCreditString = `${newCredit.toFixed(1)}`; // Convert to string with one decimal place
+      
       const { error: updateUserError } = await supabase
         .from('users')
-        .update({ credits: newCredit.toString() + ".0" })
+        .update({ credits: newCreditString })
         .eq('id', userId)
         .eq('distributor_id', distributorId);
       
@@ -256,7 +258,7 @@ export const useDistributorOperations = () => {
       const newBalance = currentBalance - creditsToAdd;
       const { error: updateDistributorError } = await supabase
         .from('distributors')
-        .update({ current_balance: newBalance.toString() })
+        .update({ current_balance: newBalance })
         .eq('id', distributorId);
       
       if (updateDistributorError) {
@@ -265,7 +267,7 @@ export const useDistributorOperations = () => {
         try {
           await supabase
             .from('users')
-            .update({ credits: currentCredit.toString() + ".0" })
+            .update({ credits: currentCredit.toString() })
             .eq('id', userId);
         } catch (rollbackError) {
           console.error("Failed to rollback user credit update:", rollbackError);
