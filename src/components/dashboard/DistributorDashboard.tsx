@@ -57,20 +57,31 @@ export function DistributorDashboard() {
         }
         
         // Count operations for users under this distributor
-        const { count: operationCount, error: opCountError } = await supabase
-          .from('operations')
-          .select('*', { count: 'exact', head: true })
-          .in('uid', supabase.from('users').select('uid').eq('distributor_id', distributorId));
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('uid')
+          .eq('distributor_id', distributorId);
           
-        if (opCountError) {
-          console.error("Error counting operations:", opCountError);
-          return;
+        const userIds = usersData?.map(user => user.uid) || [];
+          
+        let operationCount = 0;
+        if (userIds.length > 0) {
+          const { count, error: opCountError } = await supabase
+            .from('operations')
+            .select('*', { count: 'exact', head: true })
+            .in('uid', userIds);
+            
+          if (opCountError) {
+            console.error("Error counting operations:", opCountError);
+          } else {
+            operationCount = count || 0;
+          }
         }
         
         setDistributorStats({
           userCount: userCount || 0,
           creditBalance: distributorData?.current_balance?.toString() || "0.0",
-          operationCount: operationCount || 0,
+          operationCount: operationCount,
           expiryDate: ""  // Distributors typically don't have expiry dates
         });
         
@@ -124,7 +135,11 @@ export function DistributorDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-2">
-            <ChartCard />
+            <ChartCard 
+              title={t("userOperations") || "عمليات المستخدمين"}
+            >
+              {/* Add chart content here */}
+            </ChartCard>
           </CardContent>
         </Card>
 

@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { useLanguage } from "./hooks/useLanguage";
-import { LoadingScreen } from "./components/ui/loading";
+import { LoadingScreen } from "./components/ui/loading-screen";
 
 // Lazy-loaded pages
 const AppLayout = React.lazy(() => import("./components/layout/AppLayout"));

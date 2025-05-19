@@ -1,102 +1,105 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/sonner";
-import { Plus, RefreshCw, Pencil, Trash2, Users } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/auth/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Edit, RefreshCcw } from "lucide-react";
 
 interface Distributor {
   id: string;
   uid: string;
   name?: string;
   email?: string;
-  credit_limit: number;
   current_balance: number;
+  credit_limit: number;
+  status: string;
   commission_rate?: string;
-  status?: string;
-  created_at?: string;
+  created_at: string;
 }
 
 export default function Distributors() {
   const { t, isRTL } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
   
-  // Form state
   const [formData, setFormData] = useState({
     email: "",
     name: "",
-    creditLimit: "1000",
-    commissionRate: "10",
-    password: ""
+    commission_rate: "10",
+    credit_limit: "1000"
   });
   
-  // Load distributors
-  const loadDistributors = async () => {
+  const fetchDistributors = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Get distributors with their user information
       const { data, error } = await supabase
         .from('distributors')
         .select(`
-          id, 
-          uid, 
-          credit_limit, 
-          current_balance, 
-          commission_rate, 
-          status, 
+          id,
+          uid,
+          current_balance,
+          credit_limit,
+          status,
+          commission_rate,
           created_at,
-          website,
-          facebook
+          users!distributors_uid_fkey (name, email)
         `);
-
+      
       if (error) {
         throw error;
       }
-
-      // Get user data for each distributor
-      const distributorsWithUserData = await Promise.all(
-        data.map(async (distributor) => {
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('name, email')
-            .eq('uid', distributor.uid)
-            .single();
-
-          if (userError) {
-            console.error(`Error fetching user data for distributor ${distributor.id}:`, userError);
-            return {
-              ...distributor,
-              name: 'Unknown',
-              email: 'Unknown'
-            };
-          }
-
-          return {
-            ...distributor,
-            name: userData?.name || 'Unknown',
-            email: userData?.email || 'Unknown'
-          };
-        })
-      );
-
-      setDistributors(distributorsWithUserData);
+      
+      const formattedData = data.map(distributor => ({
+        id: distributor.id,
+        uid: distributor.uid,
+        name: distributor.users?.[0]?.name || "N/A",
+        email: distributor.users?.[0]?.email || "N/A",
+        current_balance: distributor.current_balance || 0,
+        credit_limit: distributor.credit_limit || 0,
+        status: distributor.status || "active",
+        commission_rate: distributor.commission_rate || "0%",
+        created_at: new Date(distributor.created_at).toLocaleDateString()
+      }));
+      
+      setDistributors(formattedData);
     } catch (error) {
-      console.error("Error loading distributors:", error);
-      toast(t("error") || "خطأ", {
-        description: t("failedToLoadDistributors") || "فشل تحميل بيانات الموزعين"
+      console.error('Error fetching distributors:', error);
+      toast({
+        title: t("errorFetchingDistributors") || "خطأ في جلب الموزعين",
+        description: (error as Error).message,
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -104,493 +107,338 @@ export default function Distributors() {
   };
   
   useEffect(() => {
-    if (isAdmin) {
-      loadDistributors();
-    }
-  }, [isAdmin]);
+    fetchDistributors();
+  }, []);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-  
-  const resetForm = () => {
-    setFormData({
-      email: "",
-      name: "",
-      creditLimit: "1000",
-      commissionRate: "10",
-      password: ""
-    });
-  };
-  
-  const handleAddDistributor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleAddDistributor = async () => {
     try {
-      setLoading(true);
-      
-      // 1. Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          name: formData.name
-        }
-      });
-      
-      if (authError) {
-        throw new Error(authError.message);
+      // First check if the user exists
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, uid')
+        .eq('email', formData.email)
+        .single();
+        
+      if (userError) {
+        throw new Error(t("userNotFound") || "المستخدم غير موجود");
       }
       
-      if (!authData.user) {
-        throw new Error("Failed to create auth user");
-      }
-      
-      const userId = authData.user.id;
-      
-      // 2. Create distributor in distributors table
+      // Now add the distributor record
       const { data: distributorData, error: distributorError } = await supabase
         .from('distributors')
-        .insert({
-          uid: userId,
-          credit_limit: parseFloat(formData.creditLimit),
+        .insert([{
+          uid: userData.uid,
+          commission_rate: formData.commission_rate,
+          credit_limit: parseFloat(formData.credit_limit),
           current_balance: 0,
-          commission_rate: formData.commissionRate,
           status: 'active'
-        })
-        .select('id')
-        .single();
-      
+        }])
+        .select();
+        
       if (distributorError) {
-        // Try to clean up auth user on failure
-        await supabase.auth.admin.deleteUser(userId);
-        throw new Error(`Failed to create distributor: ${distributorError.message}`);
+        throw distributorError;
       }
       
-      // 3. Create user in users table
-      const { error: userError } = await supabase
+      // Update user type to distributor
+      const { error: updateError } = await supabase
         .from('users')
-        .insert({
-          id: userId,
-          uid: userId,
-          email: formData.email,
-          password: formData.password, // Store for legacy compatibility
-          name: formData.name,
-          email_type: 'Distributor',
-          user_type: 'Distributor',
-          activate: 'Active',
-          block: 'Not Blocked',
-          credits: '0.0',
-          start_date: new Date().toISOString().split('T')[0],
-          hwid: 'Null'
-        });
-      
-      if (userError) {
-        // Clean up on failure
-        await supabase.from('distributors').delete().eq('id', distributorData.id);
-        await supabase.auth.admin.deleteUser(userId);
-        throw new Error(`Failed to create user record: ${userError.message}`);
+        .update({ email_type: 'Distributor' })
+        .eq('id', userData.id);
+        
+      if (updateError) {
+        throw updateError;
       }
       
-      toast(t("success") || "نجاح", {
-        description: t("distributorAdded") || "تمت إضافة الموزع بنجاح"
+      toast({
+        title: t("distributorAdded") || "تم إضافة الموزع",
+        description: t("distributorAddedSuccess") || "تم إضافة الموزع بنجاح"
       });
       
       setIsAddDialogOpen(false);
-      resetForm();
-      loadDistributors();
-      
-    } catch (error) {
-      console.error("Error adding distributor:", error);
-      toast(t("error") || "خطأ", {
-        description: error instanceof Error ? error.message : "Failed to add distributor"
+      setFormData({
+        email: "",
+        name: "",
+        commission_rate: "10",
+        credit_limit: "1000"
       });
-    } finally {
-      setLoading(false);
+      
+      fetchDistributors();
+    } catch (error) {
+      console.error('Error adding distributor:', error);
+      toast({
+        title: t("errorAddingDistributor") || "خطأ في إضافة الموزع",
+        description: (error as Error).message,
+        variant: "destructive"
+      });
     }
   };
   
-  const handleEditDistributor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleEditDistributor = async () => {
     if (!selectedDistributor) return;
     
     try {
-      setLoading(true);
-      
-      // Update distributor info
-      const { error: distributorError } = await supabase
+      const { error } = await supabase
         .from('distributors')
         .update({
-          credit_limit: parseFloat(formData.creditLimit),
-          commission_rate: formData.commissionRate
+          commission_rate: formData.commission_rate,
+          credit_limit: parseFloat(formData.credit_limit),
+          status: selectedDistributor.status
         })
         .eq('id', selectedDistributor.id);
-      
-      if (distributorError) {
-        throw new Error(`Failed to update distributor: ${distributorError.message}`);
+        
+      if (error) {
+        throw error;
       }
       
-      // Update user info
-      const { error: userError } = await supabase
-        .from('users')
-        .update({
-          name: formData.name
-        })
-        .eq('uid', selectedDistributor.uid);
-      
-      if (userError) {
-        throw new Error(`Failed to update user record: ${userError.message}`);
-      }
-      
-      toast(t("success") || "نجاح", {
-        description: t("distributorUpdated") || "تم تحديث بيانات الموزع بنجاح"
+      toast({
+        title: t("distributorUpdated") || "تم تحديث الموزع",
+        description: t("distributorUpdatedSuccess") || "تم تحديث بيانات الموزع بنجاح"
       });
       
       setIsEditDialogOpen(false);
-      resetForm();
-      loadDistributors();
+      setSelectedDistributor(null);
       
+      fetchDistributors();
     } catch (error) {
-      console.error("Error updating distributor:", error);
-      toast(t("error") || "خطأ", {
-        description: error instanceof Error ? error.message : "Failed to update distributor"
+      console.error('Error updating distributor:', error);
+      toast({
+        title: t("errorUpdatingDistributor") || "خطأ في تحديث الموزع",
+        description: (error as Error).message,
+        variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
   
-  const handleDeleteDistributor = async (distributor: Distributor) => {
-    if (!window.confirm(t("confirmDeleteDistributor") || "هل أنت متأكد من رغبتك في حذف هذا الموزع؟")) {
-      return;
-    }
-    
+  const handleAddCredit = async (distributorId: string, amount: number) => {
     try {
-      setLoading(true);
-      
-      // 1. Delete from distributors table
-      const { error: distributorError } = await supabase
-        .from('distributors')
-        .delete()
-        .eq('id', distributor.id);
-      
-      if (distributorError) {
-        throw new Error(`Failed to delete distributor: ${distributorError.message}`);
-      }
-      
-      // 2. Delete from auth
-      const { error: authError } = await supabase
-        .rpc('delete_auth_user', { user_id: distributor.uid });
-      
-      if (authError) {
-        console.error("Error deleting auth user:", authError);
-        // Non-critical, continue
-      }
-      
-      // 3. Delete from users table
-      const { error: userError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', distributor.uid);
-      
-      if (userError) {
-        console.error("Error deleting user record:", userError);
-        // Non-critical, continue
-      }
-      
-      toast(t("success") || "نجاح", {
-        description: t("distributorDeleted") || "تم حذف الموزع بنجاح"
-      });
-      
-      loadDistributors();
-      
-    } catch (error) {
-      console.error("Error deleting distributor:", error);
-      toast(t("error") || "خطأ", {
-        description: error instanceof Error ? error.message : "Failed to delete distributor"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const openEditDialog = (distributor: Distributor) => {
-    setSelectedDistributor(distributor);
-    setFormData({
-      email: distributor.email || "",
-      name: distributor.name || "",
-      creditLimit: distributor.credit_limit.toString(),
-      commissionRate: distributor.commission_rate || "10",
-      password: "" // We don't set password for edit
-    });
-    setIsEditDialogOpen(true);
-  };
-  
-  const addCreditsToDistributor = async (distributor: Distributor) => {
-    const amount = prompt(
-      t("enterCreditsAmount") || "أدخل كمية الرصيد المراد إضافتها:",
-      "100"
-    );
-    
-    if (!amount) return;
-    
-    const creditsToAdd = parseFloat(amount);
-    
-    if (isNaN(creditsToAdd) || creditsToAdd <= 0) {
-      toast(t("error") || "خطأ", {
-        description: t("invalidAmount") || "كمية غير صالحة"
-      });
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      // Get current balance
-      const { data: currentData, error: fetchError } = await supabase
+      // Add credit to distributor balance
+      const { data: distributor, error: fetchError } = await supabase
         .from('distributors')
         .select('current_balance')
-        .eq('id', distributor.id)
+        .eq('id', distributorId)
         .single();
-      
+        
       if (fetchError) {
-        throw new Error("Failed to fetch current balance");
+        throw fetchError;
       }
       
-      const currentBalance = parseFloat(currentData.current_balance || "0");
-      const newBalance = currentBalance + creditsToAdd;
+      const newBalance = (distributor.current_balance || 0) + amount;
       
-      // Update distributor balance
       const { error: updateError } = await supabase
         .from('distributors')
         .update({ current_balance: newBalance })
-        .eq('id', distributor.id);
-      
+        .eq('id', distributorId);
+        
       if (updateError) {
-        throw new Error("Failed to update balance");
+        throw updateError;
       }
       
-      // Record the transaction
-      const { error: transactionError } = await supabase
+      // Log the transaction
+      const { error: logError } = await supabase
         .from('distributor_credits')
-        .insert({
-          distributor_id: distributor.id,
-          amount: creditsToAdd,
+        .insert([{
+          distributor_id: distributorId,
+          amount: amount,
           operation_type: 'add',
-          description: 'Credits added by admin',
-          admin_id: (await supabase.auth.getUser()).data.user?.id
-        });
-      
-      if (transactionError) {
-        console.error("Error recording transaction:", transactionError);
-        // Non-critical, continue
+          description: 'Credit added by admin'
+        }]);
+        
+      if (logError) {
+        throw logError;
       }
       
-      toast(t("success") || "نجاح", {
-        description: t("creditsAddedToDistributor") || "تمت إضافة الرصيد للموزع بنجاح"
+      toast({
+        title: t("creditAdded") || "تم إضافة الرصيد",
+        description: `${amount} ${t("creditsAddedToDistributor") || "تم إضافة رصيد للموزع"}`
       });
       
-      loadDistributors();
-      
+      fetchDistributors();
     } catch (error) {
-      console.error("Error adding credits to distributor:", error);
-      toast(t("error") || "خطأ", {
-        description: error instanceof Error ? error.message : "Failed to add credits"
+      console.error('Error adding credit:', error);
+      toast({
+        title: t("errorAddingCredit") || "خطأ في إضافة الرصيد",
+        description: (error as Error).message,
+        variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
   
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("distributorsManagement") || "إدارة الموزعين"}
+        </h1>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchDistributors}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            {t("refresh") || "تحديث"}
+          </Button>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                {t("addDistributor") || "إضافة موزع"}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("addDistributor") || "إضافة موزع"}</DialogTitle>
+                <DialogDescription>
+                  {t("addDistributorDesc") || "أضف مستخدم كموزع في النظام"}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="col-span-1">
+                    {t("email") || "البريد الإلكتروني"}
+                  </Label>
+                  <Input 
+                    id="email" 
+                    className="col-span-3" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="commission" className="col-span-1">
+                    {t("commissionRate") || "نسبة العمولة"}
+                  </Label>
+                  <Input 
+                    id="commission" 
+                    className="col-span-3"
+                    value={formData.commission_rate}
+                    onChange={(e) => setFormData({...formData, commission_rate: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="creditLimit" className="col-span-1">
+                    {t("creditLimit") || "حد الائتمان"}
+                  </Label>
+                  <Input 
+                    id="creditLimit" 
+                    type="number"
+                    className="col-span-3"
+                    value={formData.credit_limit}
+                    onChange={(e) => setFormData({...formData, credit_limit: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  {t("cancel") || "إلغاء"}
+                </Button>
+                <Button onClick={handleAddDistributor}>
+                  {t("add") || "إضافة"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+      
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span>{t("distributors") || "الموزعون"}</span>
-            </CardTitle>
-            <CardDescription>
-              {t("distributorsDescription") || "إدارة الموزعين واعتماداتهم"}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => loadDistributors()}
-              disabled={loading}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t("refresh") || "تحديث"}
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => setIsAddDialogOpen(true)}
-              disabled={loading}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t("addDistributor") || "إضافة موزع"}
-            </Button>
-          </div>
+        <CardHeader>
+          <CardTitle>{t("distributorsList") || "قائمة الموزعين"}</CardTitle>
+          <CardDescription>
+            {t("distributorsListDesc") || "عرض وإدارة الموزعين في النظام"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
+          <Table>
+            <TableCaption>{t("distributorsListCaption") || "قائمة بجميع الموزعين المسجلين"}</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("name") || "الاسم"}</TableHead>
+                <TableHead>{t("email") || "البريد الإلكتروني"}</TableHead>
+                <TableHead>{t("balance") || "الرصيد"}</TableHead>
+                <TableHead>{t("creditLimit") || "حد الائتمان"}</TableHead>
+                <TableHead>{t("commission") || "العمولة"}</TableHead>
+                <TableHead>{t("status") || "الحالة"}</TableHead>
+                <TableHead>{t("actions") || "الإجراءات"}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
                 <TableRow>
-                  <TableHead>{t("name") || "الاسم"}</TableHead>
-                  <TableHead>{t("email") || "البريد الإلكتروني"}</TableHead>
-                  <TableHead>{t("creditLimit") || "حد الائتمان"}</TableHead>
-                  <TableHead>{t("balance") || "الرصيد"}</TableHead>
-                  <TableHead>{t("commission") || "العمولة"}</TableHead>
-                  <TableHead>{t("status") || "الحالة"}</TableHead>
-                  <TableHead>{t("actions") || "الإجراءات"}</TableHead>
+                  <TableCell colSpan={7} className="text-center py-10">
+                    {t("loading") || "جاري التحميل..."}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
-                      <div className="flex justify-center">
-                        <RefreshCw className="h-6 w-6 animate-spin" />
+              ) : distributors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10">
+                    {t("noDistributors") || "لا يوجد موزعين مسجلين"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                distributors.map((distributor) => (
+                  <TableRow key={distributor.id}>
+                    <TableCell className="font-medium">{distributor.name}</TableCell>
+                    <TableCell>{distributor.email}</TableCell>
+                    <TableCell>{distributor.current_balance}</TableCell>
+                    <TableCell>{distributor.credit_limit}</TableCell>
+                    <TableCell>{distributor.commission_rate}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        distributor.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {distributor.status === 'active' ? 
+                          (t("active") || "نشط") : 
+                          (t("inactive") || "غير نشط")
+                        }
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDistributor(distributor);
+                            setFormData({
+                              ...formData,
+                              name: distributor.name || "",
+                              email: distributor.email || "",
+                              commission_rate: distributor.commission_rate || "0",
+                              credit_limit: distributor.credit_limit.toString()
+                            });
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddCredit(distributor.id, 100)}
+                        >
+                          +100
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddCredit(distributor.id, 500)}
+                        >
+                          +500
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : distributors.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
-                      {t("noDistributorsFound") || "لم يتم العثور على موزعين"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  distributors.map((distributor) => (
-                    <TableRow key={distributor.id}>
-                      <TableCell className="font-medium">{distributor.name}</TableCell>
-                      <TableCell>{distributor.email}</TableCell>
-                      <TableCell>{distributor.credit_limit?.toString()}</TableCell>
-                      <TableCell>{distributor.current_balance?.toString()}</TableCell>
-                      <TableCell>{distributor.commission_rate || "-"}%</TableCell>
-                      <TableCell>{distributor.status}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => openEditDialog(distributor)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => addCreditsToDistributor(distributor)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteDistributor(distributor)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
-      
-      {/* Add Distributor Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("addDistributor") || "إضافة موزع"}</DialogTitle>
-            <DialogDescription>
-              {t("addDistributorDescription") || "أدخل بيانات الموزع الجديد"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAddDistributor}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">{t("name") || "الاسم"}</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  required 
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">{t("email") || "البريد الإلكتروني"}</Label>
-                <Input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  required 
-                  value={formData.email}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">{t("password") || "كلمة المرور"}</Label>
-                <Input 
-                  id="password" 
-                  name="password" 
-                  type="password" 
-                  required 
-                  value={formData.password}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="creditLimit">{t("creditLimit") || "حد الائتمان"}</Label>
-                <Input 
-                  id="creditLimit" 
-                  name="creditLimit" 
-                  type="number" 
-                  required 
-                  value={formData.creditLimit}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="commissionRate">{t("commissionRate") || "نسبة العمولة"}</Label>
-                <Input 
-                  id="commissionRate" 
-                  name="commissionRate" 
-                  type="number" 
-                  required 
-                  value={formData.commissionRate}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                {t("cancel") || "إلغاء"}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                {t("add") || "إضافة"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
       
       {/* Edit Distributor Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -598,67 +446,84 @@ export default function Distributors() {
           <DialogHeader>
             <DialogTitle>{t("editDistributor") || "تعديل الموزع"}</DialogTitle>
             <DialogDescription>
-              {t("editDistributorDescription") || "تعديل بيانات الموزع"}
+              {t("editDistributorDesc") || "تعديل بيانات الموزع"}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditDistributor}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">{t("name") || "الاسم"}</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  required 
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">{t("email") || "البريد الإلكتروني"}</Label>
-                <Input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  required 
-                  value={formData.email}
-                  disabled // Email can't be changed
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="creditLimit">{t("creditLimit") || "حد الائتمان"}</Label>
-                <Input 
-                  id="creditLimit" 
-                  name="creditLimit" 
-                  type="number" 
-                  required 
-                  value={formData.creditLimit}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="commissionRate">{t("commissionRate") || "نسبة العمولة"}</Label>
-                <Input 
-                  id="commissionRate" 
-                  name="commissionRate" 
-                  type="number" 
-                  required 
-                  value={formData.commissionRate}
-                  onChange={handleInputChange}
-                />
-              </div>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="col-span-1">
+                {t("name") || "الاسم"}
+              </Label>
+              <Input 
+                id="edit-name" 
+                className="col-span-3" 
+                value={formData.name}
+                disabled
+              />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                {t("cancel") || "إلغاء"}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                {t("save") || "حفظ"}
-              </Button>
-            </DialogFooter>
-          </form>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-email" className="col-span-1">
+                {t("email") || "البريد الإلكتروني"}
+              </Label>
+              <Input 
+                id="edit-email" 
+                className="col-span-3"
+                value={formData.email}
+                disabled
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-commission" className="col-span-1">
+                {t("commissionRate") || "نسبة العمولة"}
+              </Label>
+              <Input 
+                id="edit-commission" 
+                className="col-span-3"
+                value={formData.commission_rate}
+                onChange={(e) => setFormData({...formData, commission_rate: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-creditLimit" className="col-span-1">
+                {t("creditLimit") || "حد الائتمان"}
+              </Label>
+              <Input 
+                id="edit-creditLimit" 
+                type="number"
+                className="col-span-3"
+                value={formData.credit_limit}
+                onChange={(e) => setFormData({...formData, credit_limit: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-status" className="col-span-1">
+                {t("status") || "الحالة"}
+              </Label>
+              <select 
+                id="edit-status"
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedDistributor?.status || 'active'}
+                onChange={(e) => setSelectedDistributor(prev => prev ? {...prev, status: e.target.value} : null)}
+              >
+                <option value="active">{t("active") || "نشط"}</option>
+                <option value="inactive">{t("inactive") || "غير نشط"}</option>
+              </select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              {t("cancel") || "إلغاء"}
+            </Button>
+            <Button onClick={handleEditDistributor}>
+              {t("save") || "حفظ"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
