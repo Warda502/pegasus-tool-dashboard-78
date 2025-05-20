@@ -40,8 +40,10 @@ export default function App() {
           <AuthProvider>
             <Suspense fallback={<LoadingScreen />}>
               <Routes>
-                {/* Public routes */}
+                {/* Root route uses Index component to handle auth redirection */}
                 <Route path="/" element={<Index />} />
+                
+                {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/two-factor" element={<TwoFactorAuth />} />
                 

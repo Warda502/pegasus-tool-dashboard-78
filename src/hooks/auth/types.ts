@@ -36,4 +36,6 @@ export interface AuthActions {
   verifyTwoFactor: (userId: string, token: string) => Promise<boolean>;
 }
 
-export interface AuthContextType extends AuthState, AuthActions {}
+export interface AuthContextType extends AuthState, AuthActions {
+  initialized: boolean;
+}
