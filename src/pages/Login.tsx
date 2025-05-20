@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -83,8 +84,8 @@ export default function Login() {
     
     const passwordReset = searchParams.get("passwordReset");
     if (passwordReset === "success") {
-      toast(t("passwordResetSuccess"), {
-        description: t("pleaseLoginWithNewPassword")
+      toast(t("passwordResetSuccess") || "تم إعادة تعيين كلمة المرور بنجاح", {
+        description: t("pleaseLoginWithNewPassword") || "يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة"
       });
     }
     
@@ -242,14 +243,14 @@ export default function Login() {
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">{t("login")}</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{t("login") || "تسجيل الدخول"}</h2>
         </div>
         
         {loginStage === 'credentials' ? (
           <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="email">{t("email")}</Label>
+                <Label htmlFor="email">{t("email") || "البريد الإلكتروني"}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -258,10 +259,11 @@ export default function Login() {
                   required
                   dir={isRTL ? "rtl" : "ltr"}
                   autoComplete="email"
+                  placeholder={t("enterEmail") || "أدخل بريدك الإلكتروني"}
                 />
               </div>
               <div>
-                <Label htmlFor="password">{t("password")}</Label>
+                <Label htmlFor="password">{t("password") || "كلمة المرور"}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -271,6 +273,7 @@ export default function Login() {
                     required
                     dir={isRTL ? "rtl" : "ltr"}
                     autoComplete="current-password"
+                    placeholder={t("enterPassword") || "أدخل كلمة المرور"}
                   />
                   <button
                     type="button"
@@ -307,20 +310,20 @@ export default function Login() {
               disabled={isSubmitting || loading || (isProdDomain && !captchaToken)}
               className="w-full"
             >
-              {isSubmitting ? t("loggingIn") : t("login")}
+              {isSubmitting ? (t("loggingIn") || "جاري تسجيل الدخول...") : (t("login") || "تسجيل الدخول")}
             </Button>
           </form>
         ) : (
           <form className="mt-8 space-y-6" onSubmit={handleOTPVerify}>
             <div className="flex items-center gap-2 mb-6">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">{t("twoFactorAuth") || "Two-Factor Authentication"}</h3>
+              <h3 className="text-lg font-semibold">{t("twoFactorAuth") || "المصادقة الثنائية"}</h3>
             </div>
             
             <Separator className="my-4" />
             
             <p className="text-sm text-gray-600">
-              {t("enterVerificationCode") || "Enter the verification code from your authenticator app"}
+              {t("enterVerificationCode") || "أدخل رمز التحقق من تطبيق المصادقة"}
             </p>
             
             <div className="flex flex-col items-center space-y-4">
@@ -342,7 +345,7 @@ export default function Login() {
               </InputOTP>
               
               <p className="text-sm text-muted-foreground text-center">
-                {t("useAuthenticatorApp") || "Use your authenticator app to get the code"}
+                {t("useAuthenticatorApp") || "استخدم تطبيق المصادقة للحصول على الرمز"}
               </p>
             </div>
             
@@ -352,7 +355,7 @@ export default function Login() {
                 disabled={otpCode.length !== 6 || isSubmitting}
                 className="w-full"
               >
-                {isSubmitting ? t("verifying") || "جاري التحقق..." : t("verify") || "تحقق"}
+                {isSubmitting ? (t("verifying") || "جاري التحقق...") : (t("verify") || "تحقق")}
               </Button>
               
               <Button

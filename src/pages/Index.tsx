@@ -7,20 +7,28 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading, sessionChecked, needsTwoFactor, twoFactorVerified } = useAuth();
+  const { isAuthenticated, loading, sessionChecked, needsTwoFactor, twoFactorVerified, initialized } = useAuth();
   const { t } = useLanguage();
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
   useEffect(() => {
+    // Only proceed when auth context is initialized
+    if (!initialized) {
+      console.log("Index page: Waiting for auth context to initialize");
+      return;
+    }
+
     // Only proceed when the session check is complete
     if (!sessionChecked) {
+      console.log("Index page: Waiting for session check to complete");
       return;
     }
 
     console.log("Index page: Auth state check complete", {
       isAuthenticated,
       needsTwoFactor,
-      twoFactorVerified
+      twoFactorVerified,
+      initialized
     });
 
     // Set a short timeout to ensure state is settled
@@ -45,10 +53,10 @@ const Index = () => {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [navigate, isAuthenticated, sessionChecked, needsTwoFactor, twoFactorVerified]);
+  }, [navigate, isAuthenticated, sessionChecked, needsTwoFactor, twoFactorVerified, initialized]);
 
   // Show loading while checking auth status
-  if (loading || !sessionChecked || !authCheckComplete) {
+  if (loading || !sessionChecked || !authCheckComplete || !initialized) {
     return <Loading text={t("checkingAuthStatus") || "جاري التحقق من حالة تسجيل الدخول..."} />;
   }
 

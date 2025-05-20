@@ -22,6 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     sessionChecked, 
     needsTwoFactor, 
     twoFactorVerified,
+    initialized,
     checkSession
   } = useAuth();
   const location = useLocation();
@@ -35,7 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     
     // Double-check session validity on protected route mount
     const verifySession = async () => {
-      if (!sessionChecked) return;
+      if (!sessionChecked || !initialized) return;
       
       try {
         // Re-verify session with the server
@@ -62,7 +63,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [location.pathname, sessionChecked, checkSession, t]);
+  }, [location.pathname, sessionChecked, initialized, checkSession, t]);
   
   useEffect(() => {
     console.log("ProtectedRoute state:", {
@@ -73,11 +74,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       needsTwoFactor,
       twoFactorVerified,
       verifyingAuth,
+      initialized,
       canAccess: isAuthenticated && (!needsTwoFactor || twoFactorVerified)
     });
-  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified, verifyingAuth]);
+  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified, verifyingAuth, initialized]);
 
-  if (loading || verifyingAuth || !sessionChecked) {
+  if (loading || verifyingAuth || !sessionChecked || !initialized) {
     return <Loading text={t("verifyingAuthentication") || "جاري التحقق من الصلاحيات..."} />;
   }
   
