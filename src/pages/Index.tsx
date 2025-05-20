@@ -31,28 +31,21 @@ const Index = () => {
       initialized
     });
 
-    // Set a short timeout to ensure state is settled
-    const timer = setTimeout(() => {
-      // If authenticated and 2FA is verified (or not needed), go to dashboard
-      if (isAuthenticated && (!needsTwoFactor || twoFactorVerified)) {
+    // Use more reliable approach without setTimeout
+    if (isAuthenticated) {
+      if (!needsTwoFactor || twoFactorVerified) {
         console.log("Index: Redirecting to dashboard, user is fully authenticated");
         navigate("/dashboard");
-      } 
-      // If needs 2FA but not verified, send to two-factor
-      else if (isAuthenticated && needsTwoFactor && !twoFactorVerified) {
+      } else {
         console.log("Index: Redirecting to two-factor auth");
         navigate("/two-factor");
       }
-      // Not authenticated, go to login
-      else {
-        console.log("Index: Redirecting to login, user is not authenticated");
-        navigate("/login");
-      }
-      
-      setAuthCheckComplete(true);
-    }, 100);
+    } else {
+      console.log("Index: Redirecting to login, user is not authenticated");
+      navigate("/login");
+    }
     
-    return () => clearTimeout(timer);
+    setAuthCheckComplete(true);
   }, [navigate, isAuthenticated, sessionChecked, needsTwoFactor, twoFactorVerified, initialized]);
 
   // Show loading while checking auth status

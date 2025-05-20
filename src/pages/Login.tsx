@@ -32,7 +32,6 @@ export default function Login() {
     verifyTwoFactor,
     needsTwoFactor,
     user,
-    setTwoFactorComplete,
     clearTwoFactorVerification
   } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
@@ -76,6 +75,14 @@ export default function Login() {
       }
     };
   }, [clearTwoFactorVerification, needsTwoFactor, isAuthenticated, sessionChecked]);
+
+  // Handle redirect to dashboard when authenticated
+  useEffect(() => {
+    if (sessionChecked && isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate, sessionChecked]);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -121,14 +128,6 @@ export default function Login() {
     }
   }, [needsTwoFactor, loginStage]);
 
-  useEffect(() => {
-    // Only redirect if user is fully authenticated (passed 2FA if needed)
-    if (sessionChecked && isAuthenticated) {
-      console.log("User is authenticated and 2FA verified (if needed), redirecting to dashboard");
-      navigate('/dashboard');
-    }
-  }, [isAuthenticated, navigate, sessionChecked]);
-
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
@@ -151,13 +150,22 @@ export default function Login() {
         return;
       }
 
-      login(email, password).then(success => {
-        if (!success) {
-          // Login failed
+      login(email, password)
+        .then(success => {
+          if (!success) {
+            // Login failed
+            setIsSubmitting(false);
+            localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+          }
+        })
+        .catch(error => {
+          console.error("Login error:", error);
+          toast(t("loginFailed") || "فشل تسجيل الدخول", {
+            description: error instanceof Error ? error.message : t("unexpectedError") || "حدث خطأ غير متوقع"
+          });
           setIsSubmitting(false);
           localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-        }
-      });
+        });
     } catch (err) {
       console.error("Login error:", err);
       toast(t("loginFailed") || "فشل تسجيل الدخول", {
@@ -178,21 +186,23 @@ export default function Login() {
     setIsSubmitting(true);
     console.log("Verifying 2FA code:", otpCode);
     
-    verifyTwoFactor(user.id, otpCode).then(isValid => {
-      if (!isValid) {
-        // Invalid OTP
-        setOtpCode('');
+    verifyTwoFactor(user.id, otpCode)
+      .then(isValid => {
+        if (!isValid) {
+          // Invalid OTP
+          setOtpCode('');
+          localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+        }
+        setIsSubmitting(false);
+      })
+      .catch(error => {
+        console.error("OTP verification error:", error);
+        toast(t("verificationFailed") || "فشل التحقق", {
+          description: error instanceof Error ? error.message : t("unexpectedError") || "حدث خطأ غير متوقع"
+        });
         localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-      }
-      setIsSubmitting(false);
-    }).catch(error => {
-      console.error("OTP verification error:", error);
-      toast(t("verificationFailed") || "فشل التحقق", {
-        description: error instanceof Error ? error.message : t("unexpectedError") || "حدث خطأ غير متوقع"
+        setIsSubmitting(false);
       });
-      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-      setIsSubmitting(false);
-    });
   }
   
   function togglePasswordVisibility() {
@@ -236,7 +246,7 @@ export default function Login() {
 
   // Don't render anything if we're already authenticated and should be redirected
   if (isAuthenticated) {
-    return null;
+    return <Loading text={t("redirecting") || "جاري توجيهك للصفحة الرئيسية..."} className="min-h-screen" />;
   }
 
   return (

@@ -79,6 +79,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     });
   }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified, verifyingAuth, initialized]);
 
+  // Show loading while checking authentication
   if (loading || verifyingAuth || !sessionChecked || !initialized) {
     return <Loading text={t("verifyingAuthentication") || "جاري التحقق من الصلاحيات..."} />;
   }

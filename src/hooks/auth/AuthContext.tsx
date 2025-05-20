@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuthState } from "./useAuthState";
 import { useAuthActions } from "./useAuthActions";
 import { AuthContextType } from "./types";
-import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "../useLanguage";
 
@@ -62,10 +61,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: t("sessionEnded") || "انتهت جلستك"
         });
         
-        // Redirect to login
-        setTimeout(() => {
-          window.location.href = '/login?loggedOutInAnotherTab=true';
-        }, 100);
+        // Use location directly to avoid navigation loop issues
+        window.location.href = '/login?loggedOutInAnotherTab=true';
       }
     };
     
