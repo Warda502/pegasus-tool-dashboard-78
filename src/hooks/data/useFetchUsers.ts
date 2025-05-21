@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "../useLanguage";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../useAuth"; // Updated import path
 
 // Cache configuration
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -29,36 +29,37 @@ export const fetchUsers = async (isAdmin: boolean, currentUserId: string | undef
       console.log("Regular user: fetching only their own data");
       
       // First try with auth.uid
-      let { data, error } = await supabase
+      const { data: userData, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', currentUserId);
+        .eq('id', currentUserId)
+        .maybeSingle();
       
-      // If no results, try with uid field
-      if ((!data || data.length === 0) && error) {
+      // If no results with id, try with uid field
+      if ((!userData || Object.keys(userData).length === 0) || error) {
         console.log("User not found by id, trying with uid field");
         const { data: uidData, error: uidError } = await supabase
           .from('users')
           .select('*')
-          .eq('uid', currentUserId);
+          .eq('uid', currentUserId)
+          .maybeSingle();
           
         if (uidError) {
           console.error("Error fetching user by uid:", uidError);
           throw new Error("Failed to fetch user data");
         }
         
-        data = uidData;
+        if (uidData) {
+          console.log("User found by UID:", uidData);
+          return [mapUserData(uidData)];
+        } else {
+          console.error("No user data found for ID (tried both id and uid):", currentUserId);
+          return [];
+        }
       }
       
-      console.log(`Fetched user data: ${data?.length || 0} records`);
-      console.log("User data sample:", data?.length > 0 ? data[0] : "No user found");
-      
-      if (!data || data.length === 0) {
-        console.error("No user data found for ID:", currentUserId);
-        return [];
-      }
-      
-      return data.map(user => mapUserData(user));
+      console.log("User data found by ID:", userData);
+      return userData ? [mapUserData(userData)] : [];
     }
     
     // For admins, fetch all users

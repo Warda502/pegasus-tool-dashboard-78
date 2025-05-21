@@ -1,13 +1,13 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/auth/AuthContext";
+import { useAuth } from "@/hooks/useAuth"; // Updated import path
 import { Loading } from "@/components/ui/loading";
 import { useLanguage } from "@/hooks/useLanguage";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading, sessionChecked, needsTwoFactor, twoFactorVerified, initialized } = useAuth();
+  const { isAuthenticated, loading, sessionChecked, needsTwoFactor, twoFactorVerified, initialized, role, isAdmin } = useAuth();
   const { t } = useLanguage();
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
@@ -28,13 +28,16 @@ const Index = () => {
       isAuthenticated,
       needsTwoFactor,
       twoFactorVerified,
-      initialized
+      initialized,
+      role,
+      isAdmin
     });
 
     // Use more reliable approach without setTimeout
     if (isAuthenticated) {
       if (!needsTwoFactor || twoFactorVerified) {
         console.log("Index: Redirecting to dashboard, user is fully authenticated");
+        console.log("User role:", role, "isAdmin:", isAdmin);
         navigate("/dashboard");
       } else {
         console.log("Index: Redirecting to two-factor auth");
@@ -46,7 +49,7 @@ const Index = () => {
     }
     
     setAuthCheckComplete(true);
-  }, [navigate, isAuthenticated, sessionChecked, needsTwoFactor, twoFactorVerified, initialized]);
+  }, [navigate, isAuthenticated, sessionChecked, needsTwoFactor, twoFactorVerified, initialized, role, isAdmin]);
 
   // Show loading while checking auth status
   if (loading || !sessionChecked || !authCheckComplete || !initialized) {

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "./useLanguage";
-import { useAuth as useAuthContext } from "./auth/AuthContext";
+import { useAuth as useAuthContext } from "@/hooks/auth/AuthContext";
 
 export const useAuth = () => {
   const authContext = useAuthContext();

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/auth/AuthContext";
+import { useAuth } from "@/hooks/useAuth"; // Updated import path
 import { Loading } from "@/components/ui/loading";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "@/components/ui/sonner";
@@ -23,7 +23,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     needsTwoFactor, 
     twoFactorVerified,
     initialized,
-    checkSession
+    checkSession,
+    isAdmin,
+    isDistributor
   } = useAuth();
   const location = useLocation();
   const { t } = useLanguage();
@@ -31,6 +33,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   useEffect(() => {
     console.log("ProtectedRoute mounted for path:", location.pathname);
+    console.log("Current user role:", role);
+    console.log("isAdmin:", isAdmin, "isDistributor:", isDistributor);
+    console.log("Allowed roles:", allowedRoles);
+    
+    if (allowedRoles) {
+      console.log("Role check required:", allowedRoles);
+      console.log("User has role:", role);
+      console.log("Role check result:", role && allowedRoles.includes(role));
+    }
     
     let isMounted = true;
     
@@ -63,7 +74,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [location.pathname, sessionChecked, initialized, checkSession, t]);
+  }, [location.pathname, sessionChecked, initialized, checkSession, t, role, isAdmin, isDistributor, allowedRoles]);
   
   useEffect(() => {
     console.log("ProtectedRoute state:", {
@@ -97,14 +108,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   // If roles are specified, check if user has permission
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    console.log("Access denied: User role", role, "not in allowed roles:", allowedRoles);
-    toast(t("accessDenied") || "وصول مرفوض", {
-      description: t("insufficientPermissions") || "ليس لديك صلاحيات كافية للوصول إلى هذه الصفحة"
-    });
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRoles && allowedRoles.length > 0) {
+    console.log("Checking role access:", { allowedRoles, userRole: role });
+    
+    const hasAccess = 
+      (allowedRoles.includes('admin') && isAdmin) || 
+      (allowedRoles.includes('distributor') && isDistributor) ||
+      (role && allowedRoles.includes(role));
+    
+    if (!hasAccess) {
+      console.log("Access denied: User role", role, "not in allowed roles:", allowedRoles);
+      console.log("isAdmin:", isAdmin, "isDistributor:", isDistributor);
+      
+      toast(t("accessDenied") || "وصول مرفوض", {
+        description: t("insufficientPermissions") || "ليس لديك صلاحيات كافية للوصول إلى هذه الصفحة"
+      });
+      
+      return <Navigate to="/login" replace />;
+    }
   }
 
   // After all checks pass, render the protected content
+  console.log("Access granted for path:", location.pathname);
   return <>{children}</>;
 };
