@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "../useLanguage";
-import { useAuth } from "../useAuth"; // Updated import path
+import { useAuth } from "@/hooks/auth/AuthContext"; // Direct import from AuthContext
 
 // Cache configuration
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -13,8 +13,13 @@ const CACHE_GC_TIME = 1000 * 60 * 10; // 10 minutes
 let hasShownSuccessToast = false;
 
 export const fetchUsers = async (isAdmin: boolean, currentUserId: string | undefined): Promise<User[]> => {
+  console.log("fetchUsers called with:", { isAdmin, currentUserId });
+  
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("No authentication session");
+  if (!session) {
+    console.error("No authentication session found in fetchUsers");
+    throw new Error("No authentication session");
+  }
   
   if (!currentUserId) {
     console.error("No user ID provided for fetchUsers");
@@ -54,6 +59,24 @@ export const fetchUsers = async (isAdmin: boolean, currentUserId: string | undef
           return [mapUserData(uidData)];
         } else {
           console.error("No user data found for ID (tried both id and uid):", currentUserId);
+          
+          // One final attempt with auth.id from session directly
+          const sessionUserId = session.user.id;
+          if (sessionUserId && sessionUserId !== currentUserId) {
+            console.log("Trying with session user ID:", sessionUserId);
+            
+            const { data: sessionUserData, error: sessionError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', sessionUserId)
+              .maybeSingle();
+              
+            if (!sessionError && sessionUserData) {
+              console.log("User found by session ID:", sessionUserData);
+              return [mapUserData(sessionUserData)];
+            }
+          }
+          
           return [];
         }
       }
@@ -108,6 +131,8 @@ const mapUserData = (user: any): User => {
 export const useFetchUsers = () => {
   const { t } = useLanguage();
   const { isAuthenticated, isAdmin, user } = useAuth();
+  
+  console.log("useFetchUsers auth state:", { isAuthenticated, isAdmin, userId: user?.id });
 
   const { 
     data = [], 

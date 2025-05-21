@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/auth/AuthContext";
 import { useSharedData } from "@/hooks/data/DataContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { User, Settings } from "lucide-react";
 
@@ -23,6 +23,15 @@ export default function AppLayout({
   const { t, isRTL } = useLanguage();
   const { role, logout, user, isAdmin } = useAuth();
   const { users } = useSharedData();
+  
+  useEffect(() => {
+    console.log("AppLayout mounted, checking auth status:", { 
+      userId: user?.id, 
+      role, 
+      isAdmin,
+      pathName: location.pathname
+    });
+  }, [user, role, isAdmin, location.pathname]);
   
   const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
   const [isDarkMode, setIsDarkMode] = useState(

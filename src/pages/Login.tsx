@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -32,7 +31,8 @@ export default function Login() {
     verifyTwoFactor,
     needsTwoFactor,
     user,
-    clearTwoFactorVerification
+    clearTwoFactorVerification,
+    twoFactorVerified
   } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,10 +79,23 @@ export default function Login() {
   // Handle redirect to dashboard when authenticated
   useEffect(() => {
     if (sessionChecked && isAuthenticated) {
-      console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard');
+      console.log("Login page: User is authenticated", {
+        isAuthenticated, 
+        needsTwoFactor, 
+        twoFactorVerified
+      });
+      
+      // Only redirect if 2FA is not required or already verified
+      if (!needsTwoFactor || twoFactorVerified) {
+        console.log("Login page: Redirecting to dashboard");
+        // Use setTimeout to ensure this runs after React updates
+        setTimeout(() => navigate('/dashboard'), 0);
+      } else {
+        console.log("Login page: Redirecting to two-factor verification");
+        setTimeout(() => navigate('/two-factor'), 0);
+      }
     }
-  }, [isAuthenticated, navigate, sessionChecked]);
+  }, [isAuthenticated, navigate, sessionChecked, needsTwoFactor, twoFactorVerified]);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -150,8 +163,10 @@ export default function Login() {
         return;
       }
 
+      console.log("Attempting login for:", email);
       login(email, password)
         .then(success => {
+          console.log("Login attempt result:", success);
           if (!success) {
             // Login failed
             setIsSubmitting(false);

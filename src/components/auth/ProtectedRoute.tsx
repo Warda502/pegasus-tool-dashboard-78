@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth"; // Updated import path
+import { useAuth } from "@/hooks/auth/AuthContext"; // Direct import from AuthContext
 import { Loading } from "@/components/ui/loading";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "@/components/ui/sonner";
@@ -33,14 +33,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   useEffect(() => {
     console.log("ProtectedRoute mounted for path:", location.pathname);
-    console.log("Current user role:", role);
-    console.log("isAdmin:", isAdmin, "isDistributor:", isDistributor);
-    console.log("Allowed roles:", allowedRoles);
+    console.log("Current auth state:", { 
+      isAuthenticated, 
+      role, 
+      isAdmin, 
+      isDistributor,
+      needsTwoFactor,
+      twoFactorVerified,
+      sessionChecked,
+      initialized
+    });
     
     if (allowedRoles) {
       console.log("Role check required:", allowedRoles);
       console.log("User has role:", role);
       console.log("Role check result:", role && allowedRoles.includes(role));
+      console.log("isAdmin direct check:", isAdmin);
+      console.log("Admin role in allowed roles:", allowedRoles.includes('admin'));
     }
     
     let isMounted = true;
@@ -74,24 +83,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [location.pathname, sessionChecked, initialized, checkSession, t, role, isAdmin, isDistributor, allowedRoles]);
+  }, [location.pathname, sessionChecked, initialized, checkSession, t, role, isAdmin, isDistributor, allowedRoles, isAuthenticated, needsTwoFactor, twoFactorVerified]);
   
-  useEffect(() => {
-    console.log("ProtectedRoute state:", {
-      isAuthenticated,
-      role,
-      loading,
-      sessionChecked,
-      needsTwoFactor,
-      twoFactorVerified,
-      verifyingAuth,
-      initialized,
-      canAccess: isAuthenticated && (!needsTwoFactor || twoFactorVerified)
-    });
-  }, [isAuthenticated, role, loading, sessionChecked, needsTwoFactor, twoFactorVerified, verifyingAuth, initialized]);
-
   // Show loading while checking authentication
   if (loading || verifyingAuth || !sessionChecked || !initialized) {
+    console.log("ProtectedRoute: Still loading auth state", {
+      loading,
+      verifyingAuth,
+      sessionChecked,
+      initialized
+    });
     return <Loading text={t("verifyingAuthentication") || "جاري التحقق من الصلاحيات..."} />;
   }
   

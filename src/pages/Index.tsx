@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth"; // Updated import path
+import { useAuth } from "@/hooks/auth/AuthContext"; // Direct import from AuthContext
 import { Loading } from "@/components/ui/loading";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -30,22 +30,24 @@ const Index = () => {
       twoFactorVerified,
       initialized,
       role,
-      isAdmin
+      isAdmin,
+      currentPath: window.location.pathname
     });
 
-    // Use more reliable approach without setTimeout
     if (isAuthenticated) {
       if (!needsTwoFactor || twoFactorVerified) {
         console.log("Index: Redirecting to dashboard, user is fully authenticated");
         console.log("User role:", role, "isAdmin:", isAdmin);
-        navigate("/dashboard");
+        
+        // Use setTimeout to ensure this runs after React updates
+        setTimeout(() => navigate("/dashboard"), 0);
       } else {
         console.log("Index: Redirecting to two-factor auth");
-        navigate("/two-factor");
+        setTimeout(() => navigate("/two-factor"), 0);
       }
     } else {
       console.log("Index: Redirecting to login, user is not authenticated");
-      navigate("/login");
+      setTimeout(() => navigate("/login"), 0);
     }
     
     setAuthCheckComplete(true);
