@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "../useLanguage";
-import { useAuth } from "@/hooks/auth/AuthContext"; // Direct import from AuthContext
+import { useAuth } from "../auth/AuthContext";
 
 // Cache configuration
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -13,13 +13,8 @@ const CACHE_GC_TIME = 1000 * 60 * 10; // 10 minutes
 let hasShownSuccessToast = false;
 
 export const fetchUsers = async (isAdmin: boolean, currentUserId: string | undefined): Promise<User[]> => {
-  console.log("fetchUsers called with:", { isAdmin, currentUserId });
-  
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    console.error("No authentication session found in fetchUsers");
-    throw new Error("No authentication session");
-  }
+  if (!session) throw new Error("No authentication session");
   
   if (!currentUserId) {
     console.error("No user ID provided for fetchUsers");
@@ -34,55 +29,36 @@ export const fetchUsers = async (isAdmin: boolean, currentUserId: string | undef
       console.log("Regular user: fetching only their own data");
       
       // First try with auth.uid
-      const { data: userData, error } = await supabase
+      let { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', currentUserId)
-        .maybeSingle();
+        .eq('id', currentUserId);
       
-      // If no results with id, try with uid field
-      if ((!userData || Object.keys(userData).length === 0) || error) {
+      // If no results, try with uid field
+      if ((!data || data.length === 0) && error) {
         console.log("User not found by id, trying with uid field");
         const { data: uidData, error: uidError } = await supabase
           .from('users')
           .select('*')
-          .eq('uid', currentUserId)
-          .maybeSingle();
+          .eq('uid', currentUserId);
           
         if (uidError) {
           console.error("Error fetching user by uid:", uidError);
           throw new Error("Failed to fetch user data");
         }
         
-        if (uidData) {
-          console.log("User found by UID:", uidData);
-          return [mapUserData(uidData)];
-        } else {
-          console.error("No user data found for ID (tried both id and uid):", currentUserId);
-          
-          // One final attempt with auth.id from session directly
-          const sessionUserId = session.user.id;
-          if (sessionUserId && sessionUserId !== currentUserId) {
-            console.log("Trying with session user ID:", sessionUserId);
-            
-            const { data: sessionUserData, error: sessionError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', sessionUserId)
-              .maybeSingle();
-              
-            if (!sessionError && sessionUserData) {
-              console.log("User found by session ID:", sessionUserData);
-              return [mapUserData(sessionUserData)];
-            }
-          }
-          
-          return [];
-        }
+        data = uidData;
       }
       
-      console.log("User data found by ID:", userData);
-      return userData ? [mapUserData(userData)] : [];
+      console.log(`Fetched user data: ${data?.length || 0} records`);
+      console.log("User data sample:", data?.length > 0 ? data[0] : "No user found");
+      
+      if (!data || data.length === 0) {
+        console.error("No user data found for ID:", currentUserId);
+        return [];
+      }
+      
+      return data.map(user => mapUserData(user));
     }
     
     // For admins, fetch all users
@@ -131,8 +107,6 @@ const mapUserData = (user: any): User => {
 export const useFetchUsers = () => {
   const { t } = useLanguage();
   const { isAuthenticated, isAdmin, user } = useAuth();
-  
-  console.log("useFetchUsers auth state:", { isAuthenticated, isAdmin, userId: user?.id });
 
   const { 
     data = [], 

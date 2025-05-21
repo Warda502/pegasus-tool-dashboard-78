@@ -1,7 +1,7 @@
 
 import { User } from "@supabase/supabase-js";
 
-export type UserRole = "admin" | "user" | "distributor";
+export type UserRole = "admin" | "user";
 
 export interface AuthUser {
   id: string;
@@ -20,7 +20,6 @@ export interface AuthState {
   role: UserRole | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  isDistributor: boolean;
   sessionChecked: boolean;
   needsTwoFactor: boolean;
   twoFactorVerified: boolean;
@@ -36,6 +35,4 @@ export interface AuthActions {
   verifyTwoFactor: (userId: string, token: string) => Promise<boolean>;
 }
 
-export interface AuthContextType extends AuthState, AuthActions {
-  initialized: boolean;
-}
+export interface AuthContextType extends AuthState, AuthActions {}

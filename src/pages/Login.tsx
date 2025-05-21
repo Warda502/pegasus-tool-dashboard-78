@@ -31,8 +31,8 @@ export default function Login() {
     verifyTwoFactor,
     needsTwoFactor,
     user,
-    clearTwoFactorVerification,
-    twoFactorVerified
+    setTwoFactorComplete,
+    clearTwoFactorVerification
   } = useAuth();
   const [notificationsShown, setNotificationsShown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,20 +51,14 @@ export default function Login() {
   const isProdDomain = window.location.origin === "https://panel.pegasus-tools.com";
   // If not on prod domain, we'll skip captcha validation
 
+  // Clear login tracking on component mount and if not in the middle of auth flow
   useEffect(() => {
-    console.log("Login page mount - auth state:", {
-      isAuthenticated,
-      needsTwoFactor,
-      sessionChecked
-    });
-    
     const loginInProgress = localStorage.getItem(LOGIN_IN_PROGRESS_KEY) === 'true';
     
     // Only clear if not in login flow
     if (!needsTwoFactor && !loginInProgress) {
       console.log("Clearing 2FA verification state on login page load");
       clearTwoFactorVerification();
-      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
     }
     
     // Clear login in progress flag when component unmounts
@@ -74,28 +68,7 @@ export default function Login() {
         localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
       }
     };
-  }, [clearTwoFactorVerification, needsTwoFactor, isAuthenticated, sessionChecked]);
-
-  // Handle redirect to dashboard when authenticated
-  useEffect(() => {
-    if (sessionChecked && isAuthenticated) {
-      console.log("Login page: User is authenticated", {
-        isAuthenticated, 
-        needsTwoFactor, 
-        twoFactorVerified
-      });
-      
-      // Only redirect if 2FA is not required or already verified
-      if (!needsTwoFactor || twoFactorVerified) {
-        console.log("Login page: Redirecting to dashboard");
-        // Use setTimeout to ensure this runs after React updates
-        setTimeout(() => navigate('/dashboard'), 0);
-      } else {
-        console.log("Login page: Redirecting to two-factor verification");
-        setTimeout(() => navigate('/two-factor'), 0);
-      }
-    }
-  }, [isAuthenticated, navigate, sessionChecked, needsTwoFactor, twoFactorVerified]);
+  }, [clearTwoFactorVerification, needsTwoFactor]);
 
   useEffect(() => {
     if (notificationsShown || !sessionChecked) return;
@@ -104,30 +77,19 @@ export default function Login() {
     
     const passwordReset = searchParams.get("passwordReset");
     if (passwordReset === "success") {
-      toast(t("passwordResetSuccess") || "تم إعادة تعيين كلمة المرور بنجاح", {
-        description: t("pleaseLoginWithNewPassword") || "يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة"
+      toast(t("passwordResetSuccess"), {
+        description: t("pleaseLoginWithNewPassword")
       });
     }
     
     const sessionExpired = searchParams.get("sessionExpired");
     if (sessionExpired === "true") {
-      toast(t("sessionExpired") || "انتهت صلاحية الجلسة", {
-        description: t("pleaseLoginAgain") || "يرجى تسجيل الدخول مجددًا"
-      });
+      console.log("Session expired param detected");
     }
     
     const loggedOut = searchParams.get("loggedOut");
     if (loggedOut === "true") {
-      toast(t("loggedOutSuccess") || "تم تسجيل الخروج بنجاح", {
-        description: t("comeBackSoon") || "نتطلع لعودتك قريبًا"
-      });
-    }
-    
-    const loggedOutInAnotherTab = searchParams.get("loggedOutInAnotherTab");
-    if (loggedOutInAnotherTab === "true") {
-      toast(t("loggedOutInAnotherTab") || "تم تسجيل الخروج في نافذة أخرى", {
-        description: t("sessionEnded") || "انتهت جلستك"
-      });
+      // No need for any message here
     }
   }, [searchParams, t, notificationsShown, sessionChecked]);
 
@@ -141,7 +103,15 @@ export default function Login() {
     }
   }, [needsTwoFactor, loginStage]);
 
-  function handleLogin(e: React.FormEvent) {
+  useEffect(() => {
+    // Only redirect if user is fully authenticated (passed 2FA if needed)
+    if (sessionChecked && isAuthenticated) {
+      console.log("User is authenticated and 2FA verified (if needed), redirecting to dashboard");
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate, sessionChecked]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
@@ -153,45 +123,65 @@ export default function Login() {
       clearTwoFactorVerification();
       setOtpCode('');
       
-      // Skip captcha validation in development
-      if (isProdDomain && !captchaToken) {
-        toast(t("captchaRequired") || "يرجى إكمال اختبار التحقق", {
-          description: t("captchaRequiredDesc") || "يرجى إكمال اختبار التحقق للمتابعة"
-        });
-        setIsSubmitting(false);
-        setCaptchaError(true);
-        return;
-      }
+      // First, check if email exists and if the user is blocked or has no credits
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, email_type, block, credits, two_factor_enabled')
+        .eq('email', email)
+        .maybeSingle();
 
-      console.log("Attempting login for:", email);
-      login(email, password)
-        .then(success => {
-          console.log("Login attempt result:", success);
-          if (!success) {
-            // Login failed
-            setIsSubmitting(false);
-            localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-          }
-        })
-        .catch(error => {
-          console.error("Login error:", error);
-          toast(t("loginFailed") || "فشل تسجيل الدخول", {
-            description: error instanceof Error ? error.message : t("unexpectedError") || "حدث خطأ غير متوقع"
+      if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error("Error checking user:", userError);
+      } else if (userData) {
+        // Check if user is blocked
+        if (userData.block === 'Blocked') {
+          toast(t("accountBlocked"), {
+            description: t("accountBlockedDescription")
           });
           setIsSubmitting(false);
           localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-        });
+          return;
+        }
+
+        // Check if user has no credits (for regular users)
+        if (userData.email_type && userData.email_type.toLowerCase() !== 'admin') {
+          if (userData.credits) {
+            const creditsValue = parseFloat(userData.credits.toString().replace(/"/g, ''));
+            if (!isNaN(creditsValue) && creditsValue <= 0) {
+              toast(t("noCreditsLeft"), {
+                description: t("noCreditsLeftDescription")
+              });
+              setIsSubmitting(false);
+              localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+              return;
+            }
+          }
+        }
+      }
+
+      console.log("Attempting login after pre-checks");
+      const result = await login(email, password);
+      
+      if (result) {
+        console.log("Login successful, waiting for 2FA check if needed");
+      } else {
+        // Login failed
+        setIsSubmitting(false);
+        localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+      }
     } catch (err) {
-      console.error("Login error:", err);
-      toast(t("loginFailed") || "فشل تسجيل الدخول", {
-        description: err instanceof Error ? err.message : t("unexpectedError") || "حدث خطأ غير متوقع"
+      console.error("Login validation error:", err);
+      toast(t("loginFailed") || "Login failed", {
+        description: err instanceof Error ? err.message : t("unexpectedError") || "An unexpected error occurred"
       });
       setIsSubmitting(false);
       localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+    } finally {
+      setIsSubmitting(false);
     }
-  }
-  
-  function handleOTPVerify(e?: React.FormEvent) {
+  };
+
+  const handleOTPVerify = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
     if (otpCode.length !== 6 || !user) {
@@ -201,44 +191,50 @@ export default function Login() {
     setIsSubmitting(true);
     console.log("Verifying 2FA code:", otpCode);
     
-    verifyTwoFactor(user.id, otpCode)
-      .then(isValid => {
-        if (!isValid) {
-          // Invalid OTP
-          setOtpCode('');
-          localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-        }
-        setIsSubmitting(false);
-      })
-      .catch(error => {
-        console.error("OTP verification error:", error);
-        toast(t("verificationFailed") || "فشل التحقق", {
-          description: error instanceof Error ? error.message : t("unexpectedError") || "حدث خطأ غير متوقع"
-        });
+    try {
+      // Use the verifyTwoFactor method from our auth context
+      const isValid = await verifyTwoFactor(user.id, otpCode);
+      
+      if (isValid) {
+        // 2FA verification successful
+        setTwoFactorComplete();
+        console.log("2FA verification successful, will redirect to dashboard");
+        // Keep the login in progress flag so we know we're mid-auth flow
+      } else {
+        // Invalid OTP - message is shown by verifyTwoFactor
+        setOtpCode('');
         localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
-        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      toast(t("verificationFailed") || "Verification failed", {
+        description: error instanceof Error ? error.message : t("unexpectedError") || "An unexpected error occurred"
       });
-  }
-  
-  function togglePasswordVisibility() {
+      localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
-  }
-  
-  function handleCaptchaSolved(token: string) {
+  };
+
+  const handleCaptchaSolved = (token: string) => {
     setCaptchaToken(token);
     setCaptchaError(false);
-  }
-  
-  function handleCaptchaError() {
+  };
+
+  const handleCaptchaError = () => {
     setCaptchaError(true);
     setCaptchaToken("");
-  }
-  
-  function handleCaptchaExpired() {
+  };
+
+  const handleCaptchaExpired = () => {
     setCaptchaToken("");
-  }
+  };
   
-  function handleBack() {
+  const handleBack = () => {
     // For 2FA screen: go back to credentials, but only if not in the middle of the auth flow
     if (!user) {
       setLoginStage('credentials');
@@ -253,7 +249,7 @@ export default function Login() {
         localStorage.removeItem(LOGIN_IN_PROGRESS_KEY);
       });
     }
-  }
+  };
 
   if (!sessionChecked || loading) {
     return <Loading text={t("checkingSession") || "جاري التحقق من حالة الجلسة..."} className="min-h-screen" />;
@@ -261,21 +257,21 @@ export default function Login() {
 
   // Don't render anything if we're already authenticated and should be redirected
   if (isAuthenticated) {
-    return <Loading text={t("redirecting") || "جاري توجيهك للصفحة الرئيسية..."} className="min-h-screen" />;
+    return null;
   }
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">{t("login") || "تسجيل الدخول"}</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{t("login")}</h2>
         </div>
         
         {loginStage === 'credentials' ? (
           <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="email">{t("email") || "البريد الإلكتروني"}</Label>
+                <Label htmlFor="email">{t("email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -284,11 +280,10 @@ export default function Login() {
                   required
                   dir={isRTL ? "rtl" : "ltr"}
                   autoComplete="email"
-                  placeholder={t("enterEmail") || "أدخل بريدك الإلكتروني"}
                 />
               </div>
               <div>
-                <Label htmlFor="password">{t("password") || "كلمة المرور"}</Label>
+                <Label htmlFor="password">{t("password")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -298,7 +293,6 @@ export default function Login() {
                     required
                     dir={isRTL ? "rtl" : "ltr"}
                     autoComplete="current-password"
-                    placeholder={t("enterPassword") || "أدخل كلمة المرور"}
                   />
                   <button
                     type="button"
@@ -335,20 +329,20 @@ export default function Login() {
               disabled={isSubmitting || loading || (isProdDomain && !captchaToken)}
               className="w-full"
             >
-              {isSubmitting ? (t("loggingIn") || "جاري تسجيل الدخول...") : (t("login") || "تسجيل الدخول")}
+              {isSubmitting ? t("loggingIn") : t("login")}
             </Button>
           </form>
         ) : (
           <form className="mt-8 space-y-6" onSubmit={handleOTPVerify}>
             <div className="flex items-center gap-2 mb-6">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">{t("twoFactorAuth") || "المصادقة الثنائية"}</h3>
+              <h3 className="text-lg font-semibold">{t("twoFactorAuth") || "Two-Factor Authentication"}</h3>
             </div>
             
             <Separator className="my-4" />
             
             <p className="text-sm text-gray-600">
-              {t("enterVerificationCode") || "أدخل رمز التحقق من تطبيق المصادقة"}
+              {t("enterVerificationCode") || "Enter the verification code from your authenticator app"}
             </p>
             
             <div className="flex flex-col items-center space-y-4">
@@ -370,7 +364,7 @@ export default function Login() {
               </InputOTP>
               
               <p className="text-sm text-muted-foreground text-center">
-                {t("useAuthenticatorApp") || "استخدم تطبيق المصادقة للحصول على الرمز"}
+                {t("useAuthenticatorApp") || "Use your authenticator app to get the code"}
               </p>
             </div>
             
@@ -380,7 +374,7 @@ export default function Login() {
                 disabled={otpCode.length !== 6 || isSubmitting}
                 className="w-full"
               >
-                {isSubmitting ? (t("verifying") || "جاري التحقق...") : (t("verify") || "تحقق")}
+                {isSubmitting ? t("verifying") || "جاري التحقق..." : t("verify") || "تحقق"}
               </Button>
               
               <Button

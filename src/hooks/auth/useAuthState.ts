@@ -24,36 +24,80 @@ export const useAuthState = (): AuthState => {
     try {
       console.log("Fetching complete user data for ID:", userId);
       
-      // Only check by UID - consolidated approach
-      const { data: userData, error } = await supabase
+      // Try first with ID
+      const { data: userDataById, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user data by ID:", error);
+      }
+
+      // If found by ID, use it
+      if (userDataById) {
+        console.log("User data found by ID:", userDataById);
+        
+        const userRole = ((userDataById.email_type || '').toLowerCase() === 'admin') 
+          ? 'admin' as UserRole 
+          : 'user' as UserRole;
+        
+        // Check if user has 2FA enabled
+        const hasTwoFactorEnabled = userDataById.two_factor_enabled || false;
+        setNeedsTwoFactor(hasTwoFactorEnabled);
+        
+        // IMPORTANT: Check if 2FA has been previously verified for this user
+        const isVerified = localStorage.getItem(TwoFactorVerifiedKey) === 'true';
+        console.log("2FA verification status from localStorage:", isVerified);
+        
+        if (hasTwoFactorEnabled) {
+          setTwoFactorVerified(isVerified);
+        } else {
+          // No 2FA needed, so it's "verified" by default
+          setTwoFactorVerified(true);
+          // Clean up any stored 2FA state if not needed
+          localStorage.removeItem(TwoFactorVerifiedKey);
+        }
+        
+        return {
+          id: userDataById.id,
+          email: userDataById.email,
+          name: userDataById.name || '',
+          role: userRole,
+          credits: userDataById.credits,
+          expiryTime: userDataById.expiry_time,
+          uid: userDataById.uid,
+          twoFactorEnabled: hasTwoFactorEnabled
+        };
+      }
+
+      // If not found by ID, try with UID
+      console.log("No user data found by ID, trying with UID...");
+      const { data: userDataByUid, error: uidError } = await supabase
         .from('users')
         .select('*')
         .eq('uid', userId)
         .single();
-
-      if (error) {
-        console.error("Error fetching user data:", error);
+        
+      if (uidError) {
+        console.error("Error fetching user by UID:", uidError);
+        return null;
+      }
+      
+      if (!userDataByUid) {
+        console.error("No user data found by either ID or UID");
         return null;
       }
 
-      if (!userData) {
-        console.error("No user data found");
-        return null;
-      }
-
-      console.log("User data found:", userData);
+      console.log("User data found by UID:", userDataByUid);
       
-      let userRole: UserRole = 'user';
-      
-      // Determine role based on email_type
-      if ((userData.email_type || '').toLowerCase() === 'admin') {
-        userRole = 'admin';
-      } else if ((userData.email_type || '').toLowerCase() === 'distributor') {
-        userRole = 'distributor';
-      }
+      const userRole = ((userDataByUid.email_type || '').toLowerCase() === 'admin') 
+        ? 'admin' as UserRole 
+        : 'user' as UserRole;
       
       // Check if user has 2FA enabled
-      const hasTwoFactorEnabled = userData.two_factor_enabled || false;
+      const hasTwoFactorEnabled = userDataByUid.two_factor_enabled || false;
       setNeedsTwoFactor(hasTwoFactorEnabled);
       
       // IMPORTANT: Check if 2FA has been previously verified for this user
@@ -70,13 +114,13 @@ export const useAuthState = (): AuthState => {
       }
       
       return {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name || '',
+        id: userDataByUid.id,
+        email: userDataByUid.email,
+        name: userDataByUid.name || '',
         role: userRole,
-        credits: userData.credits,
-        expiryTime: userData.expiry_time,
-        uid: userData.uid,
+        credits: userDataByUid.credits,
+        expiryTime: userDataByUid.expiry_time,
+        uid: userDataByUid.uid,
         twoFactorEnabled: hasTwoFactorEnabled
       };
     } catch (err) {
@@ -91,6 +135,7 @@ export const useAuthState = (): AuthState => {
     setTwoFactorVerified(true);
     // Store 2FA verification status in localStorage to persist across page reloads
     localStorage.setItem(TwoFactorVerifiedKey, 'true');
+    setIsAuthenticated(true);
   }, []);
 
   // Method to clear 2FA verification (used on logout)
@@ -115,40 +160,35 @@ export const useAuthState = (): AuthState => {
     
     console.log("Processing session for:", session.user.email);
     
-    // Important: Set default authenticated state as false until user data is fetched
-    setIsAuthenticated(false);
-    
     // Fetch user data with a small delay to ensure DB is ready
-    const userData = await fetchUserData(session.user.id);
-    if (userData) {
-      console.log("Setting user data:", userData);
-      setUser(userData as AuthUser);
-      setRole(userData.role as UserRole);
-      
-      const requiresTwoFactor = userData.twoFactorEnabled || false;
-      console.log("User requires 2FA:", requiresTwoFactor);
-      
-      // Check if 2FA is already verified from localStorage
-      const isVerified = localStorage.getItem(TwoFactorVerifiedKey) === 'true';
-      console.log("Is 2FA already verified (localStorage):", isVerified);
-      
-      // Set authentication state based on 2FA requirements and verification
-      const isFullyAuthenticated = !requiresTwoFactor || isVerified;
-      console.log("Setting authentication state:", {
-        isAuthenticated: isFullyAuthenticated,
-        needsTwoFactor: requiresTwoFactor,
-        twoFactorVerified: isVerified
-      });
-      
-      setNeedsTwoFactor(requiresTwoFactor);
-      setTwoFactorVerified(isVerified);
-      setIsAuthenticated(isFullyAuthenticated);
-    } else {
-      console.error("Failed to fetch user data after login");
-      setIsAuthenticated(false);
-      setUser(null);
-      setRole(null);
-    }
+    setTimeout(async () => {
+      const userData = await fetchUserData(session.user.id);
+      if (userData) {
+        console.log("Setting user data:", userData);
+        setUser(userData as AuthUser);
+        setRole(userData.role as UserRole);
+        
+        const requiresTwoFactor = userData.twoFactorEnabled || false;
+        console.log("User requires 2FA:", requiresTwoFactor);
+        
+        // Check if 2FA is already verified from localStorage
+        const isVerified = localStorage.getItem(TwoFactorVerifiedKey) === 'true';
+        console.log("Is 2FA already verified (localStorage):", isVerified);
+        
+        // Set authentication state based on 2FA requirements and verification
+        const isFullyAuthenticated = !requiresTwoFactor || isVerified;
+        console.log("Setting authentication state:", {
+          isAuthenticated: isFullyAuthenticated,
+          needsTwoFactor: requiresTwoFactor,
+          twoFactorVerified: isVerified
+        });
+        
+        setIsAuthenticated(isFullyAuthenticated);
+      } else {
+        console.error("Failed to fetch user data after login");
+        setIsAuthenticated(false);
+      }
+    }, 500);
   }, [fetchUserData]);
 
   useEffect(() => {
@@ -206,9 +246,6 @@ export const useAuthState = (): AuthState => {
         
       } catch (err) {
         console.error("Setup auth listener error:", err);
-        setIsAuthenticated(false);
-        setUser(null);
-        setRole(null);
       } finally {
         setLoading(false);
         setSessionChecked(true);
@@ -241,7 +278,6 @@ export const useAuthState = (): AuthState => {
     user,
     isAuthenticated,
     isAdmin: role === 'admin',
-    isDistributor: role === 'distributor',
     sessionChecked,
     needsTwoFactor,
     twoFactorVerified,

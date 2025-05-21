@@ -1,22 +1,40 @@
 
-import React, { ReactNode } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
-export interface ChartCardProps {
+interface ChartCardProps {
   title: string;
-  children: ReactNode;
-  icon?: ReactNode;
+  icon?: React.ReactNode;
+  className?: string;
   description?: string;
+  children: React.ReactNode;
 }
 
-export function ChartCard({ title, children, icon, description }: ChartCardProps) {
+export function ChartCard({ 
+  title, 
+  icon, 
+  className,
+  description,
+  children 
+}: ChartCardProps) {
   return (
-    <div className="h-full">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-medium">{title}</h3>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-      {description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{description}</p>}
-      <div className="h-[300px]">{children}</div>
-    </div>
+    <Card className={cn("h-full overflow-hidden flex flex-col", className)}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="flex flex-col">
+          <CardTitle className="text-sm md:text-base font-medium flex items-center gap-2">
+            {icon}
+            {title}
+          </CardTitle>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-1 sm:p-2 md:p-6 flex-1 flex items-center justify-center">
+        <div className="w-full h-full flex-1 flex items-center justify-center">
+          {children}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
