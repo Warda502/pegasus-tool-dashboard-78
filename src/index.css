@@ -1,9 +1,6 @@
-
-/* @tailwind directives require Tailwind CSS build process.
-   Uncomment these lines only if your project is set up with Tailwind CSS. */
-/* @tailwind base; */
-/* @tailwind components; */
-/* @tailwind utilities; */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
