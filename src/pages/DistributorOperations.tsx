@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -28,21 +27,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface Operation {
-  operation_id: string;
-  operation_type: string;
-  phone_sn: string;
-  brand: string;
-  model: string;
-  imei: string;
-  username: string;
-  credit: string;
-  time: string;
-  status: string;
-  uid: string;
-  [key: string]: any;
-}
+import { Operation } from "@/hooks/data/types";
 
 const DistributorOperations = () => {
   const { user } = useAuth();
@@ -371,7 +356,7 @@ const DistributorOperations = () => {
       {/* Operation Details Dialog */}
       {selectedOperation && (
         <OperationDetailsDialog
-          open={showDetailsDialog}
+          isOpen={showDetailsDialog}
           onOpenChange={setShowDetailsDialog}
           operation={selectedOperation}
         />

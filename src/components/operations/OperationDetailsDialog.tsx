@@ -2,41 +2,41 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useLanguage, formatTimeString } from "@/hooks/useSharedData";
-import type { Operation } from "@/hooks/useSharedData";
+import { useLanguage } from "@/hooks/useLanguage";
+import type { Operation } from "@/hooks/data/types";
 
 interface OperationDetailsDialogProps {
   operation: Operation | null;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean; 
+  onOpenChange: (open: boolean) => void;
 }
 
-export const OperationDetailsDialog = ({ operation, isOpen, onClose }: OperationDetailsDialogProps) => {
+export const OperationDetailsDialog = ({ operation, isOpen, onOpenChange }: OperationDetailsDialogProps) => {
   const { t, language, isRTL } = useLanguage();
   
   if (!operation) return null;
 
   const detailItems = [
-    { label: t("operationID"), value: operation.OprationID },
-    { label: t("operationType"), value: operation.OprationTypes },
-    { label: t("serialNumber"), value: operation.Phone_SN },
-    { label: t("brand"), value: operation.Brand },
-    { label: t("model"), value: operation.Model },
-    { label: t("imei"), value: operation.Imei },
-    { label: t("user"), value: operation.UserName },
-    { label: t("credit"), value: operation.Credit },
-    { label: t("time"), value: formatTimeString(operation.Time) },
-    { label: t("status"), value: operation.Status },
-    { label: t("android"), value: operation.Android },
-    { label: t("baseband"), value: operation.Baseband },
-    { label: t("carrier"), value: operation.Carrier },
-    { label: t("securityPatch"), value: operation.Security_Patch },
-    { label: t("uid"), value: operation.UID },
-    { label: t("hwid"), value: operation.Hwid },
+    { label: t("operationID"), value: operation.operation_id },
+    { label: t("operationType"), value: operation.operation_type },
+    { label: t("serialNumber"), value: operation.phone_sn },
+    { label: t("brand"), value: operation.brand },
+    { label: t("model"), value: operation.model },
+    { label: t("imei"), value: operation.imei },
+    { label: t("user"), value: operation.username },
+    { label: t("credit"), value: operation.credit },
+    { label: t("time"), value: operation.time },
+    { label: t("status"), value: operation.status },
+    { label: t("android"), value: operation.android },
+    { label: t("baseband"), value: operation.baseband },
+    { label: t("carrier"), value: operation.carrier },
+    { label: t("securityPatch"), value: operation.security_patch },
+    { label: t("uid"), value: operation.uid },
+    { label: t("hwid"), value: operation.hwid },
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh]" dir={isRTL ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{t("operationDetails")}</DialogTitle>
@@ -63,7 +63,7 @@ export const OperationDetailsDialog = ({ operation, isOpen, onClose }: Operation
         </ScrollArea>
         
         <DialogFooter>
-          <Button onClick={onClose}>{t("close")}</Button>
+          <Button onClick={() => onOpenChange(false)}>{t("close")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

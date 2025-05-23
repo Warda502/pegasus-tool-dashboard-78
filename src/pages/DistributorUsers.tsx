@@ -22,11 +22,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, RefreshCw, Edit, Trash, User } from "lucide-react";
+import { Plus, Search, Filter, RefreshCw, Edit, Trash, User as UserIcon } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Label } from "@/components/ui/label";
 import { UserActions } from "@/components/users/UserActions";
-import { User } from "@/hooks/useSharedData";
+import { User } from "@/hooks/data/types";
 import { useUserOperations } from "@/hooks/useUserOperations";
 import { useUserDialogs } from "@/hooks/useUserDialogs";
 
@@ -38,20 +38,7 @@ const DistributorUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [distributorId, setDistributorId] = useState<string | null>(null);
   const { deleteUser, updateUser, addUser, renewUser } = useUserOperations();
-  const { 
-    ViewUserDialog, 
-    EditUserDialog, 
-    AddUserDialog, 
-    RenewUserDialog,
-    viewUser,
-    editUser,
-    openAddUser,
-    renewUserDialog,
-    isViewOpen,
-    isEditOpen,
-    isAddOpen,
-    isRenewOpen
-  } = useUserDialogs();
+  const userDialogs = useUserDialogs();
 
   useEffect(() => {
     const fetchDistributorId = async () => {
@@ -240,7 +227,7 @@ const DistributorUsers = () => {
             {t("refresh")}
           </Button>
           
-          <Button onClick={() => openAddUser()} variant="default" size="sm">
+          <Button onClick={() => userDialogs.openAddUser()} variant="default" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             {t("addUser")}
           </Button>
@@ -289,7 +276,7 @@ const DistributorUsers = () => {
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-10">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <User className="h-10 w-10 mb-2" />
+                        <UserIcon className="h-10 w-10 mb-2" />
                         <p>{t("noUsersFound") || "No users found"}</p>
                       </div>
                     </TableCell>
@@ -312,9 +299,9 @@ const DistributorUsers = () => {
                         <UserActions 
                           user={user}
                           isAdmin={false}
-                          onView={viewUser}
-                          onEdit={editUser}
-                          onRenew={renewUserDialog}
+                          onView={userDialogs.viewUser}
+                          onEdit={userDialogs.editUser}
+                          onRenew={userDialogs.renewUserDialog}
                           onDelete={deleteUser}
                         />
                       </TableCell>
@@ -328,10 +315,10 @@ const DistributorUsers = () => {
       </Card>
       
       {/* User Dialogs */}
-      <ViewUserDialog />
-      <EditUserDialog onUpdate={updateUser} />
-      <AddUserDialog onAdd={handleAddUser} />
-      <RenewUserDialog onRenew={renewUser} />
+      <userDialogs.ViewUserDialog />
+      <userDialogs.EditUserDialog onUpdate={updateUser} />
+      <userDialogs.AddUserDialog onAdd={handleAddUser} />
+      <userDialogs.RenewUserDialog onRenew={renewUser} />
     </div>
   );
 };

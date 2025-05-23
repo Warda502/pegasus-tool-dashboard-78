@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -40,6 +39,7 @@ interface Distributor {
   created_at: string;
   user_email?: string;
   user_name?: string;
+  users?: any[];
 }
 
 const Distributors = () => {
@@ -98,8 +98,8 @@ const Distributors = () => {
       // Process data to include user info
       const processedData = data.map(item => ({
         ...item,
-        user_email: item.users?.length > 0 ? item.users[0].email : undefined,
-        user_name: item.users?.length > 0 ? item.users[0].name : undefined
+        user_email: item.users && item.users.length > 0 ? item.users[0].email : undefined,
+        user_name: item.users && item.users.length > 0 ? item.users[0].name : undefined
       }));
       
       setDistributors(processedData);
