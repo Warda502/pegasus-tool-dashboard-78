@@ -1,7 +1,7 @@
 
 import { User } from "@supabase/supabase-js";
 
-export type UserRole = "admin" | "user";
+export type UserRole = "admin" | "user" | "distributor";
 
 export interface AuthUser {
   id: string;
@@ -12,6 +12,9 @@ export interface AuthUser {
   credits?: string;
   expiryTime?: string;
   twoFactorEnabled?: boolean;
+  distributorId?: string; // معرف الموزع إذا كان المستخدم موزعًا
+  commissionRate?: string; // نسبة العمولة للموزع
+  currentBalance?: string; // الرصيد الحالي للموزع
 }
 
 export interface AuthState {
@@ -20,6 +23,7 @@ export interface AuthState {
   role: UserRole | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isDistributor: boolean; // إضافة علامة للموزع
   sessionChecked: boolean;
   needsTwoFactor: boolean;
   twoFactorVerified: boolean;

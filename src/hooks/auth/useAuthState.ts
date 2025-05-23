@@ -23,7 +23,7 @@ export const useAuthState = (): AuthState => {
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       console.log("Fetching complete user data for ID:", userId);
-      
+
       // Try first with ID
       const { data: userDataById, error } = await supabase
         .from('users')
@@ -38,19 +38,23 @@ export const useAuthState = (): AuthState => {
       // If found by ID, use it
       if (userDataById) {
         console.log("User data found by ID:", userDataById);
-        
-        const userRole = ((userDataById.email_type || '').toLowerCase() === 'admin') 
-          ? 'admin' as UserRole 
-          : 'user' as UserRole;
-        
+
+        // تحديد دور المستخدم (مسؤول، موزع، أو مستخدم عادي)
+        let userRole: UserRole = 'user';
+        if ((userDataById.email_type || '').toLowerCase() === 'admin') {
+          userRole = 'admin';
+        } else if ((userDataById.role || '').toLowerCase() === 'distributor') {
+          userRole = 'distributor';
+        }
+
         // Check if user has 2FA enabled
         const hasTwoFactorEnabled = userDataById.two_factor_enabled || false;
         setNeedsTwoFactor(hasTwoFactorEnabled);
-        
+
         // IMPORTANT: Check if 2FA has been previously verified for this user
         const isVerified = localStorage.getItem(TwoFactorVerifiedKey) === 'true';
         console.log("2FA verification status from localStorage:", isVerified);
-        
+
         if (hasTwoFactorEnabled) {
           setTwoFactorVerified(isVerified);
         } else {
@@ -59,7 +63,19 @@ export const useAuthState = (): AuthState => {
           // Clean up any stored 2FA state if not needed
           localStorage.removeItem(TwoFactorVerifiedKey);
         }
-        
+
+        // إذا كان المستخدم موزعًا، قم بجلب بيانات الموزع
+        let distributorData = null;
+        if (userRole === 'distributor') {
+          const { data: distData } = await supabase
+            .from('distributors')
+            .select('*')
+            .eq('uid', userDataById.uid)
+            .single();
+
+          distributorData = distData;
+        }
+
         return {
           id: userDataById.id,
           email: userDataById.email,
@@ -68,7 +84,10 @@ export const useAuthState = (): AuthState => {
           credits: userDataById.credits,
           expiryTime: userDataById.expiry_time,
           uid: userDataById.uid,
-          twoFactorEnabled: hasTwoFactorEnabled
+          twoFactorEnabled: hasTwoFactorEnabled,
+          distributorId: distributorData?.id,
+          commissionRate: distributorData?.commission_rate,
+          currentBalance: distributorData?.current_balance
         };
       }
 
@@ -79,31 +98,35 @@ export const useAuthState = (): AuthState => {
         .select('*')
         .eq('uid', userId)
         .single();
-        
+
       if (uidError) {
         console.error("Error fetching user by UID:", uidError);
         return null;
       }
-      
+
       if (!userDataByUid) {
         console.error("No user data found by either ID or UID");
         return null;
       }
 
       console.log("User data found by UID:", userDataByUid);
-      
-      const userRole = ((userDataByUid.email_type || '').toLowerCase() === 'admin') 
-        ? 'admin' as UserRole 
-        : 'user' as UserRole;
-      
+
+      // تحديد دور المستخدم (مسؤول، موزع، أو مستخدم عادي)
+      let userRole: UserRole = 'user';
+      if ((userDataByUid.email_type || '').toLowerCase() === 'admin') {
+        userRole = 'admin';
+      } else if ((userDataByUid.role || '').toLowerCase() === 'distributor') {
+        userRole = 'distributor';
+      }
+
       // Check if user has 2FA enabled
       const hasTwoFactorEnabled = userDataByUid.two_factor_enabled || false;
       setNeedsTwoFactor(hasTwoFactorEnabled);
-      
+
       // IMPORTANT: Check if 2FA has been previously verified for this user
       const isVerified = localStorage.getItem(TwoFactorVerifiedKey) === 'true';
       console.log("2FA verification status from localStorage:", isVerified);
-      
+
       if (hasTwoFactorEnabled) {
         setTwoFactorVerified(isVerified);
       } else {
@@ -112,7 +135,19 @@ export const useAuthState = (): AuthState => {
         // Clean up any stored 2FA state if not needed
         localStorage.removeItem(TwoFactorVerifiedKey);
       }
-      
+
+      // إذا كان المستخدم موزعًا، قم بجلب بيانات الموزع
+      let distributorData = null;
+      if (userRole === 'distributor') {
+        const { data: distData } = await supabase
+          .from('distributors')
+          .select('*')
+          .eq('uid', userDataByUid.uid)
+          .single();
+
+        distributorData = distData;
+      }
+
       return {
         id: userDataByUid.id,
         email: userDataByUid.email,
@@ -121,7 +156,10 @@ export const useAuthState = (): AuthState => {
         credits: userDataByUid.credits,
         expiryTime: userDataByUid.expiry_time,
         uid: userDataByUid.uid,
-        twoFactorEnabled: hasTwoFactorEnabled
+        twoFactorEnabled: hasTwoFactorEnabled,
+        distributorId: distributorData?.id,
+        commissionRate: distributorData?.commission_rate,
+        currentBalance: distributorData?.current_balance
       };
     } catch (err) {
       console.error("Failed to fetch user data:", err);
@@ -157,9 +195,9 @@ export const useAuthState = (): AuthState => {
       localStorage.removeItem(TwoFactorVerifiedKey);
       return;
     }
-    
+
     console.log("Processing session for:", session.user.email);
-    
+
     // Fetch user data with a small delay to ensure DB is ready
     setTimeout(async () => {
       const userData = await fetchUserData(session.user.id);
@@ -167,14 +205,14 @@ export const useAuthState = (): AuthState => {
         console.log("Setting user data:", userData);
         setUser(userData as AuthUser);
         setRole(userData.role as UserRole);
-        
+
         const requiresTwoFactor = userData.twoFactorEnabled || false;
         console.log("User requires 2FA:", requiresTwoFactor);
-        
+
         // Check if 2FA is already verified from localStorage
         const isVerified = localStorage.getItem(TwoFactorVerifiedKey) === 'true';
         console.log("Is 2FA already verified (localStorage):", isVerified);
-        
+
         // Set authentication state based on 2FA requirements and verification
         const isFullyAuthenticated = !requiresTwoFactor || isVerified;
         console.log("Setting authentication state:", {
@@ -182,7 +220,7 @@ export const useAuthState = (): AuthState => {
           needsTwoFactor: requiresTwoFactor,
           twoFactorVerified: isVerified
         });
-        
+
         setIsAuthenticated(isFullyAuthenticated);
       } else {
         console.error("Failed to fetch user data after login");
@@ -193,17 +231,17 @@ export const useAuthState = (): AuthState => {
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
-    
+
     const setupAuthListener = async () => {
       try {
         console.log("Setting up auth listener");
         setLoading(true);
-        
+
         // Set up the auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event: AuthChangeEvent, session) => {
             console.log("Auth state changed:", event, "Session exists:", !!session);
-            
+
             switch(event) {
               case 'SIGNED_OUT':
                 setRole(null);
@@ -214,7 +252,7 @@ export const useAuthState = (): AuthState => {
                 localStorage.removeItem(TwoFactorVerifiedKey);
                 setTwoFactorVerified(false);
                 break;
-              
+
               case 'SIGNED_IN':
               case 'TOKEN_REFRESHED':
               case 'USER_UPDATED':
@@ -236,14 +274,14 @@ export const useAuthState = (): AuthState => {
 
         // Check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+
         if (sessionError) {
           console.error("Error getting session:", sessionError);
         } else {
           console.log("Initial session check:", session ? "Session exists" : "No session");
           await handleSession(session);
         }
-        
+
       } catch (err) {
         console.error("Setup auth listener error:", err);
       } finally {
@@ -278,6 +316,7 @@ export const useAuthState = (): AuthState => {
     user,
     isAuthenticated,
     isAdmin: role === 'admin',
+    isDistributor: role === 'distributor',
     sessionChecked,
     needsTwoFactor,
     twoFactorVerified,

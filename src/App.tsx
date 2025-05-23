@@ -28,7 +28,12 @@ import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
 import PaymentMethods from "./pages/WebSettings/PaymentMethods";
 import DiscountOffers from "./pages/WebSettings/DiscountOffers";
-import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
+import TwoFactorAuth from "./pages/TwoFactorAuth";
+import Distributors from "./pages/Distributors";
+import DistributorUsers from "./pages/DistributorUsers";
+import DistributorCredits from "./pages/DistributorCredits";
+import DistributorDashboard from "./pages/DistributorDashboard";
+import { useAuth } from "./hooks/auth/AuthContext";
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -43,17 +48,19 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  const { isAdmin, isDistributor } = useAuth();
+
   // Initialize theme based on user preference
   useEffect(() => {
     const theme = localStorage.getItem("theme");
-    
-    if (theme === "dark" || 
+
+    if (theme === "dark" ||
        (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    
+
     // Listen for system preference changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
@@ -65,11 +72,11 @@ const App = () => {
         }
       }
     };
-    
+
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
@@ -82,7 +89,11 @@ const App = () => {
                   <Route path="/login" element={<Login />} />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
-                      <AppLayout><Dashboard /></AppLayout>
+                      <AppLayout>
+                        {isAdmin ? <Dashboard /> :
+                         isDistributor ? <DistributorDashboard /> :
+                         <Dashboard />}
+                      </AppLayout>
                     </ProtectedRoute>
                   } />
                   <Route path="/users-manager" element={
@@ -158,6 +169,22 @@ const App = () => {
                     <Route path="payment-methods" element={<PaymentMethods />} />
                     <Route path="discount-offers" element={<DiscountOffers />} />
                   </Route>
+                  {/* مسارات الموزع */}
+                  <Route path="/distributors" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><Distributors /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/distributor-users" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorUsers /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/distributor-credits" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorCredits /></AppLayout>
+                    </ProtectedRoute>
+                  } />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Toaster />
