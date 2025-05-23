@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,63 +93,39 @@
 
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    @apply border-border;
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-background text-foreground antialiased;
   }
 }
 
 /* Enhanced card styles */
 .card {
-  transition: all 0.3s;
-}
-.card:hover {
-  box-shadow: 0 4px 14px 0 rgba(0,0,0,0.10), 0 2px 2px 0 rgba(0,0,0,0.08);
+  @apply transition-all duration-300 hover:shadow-md;
 }
 
 /* Custom utilities */
 @layer utilities {
   .glass-effect {
-    backdrop-filter: blur(12px);
-    background-color: rgba(255, 255, 255, 0.7);
-  }
-  .dark .glass-effect {
-    background-color: rgba(31, 41, 55, 0.7); /* Tailwind's gray-800 */
+    @apply backdrop-blur-md bg-white/70 dark:bg-gray-800/70;
   }
   
   .text-gradient {
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.7));
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70;
   }
   
   .hover-lift {
-    transition-property: transform;
-    transition-duration: 300ms;
-  }
-  .hover-lift:hover {
-    transform: translateY(-0.25rem); /* Equivalent to -translate-y-1 in Tailwind (usually -4px or -0.25rem) */
+    @apply transition-transform duration-300 hover:-translate-y-1;
   }
   
   .hover-scale {
-    transition-property: transform;
-    transition-duration: 300ms;
-  }
-  .hover-scale:hover {
-    transform: scale(1.05);
+    @apply transition-transform duration-300 hover:scale-105;
   }
   
   .border-gradient {
-    border-width: 2px;
-    border-style: solid;
-    border-color: transparent;
-    background-clip: border-box;
+    @apply border-2 border-transparent bg-clip-border;
     background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/50%));
   }
 }
@@ -186,7 +163,5 @@ input:focus, textarea:focus {
 
 /* Table hover effects */
 tr:hover td {
-  background-color: hsla(var(--primary), 0.05);
-  transition-property: background-color;
-  transition-duration: 200ms;
+  @apply bg-primary/5 transition-colors duration-200;
 }
