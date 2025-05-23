@@ -75,28 +75,78 @@ export type Database = {
         }
         Relationships: []
       }
+      distributor_credits: {
+        Row: {
+          admin_id: string | null
+          amount: number
+          created_at: string | null
+          description: string | null
+          distributor_id: string
+          id: string
+          operation_type: string
+        }
+        Insert: {
+          admin_id?: string | null
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          distributor_id: string
+          id?: string
+          operation_type: string
+        }
+        Update: {
+          admin_id?: string | null
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          distributor_id?: string
+          id?: string
+          operation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributor_credits_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distributors: {
         Row: {
           commission_rate: string | null
+          created_at: string | null
+          credit_limit: number | null
+          current_balance: number | null
           facebook: string | null
           id: string
           permissions: string | null
+          status: string | null
           uid: string | null
           website: string | null
         }
         Insert: {
           commission_rate?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
           facebook?: string | null
           id?: string
           permissions?: string | null
+          status?: string | null
           uid?: string | null
           website?: string | null
         }
         Update: {
           commission_rate?: string | null
+          created_at?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
           facebook?: string | null
           id?: string
           permissions?: string | null
+          status?: string | null
           uid?: string | null
           website?: string | null
         }
@@ -505,6 +555,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      get_user_distributor_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       increment_counter: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -515,6 +569,10 @@ export type Database = {
       }
       is_distributor: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      update_distributor_balance: {
+        Args: { distributor_id: string; amount: number }
         Returns: boolean
       }
       verify_login_status: {

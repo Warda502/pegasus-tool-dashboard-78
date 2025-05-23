@@ -28,7 +28,11 @@ import SupportedModels from "./pages/WebSettings/SupportedModels";
 import Pricing from "./pages/WebSettings/Pricing";
 import PaymentMethods from "./pages/WebSettings/PaymentMethods";
 import DiscountOffers from "./pages/WebSettings/DiscountOffers";
-import TwoFactorAuth from "./pages/TwoFactorAuth"; // إضافة صفحة المصادقة الثنائية
+import TwoFactorAuth from "./pages/TwoFactorAuth";
+import Distributors from "./pages/Distributors";
+import DistributorUsers from "./pages/DistributorUsers";
+import DistributorOperations from "./pages/DistributorOperations";
+import DistributorCredits from "./pages/DistributorCredits";
 import { useEffect } from "react";
 
 // Configure React Query with better defaults
@@ -105,7 +109,6 @@ const App = () => {
                       <AppLayout><EditMyProfile /></AppLayout>
                     </ProtectedRoute>
                   } />
-                  {/* إضافة مسار المصادقة الثنائية */}
                   <Route path="/two-factor-auth" element={
                     <ProtectedRoute>
                       <AppLayout><TwoFactorAuth /></AppLayout>
@@ -144,6 +147,28 @@ const App = () => {
                   <Route path="/tool-settings" element={
                     <ProtectedRoute allowedRoles={["admin"]}>
                       <AppLayout><ToolSettings /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  {/* Distributor Routes */}
+                  <Route path="/distributor-users" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorUsers /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/distributor-operations" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorOperations /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/distributor-credits" element={
+                    <ProtectedRoute allowedRoles={["distributor"]}>
+                      <AppLayout><DistributorCredits /></AppLayout>
+                    </ProtectedRoute>
+                  } />
+                  {/* Admin-only Distributors Management */}
+                  <Route path="/distributors" element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AppLayout><Distributors /></AppLayout>
                     </ProtectedRoute>
                   } />
                   {/* Web Settings Routes */}
