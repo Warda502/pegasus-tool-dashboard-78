@@ -1,10 +1,6 @@
 
 import { useState } from 'react';
-import { User } from './data/types';
-import { ViewUserDialog } from '@/components/users/ViewUserDialog';
-import { EditUserDialog } from '@/components/users/EditUserDialog';
-import { AddUserDialog } from '@/components/users/AddUserDialog';
-import { RenewUserDialog } from '@/components/users/RenewUserDialog';
+import { User } from './useSharedData';
 
 // Custom hook to manage all user-related dialogs
 export const useUserDialogs = () => {
@@ -16,22 +12,22 @@ export const useUserDialogs = () => {
   const [isAddCreditsDialogOpen, setIsAddCreditsDialogOpen] = useState(false);
   const [isAddToPlanDialogOpen, setIsAddToPlanDialogOpen] = useState(false);
 
-  const viewUser = (user: User) => {
+  const openViewDialog = (user: User) => {
     setSelectedUser(user);
     setIsViewDialogOpen(true);
   };
 
-  const editUser = (user: User) => {
+  const openEditDialog = (user: User) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
 
-  const renewUserDialog = (user: User) => {
+  const openRenewDialog = (user: User) => {
     setSelectedUser(user);
     setIsRenewDialogOpen(true);
   };
 
-  const openAddUser = () => {
+  const openAddDialog = () => {
     setIsAddDialogOpen(true);
   };
 
@@ -41,49 +37,6 @@ export const useUserDialogs = () => {
   
   const openAddToPlanDialog = () => {
     setIsAddToPlanDialogOpen(true);
-  };
-
-  // Create dialog components
-  const ViewUserDialog = () => {
-    return selectedUser ? (
-      <ViewUserDialog
-        open={isViewDialogOpen}
-        onOpenChange={setIsViewDialogOpen}
-        user={selectedUser}
-      />
-    ) : null;
-  };
-
-  const EditUserDialog = ({ onUpdate }: { onUpdate: (user: User) => Promise<boolean> }) => {
-    return selectedUser ? (
-      <EditUserDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        user={selectedUser}
-        onUpdate={onUpdate}
-      />
-    ) : null;
-  };
-
-  const AddUserDialog = ({ onAdd }: { onAdd: (userData: any) => Promise<boolean> }) => {
-    return (
-      <AddUserDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onAdd={onAdd}
-      />
-    );
-  };
-
-  const RenewUserDialog = ({ onRenew }: { onRenew: (user: User, months: string) => Promise<boolean> }) => {
-    return selectedUser ? (
-      <RenewUserDialog
-        open={isRenewDialogOpen}
-        onOpenChange={setIsRenewDialogOpen}
-        user={selectedUser}
-        onRenew={onRenew}
-      />
-    ) : null;
   };
 
   return {
@@ -100,19 +53,11 @@ export const useUserDialogs = () => {
     setIsRenewDialogOpen,
     setIsAddCreditsDialogOpen,
     setIsAddToPlanDialogOpen,
-    viewUser,
-    editUser,
-    renewUserDialog,
-    openAddUser,
+    openViewDialog,
+    openEditDialog,
+    openRenewDialog,
+    openAddDialog,
     openAddCreditsDialog,
-    openAddToPlanDialog,
-    ViewUserDialog,
-    EditUserDialog,
-    AddUserDialog,
-    RenewUserDialog,
-    isViewOpen: isViewDialogOpen,
-    isEditOpen: isEditDialogOpen,
-    isAddOpen: isAddDialogOpen,
-    isRenewOpen: isRenewDialogOpen
+    openAddToPlanDialog
   };
 };

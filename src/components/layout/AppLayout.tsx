@@ -22,7 +22,7 @@ export default function AppLayout({
   const location = useLocation();
   const isMobile = useIsMobile();
   const { t, isRTL } = useLanguage();
-  const { role, logout, user, isAdmin, isDistributor } = useAuth();
+  const { role, logout, user, isAdmin } = useAuth();
   const { users } = useSharedData();
   
   const userName = user?.name || users?.find(u => u.id === user?.id)?.name || user?.email?.split('@')[0] || t("guest");
@@ -76,8 +76,7 @@ export default function AppLayout({
   
   const avatarColor = getAvatarColor(userName);
 
-  // Menu items shared across all roles
-  const commonMenuItems = [{
+  const menuItems = [{
     title: t("dashboard"),
     path: "/dashboard",
     icon: Home,
@@ -86,17 +85,52 @@ export default function AppLayout({
     title: t("editProfile"),
     path: "/edit-profile",
     icon: User,
-    show: !isAdmin && !isDistributor
+    show: !isAdmin
   }, {
     title: t("myCertFiles"),
     path: "/my-cert-files",
     icon: FileCheck,
-    show: !isAdmin && !isDistributor
+    show: !isAdmin
+  }, {
+    title: t("users"),
+    path: "/users-manager",
+    icon: Users,
+    show: role === "admin"
   }, {
     title: t("operations"),
     path: "/operations",
     icon: LineChart,
-    show: !isDistributor
+    show: true
+  }, {
+    title: t("discounts"),
+    path: "/discounts",
+    icon: Tags,
+    show: role === "admin"
+  }, {
+    title: t("groupsManagement"),
+    path: "/groups-management",
+    icon: Group,
+    show: role === "admin"
+  }, {
+    title: t("toolUpdate"),
+    path: "/tool-update",
+    icon: Download,
+    show: role === "admin"
+  }, {
+    title: t("toolSettings"),
+    path: "/tool-settings",
+    icon: Sliders,
+    show: role === "admin"
+  }, {
+    title: t("serverApiData"),
+    path: "/server-api-data",
+    icon: Database,
+    show: role === "admin"
+  }, {
+    title: t("serverStorage"),
+    path: "/server-storage",
+    icon: FileQuestion,
+    show: role === "admin"
   }, {
     title: t("TwoFactorAuth"),
     path: "/two-factor-auth",
@@ -107,75 +141,7 @@ export default function AppLayout({
     path: "/settings",
     icon: Settings,
     show: true
-  }];
-
-  // Admin-specific menu items
-  const adminMenuItems = [{
-    title: t("users"),
-    path: "/users-manager",
-    icon: Users,
-    show: isAdmin
-  }, {
-    title: t("distributors"),
-    path: "/distributors",
-    icon: Users,
-    show: isAdmin
-  }, {
-    title: t("discounts"),
-    path: "/discounts",
-    icon: Tags,
-    show: isAdmin
-  }, {
-    title: t("groupsManagement"),
-    path: "/groups-management",
-    icon: Group,
-    show: isAdmin
-  }, {
-    title: t("toolUpdate"),
-    path: "/tool-update",
-    icon: Download,
-    show: isAdmin
-  }, {
-    title: t("toolSettings"),
-    path: "/tool-settings",
-    icon: Sliders,
-    show: isAdmin
-  }, {
-    title: t("serverApiData"),
-    path: "/server-api-data",
-    icon: Database,
-    show: isAdmin
-  }, {
-    title: t("serverStorage"),
-    path: "/server-storage",
-    icon: FileQuestion,
-    show: isAdmin
-  }];
-
-  // Distributor-specific menu items
-  const distributorMenuItems = [{
-    title: t("distributorUsers") || "Manage Users",
-    path: "/distributor-users",
-    icon: Users,
-    show: isDistributor
-  }, {
-    title: t("distributorOperations") || "Operations History",
-    path: "/distributor-operations",
-    icon: LineChart,
-    show: isDistributor
-  }, {
-    title: t("distributorCredits") || "Credits Management",
-    path: "/distributor-credits",
-    icon: CreditCard,
-    show: isDistributor
-  }];
-
-  // Combine menu items based on user role
-  const menuItems = [
-    ...commonMenuItems,
-    ...adminMenuItems,
-    ...distributorMenuItems
-  ].filter(item => item.show);
+  }].filter(item => item.show);
 
   // Web Settings submenu items with appropriate icons
   const webSettingsItems = [
@@ -431,13 +397,6 @@ export default function AppLayout({
     // Helper function to get current page title
     function getCurrentPageTitle() {
       const currentPath = location.pathname;
-      
-      // Distributor pages
-      if (currentPath === '/distributor-users') return t("distributorUsers") || "Manage Users";
-      if (currentPath === '/distributor-operations') return t("distributorOperations") || "Operations History";
-      if (currentPath === '/distributor-credits') return t("distributorCredits") || "Credits Management";
-      if (currentPath === '/distributors') return t("distributors") || "Distributors";
-      
       if (currentPath.includes('/web-settings')) {
         return t("webSettings") || "Web Settings";
       }

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, UserRole, AuthState } from "./types";
@@ -38,15 +39,9 @@ export const useAuthState = (): AuthState => {
       if (userDataById) {
         console.log("User data found by ID:", userDataById);
         
-        // Determine user role - now includes distributor check
-        let userRole: UserRole;
-        if ((userDataById.email_type || '').toLowerCase() === 'admin') {
-          userRole = 'admin';
-        } else if ((userDataById.email_type || '').toLowerCase() === 'distributor') {
-          userRole = 'distributor';
-        } else {
-          userRole = 'user';
-        }
+        const userRole = ((userDataById.email_type || '').toLowerCase() === 'admin') 
+          ? 'admin' as UserRole 
+          : 'user' as UserRole;
         
         // Check if user has 2FA enabled
         const hasTwoFactorEnabled = userDataById.two_factor_enabled || false;
@@ -97,15 +92,9 @@ export const useAuthState = (): AuthState => {
 
       console.log("User data found by UID:", userDataByUid);
       
-      // Determine user role - now includes distributor check
-      let userRole: UserRole;
-      if ((userDataByUid.email_type || '').toLowerCase() === 'admin') {
-        userRole = 'admin';
-      } else if ((userDataByUid.email_type || '').toLowerCase() === 'distributor') {
-        userRole = 'distributor';
-      } else {
-        userRole = 'user';
-      }
+      const userRole = ((userDataByUid.email_type || '').toLowerCase() === 'admin') 
+        ? 'admin' as UserRole 
+        : 'user' as UserRole;
       
       // Check if user has 2FA enabled
       const hasTwoFactorEnabled = userDataByUid.two_factor_enabled || false;
@@ -289,7 +278,6 @@ export const useAuthState = (): AuthState => {
     user,
     isAuthenticated,
     isAdmin: role === 'admin',
-    isDistributor: role === 'distributor',
     sessionChecked,
     needsTwoFactor,
     twoFactorVerified,
